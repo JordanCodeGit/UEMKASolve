@@ -16,6 +16,9 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest; // Tambahkan ini jika b
 // [BENAR] Route registrasi (Publik, tidak butuh auth)
 Route::post('/register', [AuthController::class, 'register']);
 
+// [TAMBAHKAN INI] Route login (Publik)
+Route::post('/login', [AuthController::class, 'login'])
+->middleware('throttle:5,1'); // Contoh: 5 percobaan login per menit
 
 // Route verifikasi email (Harus publik tapi butuh 'signed')
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
@@ -41,6 +44,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $request->user()->sendEmailVerificationNotification();
         return response()->json(['message' => 'Link verifikasi baru telah dikirim.'], 200);
     })->middleware(['throttle:6,1'])->name('verification.send');
+
+    // [TAMBAHKAN INI] Route logout
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 

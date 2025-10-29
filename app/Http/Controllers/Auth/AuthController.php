@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;       // Untuk database transaction
 use Illuminate\Support\Facades\Hash;     // Untuk hashing password
 use Illuminate\Http\JsonResponse;        // Untuk type hinting response
 // use Illuminate\Support\Facades\Log; // Uncomment jika ingin menggunakan Log
+use App\Http\Requests\LoginRequest; // <-- Tambahkan ini
+use Illuminate\Support\Facades\Auth; // <-- Tambahkan ini
+use Illuminate\Http\Request;         // <-- Tambahkan ini (untuk logout nanti)
 
 class AuthController extends Controller
 {
@@ -79,6 +82,71 @@ class AuthController extends Controller
                 // 'error' => $e->getMessage() // Detail error sebaiknya tidak dikirim ke client di production
             ], 500); // Kode status 500 Internal Server Error
         }
+    }
+
+    public function login(LoginRequest $request): JsonResponse
+    {
+        // 1. Ambil kredensial yang sudah divalidasi
+        $credentials = $request->validated();
+
+        // 2. Coba lakukan autentikasi
+        if (!Auth::attempt($credentials)) {
+            // Jika email/password salah
+            return response()->json([
+                'message' => 'Email atau password salah.'
+            ], 401); // Kode status 401 Unauthorized
+        }
+
+        // 3. Autentikasi berhasil, ambil data user
+        $user = Auth::user();
+
+        // 4. (Opsional tapi Direkomendasikan) Cek Verifikasi Email
+        // if (!$user->hasVerifiedEmail()) {
+        //     return response()->json([
+        //         'message' => 'Email Anda belum diverifikasi. Silakan cek email Anda.'
+        //     ], 403); // Kode status 403 Forbidden
+        // }
+
+        // 5. Buat token API Sanctum
+        // Gunakan email user sebagai nama perangkat default jika tidak dikirim
+        $deviceName = $request->input('device_name', $user->email);
+        $token = $user->createToken($deviceName)->plainTextToken;
+
+        // 6. Ambil data bisnis terkait (jika ada)
+        $business = $user->business;
+
+        // 7. Berikan respons sukses dengan token dan data user/bisnis
+        return response()->json([
+            'message' => 'Login berhasil.',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'business' => $business ? [ // Hanya kirim jika bisnis ada
+                    'id' => $business->id,
+                    'nama_usaha' => $business->nama_usaha,
+                    'logo_path' => $business->logo_path,
+                ] : null,
+            ]
+        ], 200); // Kode status 200 OK
+    }
+
+    /**
+     * Handle user logout request (Contoh).
+     * Membutuhkan middleware auth:sanctum
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        // Hapus token API yang sedang digunakan
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logout berhasil.'], 200);
     }
 
     // --- Method lain (login, forgot password, dll.) akan ditambahkan di sini nanti ---
