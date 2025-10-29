@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')->constrained()->onDelete('cascade');
+            $table->foreignId('category_id')->constrained()->onDelete('cascade'); // Relasi ke kategori
+            $table->decimal('jumlah', 15, 2); // DECIMAL sesuai aturan (15 digit total, 2 di belakang koma)
+            $table->text('catatan')->nullable(); // Catatan bisa null
+            $table->date('tanggal_transaksi'); // Tanggal transaksi
             $table->timestamps();
+            $table->softDeletes(); // Tambahkan Soft Deletes sesuai aturan
         });
     }
 

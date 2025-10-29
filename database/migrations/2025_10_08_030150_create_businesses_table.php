@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('businesses', function (Blueprint $table) {
             $table->id();
+            // Foreign key ke tabel users, pastikan unique untuk relasi 1:1
+            $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
+            $table->string('nama_usaha');
+            $table->string('logo_path')->nullable(); // Path logo bisa null
             $table->timestamps();
         });
     }

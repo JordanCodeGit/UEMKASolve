@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')->constrained()->onDelete('cascade');
+            $table->string('nama_kategori');
+            $table->enum('tipe', ['pemasukan', 'pengeluaran']); // Enum sesuai aturan
             $table->timestamps();
+            $table->softDeletes(); // Tambahkan Soft Deletes sesuai aturan
         });
     }
 

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail; // Pastikan ini di-use
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens; // Untuk Sanctum
+use Illuminate\Database\Eloquent\Relations\HasOne; // Import HasOne
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail // Implementasikan MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens; // Tambahkan HasApiTokens
 
     /**
      * The attributes that are mass assignable.
@@ -43,5 +45,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the business associated with the user (one-to-one).
+     */
+    public function business(): HasOne
+    {
+        return $this->hasOne(Business::class);
     }
 }
