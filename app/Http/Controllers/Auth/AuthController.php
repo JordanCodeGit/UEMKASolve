@@ -198,8 +198,7 @@ class AuthController extends Controller
 
         // Cek status reset
         if ($status == Password::PASSWORD_RESET) {
-            // Jika berhasil, beri pesan sukses
-            return response()->json(['message' => trans($status)], 200);
+            return response()->json(['message' => 'Password Anda telah berhasil direset.'], 200);
         }
 
         // Jika gagal (misal token tidak valid, email salah)
