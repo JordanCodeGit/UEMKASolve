@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest; // Tambahkan ini jika belum ada
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,10 +60,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return response()->json(['message' => 'Link verifikasi baru telah dikirim.'], 200);
     })->middleware(['throttle:6,1'])->name('verification.send');
 
-    // [TAMBAHKAN INI] Route logout
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/dashboard', [DashboardController::class, 'getSummary']);
     Route::apiResource('transactions', TransactionController::class);
+    Route::apiResource('categories', CategoryController::class);
 
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 
