@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest; // Tambahkan ini jika belum ada
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Api\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +61,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // [TAMBAHKAN INI] Route logout
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/dashboard', [DashboardController::class, 'getSummary']);
+    Route::apiResource('transactions', TransactionController::class);
 
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 
