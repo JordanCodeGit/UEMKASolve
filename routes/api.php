@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest; // Tambahkan ini jika b
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,6 +67,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('transactions', TransactionController::class);
     Route::apiResource('categories', CategoryController::class);
 
+    Route::get('/profile', [ProfileController::class, 'getProfile']);
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile']); // Gunakan PUT untuk update
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+    
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 
 });
