@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,7 +71,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'getProfile']);
     Route::put('/profile/update', [ProfileController::class, 'updateProfile']); // Gunakan PUT untuk update
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
-    
+    Route::get('/report/download', [ReportController::class, 'downloadReport']);
+
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 
 });
