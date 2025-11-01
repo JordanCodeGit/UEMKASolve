@@ -69,7 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('categories', CategoryController::class);
 
     Route::get('/profile', [ProfileController::class, 'getProfile']);
-    Route::put('/profile/update', [ProfileController::class, 'updateProfile']); // Gunakan PUT untuk update
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
     Route::get('/report/download', [ReportController::class, 'downloadReport']);
 

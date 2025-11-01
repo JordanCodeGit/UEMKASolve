@@ -13,22 +13,25 @@ class UpdateProfileRequest extends FormRequest
         return true; // Otorisasi ditangani oleh middleware
     }
 
-    public function rules(): array
+ public function rules(): array
     {
         $userId = Auth::id();
 
         return [
-            // Validasi untuk tabel 'users'
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            // Validasi email: harus unik, TAPI abaikan ID user saat ini
             'email' => [
                 'sometimes', 'required', 'string', 'email', 'max:255',
                 Rule::unique('users')->ignore($userId),
             ],
-
-            // Validasi untuk tabel 'businesses'
             'nama_usaha' => ['sometimes', 'required', 'string', 'max:255'],
-            // 'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'], // Opsional: jika ada upload logo
+
+            // [TAMBAHKAN INI] Validasi untuk logo
+            'logo' => [
+                'nullable', // Boleh kosong
+                'image',    // Harus file gambar
+                'mimes:png,jpg,jpeg', // Format file
+                'max:2048'  // Ukuran maks 2MB (2048 KB)
+            ],
         ];
     }
 }
