@@ -9,7 +9,8 @@ use App\Http\Requests\UpdateTransactionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response; // Untuk respons 204
+use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
@@ -24,28 +25,40 @@ class TransactionController extends Controller
 
     /**
      * Menampilkan daftar transaksi milik user.
-     * Sesuai Aturan Otorisasi: difilter berdasarkan business_id.
+     * [MODIFIKASI] Ditambahkan filter lengkap.
      */
     public function index(Request $request): JsonResponse
     {
+        // Validasi input filter
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+            'search' => 'nullable|string|max:100',
+            'tipe' => ['nullable', Rule::in(['pemasukan', 'pengeluaran'])],
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
         $businessId = $this->getBusinessId();
+        $perPage = $request->input('per_page', 15); // Default 15 data per halaman
 
         $query = Transaction::where('business_id', $businessId)
-                            ->with('category:id,nama_kategori,tipe') // Hanya ambil kolom yg perlu dari relasi
-                            ->latest('tanggal_transaksi'); // Urutkan
+                            ->with('category:id,nama_kategori,tipe') // Eager load
+                            ->latest('tanggal_transaksi'); // Urutkan terbaru
 
-        // (Opsional) Tambahkan filter tanggal dari request (seperti di Dashboard)
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $request->validate([
-                'start_date' => 'required|date_format:Y-m-d',
-                'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
-            ]);
+        // --- Terapkan Filter ---
+
+        // 1. Filter Rentang Tanggal
+        if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal_transaksi', [$request->start_date, $request->end_date]);
         }
 
-        // (Opsional) Tambahkan filter search query
-        if ($request->has('search')) {
+        // 2. Filter Search (Deskripsi / Catatan)
+        if ($request->filled('search')) {
              $query->where(function ($q) use ($request) {
+                // Di Class Diagram, 'catatan' adalah nama kolom, 'deskripsi' tidak ada.
+                // Jika FE Dev Anda mengirim 'deskripsi', Anda bisa ganti 'catatan' -> 'deskripsi'
                 $q->where('catatan', 'like', '%' . $request->search . '%')
                   ->orWhereHas('category', function ($catQuery) use ($request) {
                       $catQuery->where('nama_kategori', 'like', '%' . $request->search . '%');
@@ -53,11 +66,34 @@ class TransactionController extends Controller
             });
         }
 
-        $transactions = $query->paginate(15); // Ambil 15 data per halaman
+        // 3. Filter Tipe (Pemasukan / Pengeluaran)
+        if ($request->filled('tipe')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('tipe', $request->tipe);
+            });
+        }
+
+        // 4. Filter Kategori ID (Spesifik)
+        if ($request->filled('category_id')) {
+            // Validasi tambahan untuk memastikan category_id milik user (Otorisasi)
+            $categoryExists = Auth::user()->business->categories()
+                                ->where('id', $request->category_id)
+                                ->exists();
+
+            if ($categoryExists) {
+                $query->where('category_id', $request->category_id);
+            } else {
+                // Jika user mencoba filter kategori yg bukan miliknya, kembalikan data kosong
+                $query->where('id', -1); // Query palsu
+            }
+        }
+
+        // --- Akhir Filter ---
+
+        $transactions = $query->paginate($perPage)->withQueryString(); // Bawa query param di link pagination
 
         return response()->json($transactions, 200);
     }
-
     /**
      * Menyimpan transaksi baru.
      * Validasi & Otorisasi ditangani oleh StoreTransactionRequest.
