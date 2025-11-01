@@ -3,29 +3,21 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule; // Import Rule facade
+use Illuminate\Validation\Rule;
 
 class StoreCategoryRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true; // Otorisasi ditangani oleh middleware
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
             'nama_kategori' => ['required', 'string', 'max:255'],
-            // Validasi Enum (sesuai Aturan #3)
             'tipe' => ['required', Rule::in(['pemasukan', 'pengeluaran'])],
+            'ikon' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -35,6 +27,8 @@ class StoreCategoryRequest extends FormRequest
             'nama_kategori.required' => 'Nama kategori wajib diisi.',
             'tipe.required' => 'Tipe kategori (pemasukan/pengeluaran) wajib diisi.',
             'tipe.in' => 'Tipe kategori harus "pemasukan" atau "pengeluaran".',
+            'ikon.string' => 'Ikon harus berupa teks.',
+            'ikon.max' => 'Nama ikon tidak boleh lebih dari 100 karakter.',
         ];
     }
 }
