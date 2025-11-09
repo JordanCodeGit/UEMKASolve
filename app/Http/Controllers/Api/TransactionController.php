@@ -67,10 +67,12 @@ class TransactionController extends Controller
         }
 
         // 3. Filter Tipe (Pemasukan / Pengeluaran)
-        if ($request->filled('tipe')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('tipe', $request->tipe);
-            });
+        if ($request->has('tipe')) {
+            // [ERRORNYA DI SINI] Validasi ini butuh 'use Illuminate\Validation\Rule;'
+            $request->validate([
+                'tipe' => ['nullable', Rule::in(['pemasukan', 'pengeluaran'])]
+            ]);
+            $query->where('tipe', $request->tipe);
         }
 
         // 4. Filter Kategori ID (Spesifik)
@@ -88,7 +90,7 @@ class TransactionController extends Controller
             }
         }
 
-        // --- Akhir Filter ---
+        $categories = $query->get();
 
         $transactions = $query->paginate($perPage)->withQueryString(); // Bawa query param di link pagination
 

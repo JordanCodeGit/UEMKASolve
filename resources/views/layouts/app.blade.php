@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - Uemkas</title>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     @vite('resources/css/app.css')
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -28,27 +30,27 @@
                 <li>
                     <a href="{{ route('dashboard') }}" class="{{ Request::is('dashboard') ? 'active' : '' }}">
                         <i class="fa-solid fa-house-chimney"></i>
-                        <span>Dashboard</span>
+                        <span>DASHBOARD</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('buku-kas') }}" class="{{ Request::is('buku-kas') ? 'active' : '' }}">
                         <i class="fa-solid fa-book-open"></i>
-                        <span>Buku Kas</span>
+                        <span>BUKU KAS</span>
                     </a>
                 </li>
 
                 <li>
                     <a href="{{ route('kategori') }}" class="{{ Request::is('kategori') ? 'active' : '' }}">
                         <i class="fa-solid fa-tags"></i>
-                        <span>Kategori</span>
+                        <span>KATEGORI</span>
                     </a>
                 </li>
                 
                 <li>
                     <a href="{{ route('pengaturan') }}" class="{{ Request::is('pengaturan*') ? 'active' : '' }}">
                         <i class="fa-solid fa-gear"></i>
-                        <span>Setting</span>
+                        <span>PENGATURAN</span>
                     </a>
                 </li>
             </ul>
@@ -72,7 +74,7 @@
                 @if (Request::routeIs('dashboard')) 
                     <div class="search-bar-top">
                         <i class="fa-solid fa-search"></i>
-                        <input type="text" placeholder="Cari di Sini...">
+                        <input type="text" placeholder="Cari di Sini..." id="header-search-input">
                     </div>
                 @endif
                 
@@ -84,9 +86,12 @@
                     <i class="fa-regular fa-moon"></i>
                 </button>
 
-                <div class="user-profile">
-                    <span>Yantokopi</span>
-                    <i class="fa-solid fa-chevron-down"></i>
+                <div class="user-profile-dropdown">
+    
+                    <div class="profile-avatar-header" id="global-header-avatar">
+                        </div>
+                    
+                    <span class="profile-name" id="global-header-business-name">Memuat...</span>
                 </div>
             </div>
         </header>
@@ -128,7 +133,51 @@
             });
         });
     </script>
+    <script>
+        (function() {
+            const token = localStorage.getItem('auth_token');
+            // [BARU] Ambil elemen baru
+            const businessNameEl = document.getElementById('global-header-business-name');
+            const avatarEl = document.getElementById('global-header-avatar');
 
+            if (token && businessNameEl && avatarEl) {
+                // [PERBAIKAN] Panggil /api/profile untuk data lengkap
+                fetch('{{ url("/api/profile") }}', { 
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => {
+                    if (response.status === 401) {
+                        localStorage.removeItem('auth_token');
+                        window.location.href = '{{ url("/login") }}';
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // [PERBAIKAN] Isi dengan data bisnis
+                    if (data.business && data.business.nama_usaha) {
+                        businessNameEl.textContent = data.business.nama_usaha;
+                    } else if (data.user && data.user.name) {
+                        businessNameEl.textContent = data.user.name; // Fallback ke nama user
+                    }
 
+                    if (data.business && data.business.logo_url) {
+                        // Jika ada logo, tampilkan gambar
+                        avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo">`;
+                    } else if (data.user && data.user.name) {
+                        // Jika tidak, tampilkan inisial
+                        avatarEl.textContent = data.user.name.charAt(0).toUpperCase();
+                    }
+                })
+                .catch(err => {
+                    console.error('Gagal mengambil data header profil:', err);
+                    if(businessNameEl) businessNameEl.textContent = 'Error';
+                });
+            }
+        })();
+    </script>
+            @stack('scripts')
     </body>
 </html>

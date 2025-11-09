@@ -9,84 +9,87 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\ChangePasswordRequest;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Storage; // Pastikan Storage di-import
 
 class ProfileController extends Controller
 {
     /**
-     * Mengambil data profil User dan Business yang sedang login.
-     * Sesuai diagram "ambilDataProfil".
+     * [FIXED] Mengambil data profil User dan Business yang sedang login.
      */
     public function getProfile(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        // Load relasi bisnis (sesuai Class Diagram)
-        $user->load('business');
+        // Load relasi bisnis
+        $business = $user->business; 
+        
+        // Pastikan accessor logo_url dipanggil jika bisnis ada
+        if ($business) {
+            $business->makeVisible(['logo_url']);
+        }
 
+        // Kembalikan JSON yang VALID (hanya satu 'user' key)
         return response()->json([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
             ],
-            'business' => $user->business // Akan mengembalikan data bisnis atau null
+            'business' => $business 
         ], 200);
     }
 
     /**
-     * Memperbarui data profil (User & Business).
-     * Sesuai diagram "mengisiDataProfilUsaha" & "memvalidasiDataProfil".
+     * Memperbarui data profil (User & Business) + Logo.
      */
-public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = Auth::user();
         $business = $user->business;
         $validatedData = $request->validated();
 
-        // --- Update Data Teks (Sama seperti sebelumnya) ---
+        // Update data User (jika ada)
         if (isset($validatedData['name']) || isset($validatedData['email'])) {
             $userData = [];
             if (isset($validatedData['name'])) $userData['name'] = $validatedData['name'];
             if (isset($validatedData['email'])) $userData['email'] = $validatedData['email'];
-            $user->update($userData);
+            
+            // Hanya update jika ada data
+            if (!empty($userData)) {
+                $user->update($userData);
+            }
         }
+
+        // Update data Business (jika ada)
         if ($business && isset($validatedData['nama_usaha'])) {
             $business->update([
                 'nama_usaha' => $validatedData['nama_usaha'],
             ]);
         }
-
-        // --- [TAMBAHAN] Logic untuk Upload Logo ---
+        
+        // Logic untuk Upload Logo
         if ($request->hasFile('logo')) {
-            // Pastikan bisnis ada
             if ($business) {
                 // Hapus logo lama jika ada
                 if ($business->logo_path) {
                     Storage::disk('public')->delete($business->logo_path);
                 }
-
-                // Simpan logo baru di 'storage/app/public/logos'
-                // Path yang disimpan di DB adalah 'logos/namafile.png'
+                // Simpan logo baru
                 $path = $request->file('logo')->store('logos', 'public');
-
-                // Update database
                 $business->update(['logo_path' => $path]);
             }
         }
-
+        
         // Load ulang data yang sudah di-update
         $user->load('business');
-
-        // [MODIFIKASI] Kita perlu accessor untuk URL logo
-        // Kita akan tambahkan ini di Model Business (Langkah 4)
-        $user->business->makeVisible(['logo_url']); // Panggil accessor
+        if ($user->business) {
+             $user->business->makeVisible(['logo_url']);
+        }
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
-            // Kembalikan data user DAN business yang sudah di-update
-            'user' => $user->only(['id', 'name', 'email']),
-            'business' => $user->business,
+            'user' => $user->only(['id', 'name', 'email']), // Kirim data user
+            'business' => $user->business, // Kirim data business
         ], 200);
     }
 
@@ -95,12 +98,9 @@ public function updateProfile(UpdateProfileRequest $request): JsonResponse
      */
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
-        // Validasi (termasuk cek password lama) sudah ditangani oleh ChangePasswordRequest
         $validatedData = $request->validated();
-
         $user = Auth::user();
-
-        // Update password baru
+        
         $user->update([
             'password' => Hash::make($validatedData['password'])
         ]);

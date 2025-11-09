@@ -16,31 +16,42 @@ class DashboardService
      * @param Business $business
      * @param array $dateRange
      * @return array
+     * @param string|null $searchQuery [BARU] Tambahkan parameter search
      */
-    public function getDashboardSummary(Business $business, array $dateRange): array
+    public function getDashboardSummary(Business $business, array $dateRange, ?string $searchQuery, string $doughnutTipe): array
     {
-        // 1. Ambil data Pemasukan, Pengeluaran, dan Laba (Periode)
+        // ... (Logic Pemasukan, Pengeluaran, Laba, Saldo tetap sama) ...
         $periodPemasukan = $this->calculateSum($business, 'pemasukan', $dateRange);
         $periodPengeluaran = $this->calculateSum($business, 'pengeluaran', $dateRange);
         $periodLaba = $periodPemasukan - $periodPengeluaran;
-
-        // 2. Ambil Saldo Keseluruhan (Sepanjang Masa)
         $totalPemasukan = $this->calculateSum($business, 'pemasukan');
         $totalPengeluaran = $this->calculateSum($business, 'pengeluaran');
         $totalSaldo = $totalPemasukan - $totalPengeluaran;
 
-        // 3. Ambil Transaksi Terakhir (5 Transaksi)
-        $transaksiTerakhir = $business->transactions()
-                                 ->with('category:id,nama_kategori,tipe,ikon') // Ambil ikon juga
-                                 ->latest('tanggal_transaksi')
-                                 ->limit(5)
-                                 ->get();
+        // 3. [MODIFIKASI] Ambil Transaksi Terakhir (dengan filter search)
+        $transaksiQuery = $business->transactions()
+                                 ->with('category:id,nama_kategori,tipe,ikon') 
+                                 ->latest('tanggal_transaksi');
+        
+        // Terapkan filter search jika ada
+        if ($searchQuery) {
+            $transaksiQuery->where(function ($q) use ($searchQuery) {
+                $q->where('catatan', 'like', '%' . $searchQuery . '%')
+                  ->orWhereHas('category', function ($catQuery) use ($searchQuery) {
+                      $catQuery->where('nama_kategori', 'like', '%' . $searchQuery . '%');
+                  });
+            });
+        }
 
-        // 4. [BARU] Ambil Data Grafik Kas (Line Chart)
+        $transaksiTerakhir = $transaksiQuery->limit(5)->get();
+
+        // 4. Ambil Data Grafik Kas (Line Chart)
         $lineChartData = $this->getLineChartData($business, $dateRange);
+        
+        // 5. Ambil Data Persentase Kas (Doughnut Chart)
+        $totalForDoughnut = ($doughnutTipe === 'pemasukan') ? $periodPemasukan : $periodPengeluaran;
 
-        // 5. [BARU] Ambil Data Persentase Kas (Doughnut Chart)
-        $doughnutChartData = $this->getDoughnutChartData($business, $dateRange, $periodPengeluaran);
+        $doughnutChartData = $this->getDoughnutChartData($business, $dateRange, $doughnutTipe, $totalForDoughnut);
 
         return [
             'summary' => [
@@ -51,7 +62,7 @@ class DashboardService
             ],
             'line_chart' => $lineChartData,
             'doughnut_chart' => $doughnutChartData,
-            'recent_transactions' => $transaksiTerakhir,
+            'recent_transactions' => $transaksiTerakhir, // Sekarang sudah terfilter
         ];
     }
 
@@ -138,9 +149,9 @@ class DashboardService
     /**
      * [BARU] Helper untuk mengambil data Doughnut Chart (Persentase Pengeluaran per Kategori)
      */
-    private function getDoughnutChartData(Business $business, array $dateRange, float $totalPengeluaran): array
+    private function getDoughnutChartData(Business $business, array $dateRange, string $tipe, float $total): array
     {
-        if ($totalPengeluaran == 0) {
+        if ($total == 0) { // [PERBAIKAN] Gunakan $total
             return [
                 'labels' => ['Belum ada data'],
                 'data' => [100]
@@ -148,7 +159,7 @@ class DashboardService
         }
 
         $data = $business->transactions()
-            ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
+            ->whereHas('category', fn($q) => $q->where('tipe', $tipe)) // <-- [PERBAIKAN]
             ->whereBetween('tanggal_transaksi', [$dateRange['startDate'], $dateRange['endDate']])
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
             ->select(
@@ -156,9 +167,9 @@ class DashboardService
                 DB::raw('SUM(transactions.jumlah) as total')
             )
             ->groupBy('label')
-            ->orderBy('total', 'desc') // Urutkan dari terbesar
-            ->limit(5) // Ambil 5 kategori teratas
-            ->get(); // Hasil: Collection [{label: 'Gaji', total: 5000}, ...]
+            ->orderBy('total', 'desc')
+            ->limit(5)
+            ->get();
 
         // Pisahkan label dan data
         $labels = $data->pluck('label');
