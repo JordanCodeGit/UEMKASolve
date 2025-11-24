@@ -22,6 +22,8 @@ class User extends Authenticatable implements MustVerifyEmail // Implementasikan
         'name',
         'email',
         'password',
+        'google_id',
+        'id_perusahaan',
     ];
 
     /**
@@ -50,8 +52,9 @@ class User extends Authenticatable implements MustVerifyEmail // Implementasikan
     /**
      * Get the business associated with the user (one-to-one).
      */
-    public function business(): HasOne
+    public function perusahaan()
     {
-        return $this->hasOne(Business::class);
+        // User ini 'milik' (belongsTo) satu Perusahaan
+        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
 }

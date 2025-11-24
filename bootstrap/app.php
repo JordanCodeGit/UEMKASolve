@@ -32,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
         //     \App\Http\Middleware\ExampleMiddleware::class,
         // ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckCompanySetup::class,
+        ]);
+
         // Middleware API (seperti throttle) biasanya sudah diatur di $middleware->api(...)
         // di kernel atau langsung di route group 'api' Laravel.
     })

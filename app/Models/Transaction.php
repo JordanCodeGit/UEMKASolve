@@ -28,7 +28,7 @@ class Transaction extends Model
     {
         return [
             'jumlah' => 'decimal:2', // Pastikan jumlah di-cast sebagai decimal
-            'tanggal_transaksi' => 'date', // Cast tanggal
+            'tanggal_transaksi' => 'datetime', // Cast tanggal
         ];
     }
 

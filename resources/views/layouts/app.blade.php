@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - Uemkas</title>
-    
+    <link rel="icon" href="{{ asset('images/favicon.png') }}" type="image/png">
+    <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     @vite('resources/css/app.css')
@@ -48,7 +49,7 @@
                 </li>
                 
                 <li>
-                    <a href="{{ route('pengaturan') }}" class="{{ Request::is('pengaturan*') ? 'active' : '' }}">
+                    <a href="{{ route('pengaturan.show') }}" class="{{ Request::is('pengaturan') ? 'active' : '' }}">
                         <i class="fa-solid fa-gear"></i>
                         <span>PENGATURAN</span>
                     </a>
@@ -64,37 +65,51 @@
         </div>
     </aside>
     <div class="main-content-wrapper">
-        
-        <header class="top-bar">
-            <h1 class="page-title">
-                @yield('title')
-            </h1>
-            
-            <div class="top-bar-right">
-                @if (Request::routeIs('dashboard')) 
-                    <div class="search-bar-top">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" placeholder="Cari di Sini..." id="header-search-input">
-                    </div>
-                @endif
+        @if (!Request::is('pengaturan'))
+            <header class="top-bar">
+                <h1 class="page-title">
+                    @yield('title')
+                </h1>
                 
-                <button class="notification-bell">
-                    <i class="fa-regular fa-bell"></i>
-                </button>
-                
-                <button class="theme-toggle-btn" id="theme-toggle">
-                    <i class="fa-regular fa-moon"></i>
-                </button>
-
-                <div class="user-profile-dropdown">
-    
-                    <div class="profile-avatar-header" id="global-header-avatar">
-                        </div>
+                <div class="top-bar-right">
+                    <button class="notification-bell">
+                        <i class="fa-regular fa-bell"></i>
+                    </button>
                     
-                    <span class="profile-name" id="global-header-business-name">Memuat...</span>
+
+                    <div class="user-profile-dropdown" id="profileTriggerBtn">
+                        
+                        @if(optional($globalUser->perusahaan)->logo)
+                            <img src="{{ $globalUser->perusahaan->logo }}" alt="Logo" class="profile-avatar-pojok">
+                        @else
+                            <div class="default-avatar-pojok">
+                                {{ substr($globalUser->name, 0, 1) }}
+                            </div>
+                        @endif
+
+                        <span class="profile-name">
+                            {{ Auth::user()->perusahaan ? Auth::user()->perusahaan->nama_perusahaan : Auth::user()->name }}
+                        </span>
+                        <i class="fa-solid fa-chevron-down" style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
+
+                        <div class="header-dropdown-menu" id="headerDropdownMenu">
+                            
+                            <a href="{{ route('pengaturan.show') }}" class="header-menu-item">
+                                <i class="fa-solid fa-gear"></i>
+                                <span>Pengaturan</span>
+                            </a>
+
+                            <a href="#" class="header-menu-item text-red" id="headerLogoutBtn">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                <span>Keluar</span>
+                            </a>
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
+        @endif
+
         <main class="content-area">
             @yield('content')
         </main>
@@ -133,6 +148,67 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileBtn = document.getElementById('profileTriggerBtn');
+            const dropdownMenu = document.getElementById('headerDropdownMenu');
+            const logoutBtn = document.getElementById('headerLogoutBtn');
+
+            // 1. Toggle Menu saat klik Profil
+            if (profileBtn) {
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Cegah event bubbling
+                    this.classList.toggle('active');
+                });
+            }
+
+            // 2. Tutup menu jika klik di luar
+            document.addEventListener('click', function(e) {
+                if (profileBtn && !profileBtn.contains(e.target)) {
+                    profileBtn.classList.remove('active');
+                }
+            });
+
+            // 3. LOGIKA LOGOUT (API Request)
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // UI Loading
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Keluar...</span>';
+                    this.style.pointerEvents = 'none'; // Cegah klik ganda
+
+                    const token = localStorage.getItem('auth_token');
+
+                    try {
+                        // Panggil Route Logout
+                        // Pastikan route '/logout' di web.php mengarah ke AuthController@logout
+                        await fetch('{{ url("/logout") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}', // Wajib untuk Web Route
+                                'Authorization': 'Bearer ' + token      // Wajib untuk hapus Token API
+                            }
+                        });
+                    } catch (error) {
+                        console.error("Logout error:", error);
+                        // Tetap lanjutkan logout di browser meskipun API error
+                    } finally {
+                        // BERSIH-BERSIH TOKEN LOKAL
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('user_data');
+                        
+                        // Redirect ke Login
+                        window.location.href = '{{ route("login") }}';
+                    }
+                });
+            }
+        });
+        </script>
     <script>
         (function() {
             const token = localStorage.getItem('auth_token');

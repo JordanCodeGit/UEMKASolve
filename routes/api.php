@@ -1,7 +1,5 @@
 <?php
 
-
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
@@ -11,6 +9,7 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SetupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,8 +72,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
     Route::get('/report/download', [ReportController::class, 'downloadReport']);
 
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::post('/transactions', [TransactionController::class, 'store']);
+    Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
+
     // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
 
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Route untuk simpan perusahaan baru dari pop-up
+    Route::post('/setup-perusahaan', [SetupController::class, 'store']);
+    
+    // Pastikan route ini ada untuk pengecekan user di dashboard
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'getSummary']);
 });
 
 // --- Rute Login & Forgot Password (Publik) akan ditambahkan di sini nanti ---

@@ -3,75 +3,170 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use App\Services\DashboardService; // Import service
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon; // Import Carbon
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use App\Models\Transaction;
+use App\Models\Perusahaan;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    protected $dashboardService;
-
-    // Inject DashboardService ke controller
-    public function __construct(DashboardService $dashboardService)
+    public function index()
     {
-        $this->dashboardService = $dashboardService;
+        $user = Auth::user();
+        $needsCompanySetup = is_null($user->id_perusahaan);
+        return view('dashboard', compact('needsCompanySetup'));
     }
 
-    /**
-     * Handle request untuk mengambil data dashboard.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function getSummary(Request $request): JsonResponse
+    public function storeCompanySetup(Request $request)
     {
-        // 1. Validasi input (tambahkan 'doughnut_tipe')
-        $validated = $request->validate([
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
-            'search' => 'nullable|string|max:100',
-            // [PERBAIKAN] Tambahkan validasi untuk filter doughnut
-            'doughnut_tipe' => ['nullable', Rule::in(['pemasukan', 'pengeluaran'])],
+        $request->validate([
+            'nama_perusahaan' => 'required|string|max:255',
+            'logo'            => 'nullable|image|max:2048',
         ]);
 
-        // 2. Ambil user & bisnis (tetap sama)
         $user = Auth::user();
-        $business = $user->business;
-        if (!$business) {
-            return response()->json(['message' => 'Data bisnis tidak ditemukan.'], 404);
+        if ($user->id_perusahaan) return redirect()->back();
+
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
-        // 3. Tentukan rentang tanggal (tetap sama)
-        $dateRange = [
-            'startDate' => $validated['start_date'] ?? Carbon::now()->startOfMonth()->toDateString(),
-            'endDate' => $validated['end_date'] ?? Carbon::now()->endOfMonth()->toDateString(),
-        ];
+        $perusahaan = Perusahaan::create([
+            'nama_perusahaan' => strip_tags($request->nama_perusahaan),
+            'logo'            => $logoPath,
+        ]);
 
-        // 4. Ambil search query (tetap sama)
-        $searchQuery = $validated['search'] ?? null;
+        $user->update(['id_perusahaan' => $perusahaan->id]);
+        return redirect()->route('dashboard')->with('success', 'Profil usaha berhasil dibuat!');
+    }
+
+    public function getSummary(Request $request)
+    {
+        $user = Auth::user();
+        $idPerusahaan = $user->id_perusahaan;
+
+        if (!$idPerusahaan) {
+            return response()->json([
+                'summary' => ['saldo' => 0, 'pemasukan' => 0, 'pengeluaran' => 0, 'laba' => 0],
+                'recent_transactions' => [],
+                'line_chart' => ['labels' => [], 'datasets' => []],
+                'doughnut_chart' => ['labels' => [], 'data' => []]
+            ]);
+        }
+
+        // =========================================================
+        // 1. QUERY SUMMARY (KEBAL FILTER - ALL TIME)
+        // =========================================================
+        // Query ini murni hanya melihat id_perusahaan, tanpa peduli filter tanggal/search
+        $querySummary = Transaction::where('business_id', $idPerusahaan);
         
-        // 5. [PERBAIKAN] Ambil tipe doughnut
-        $doughnutTipe = $validated['doughnut_tipe'] ?? 'pengeluaran'; // Default 'pengeluaran'
-        Log::info('Dashboard request received with doughnut_tipe: ' . $doughnutTipe);
+        $pemasukanTotal = (clone $querySummary)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranTotal = (clone $querySummary)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $labaTotal = $pemasukanTotal - $pengeluaranTotal;
 
-        // 6. Panggil service dengan parameter baru
-        try {
-            // [PERBAIKAN] Teruskan $doughnutTipe
-            $summaryData = $this->dashboardService->getDashboardSummary(
-                $business, 
-                $dateRange, 
-                $searchQuery,
-                $doughnutTipe // <-- Parameter baru
-            ); 
-            
-            return response()->json($summaryData, 200);
 
-        } catch (\Exception $e) {
-            // Log::error('Gagal mengambil data dashboard: ' . $e->getMessage());
-            return response()->json(['message' => 'Gagal mengambil data dashboard.', 'error' => $e->getMessage()], 500);
+        // =========================================================
+        // 2. QUERY CHART & LIST (KENA FILTER)
+        // =========================================================
+        // Query ini yang akan diobok-obok oleh filter user
+        $queryFiltered = Transaction::where('business_id', $idPerusahaan);
+
+        // A. Filter Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $queryFiltered->where(function($q) use ($search) {
+                $q->where('catatan', 'like', "%{$search}%")
+                  ->orWhereHas('category', function($cat) use ($search) {
+                      $cat->where('nama_kategori', 'like', "%{$search}%");
+                  });
+            });
         }
+
+        // B. Filter Tanggal (Hanya Mempengaruhi Grafik & List)
+        $isFilterActive = $request->filled('start_date') && $request->filled('end_date');
+        
+        if ($isFilterActive) {
+            $startDate = $request->start_date . ' 00:00:00';
+            $endDate   = $request->end_date . ' 23:59:59';
+            
+            $queryFiltered->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
+            
+            // Mode Harian
+            $groupByFormat = "DATE(tanggal_transaksi)";
+            $dateFormatPHP = 'd M'; 
+        } else {
+            // Mode Bulanan (Semua)
+            $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
+            $dateFormatPHP = 'M Y'; 
+        }
+
+        // --- LINE CHART (Cashflow) ---
+        $incomeDataRaw = (clone $queryFiltered)
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
+            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
+            ->groupBy('date')->orderBy('date')->pluck('total', 'date');
+
+        $expenseDataRaw = (clone $queryFiltered)
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
+            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
+            ->groupBy('date')->orderBy('date')->pluck('total', 'date');
+
+        $allKeys = $incomeDataRaw->keys()->merge($expenseDataRaw->keys())->unique()->sort()->values();
+        $chartLabels = []; $chartIncome = []; $chartExpense = [];
+
+        foreach ($allKeys as $key) {
+            $chartLabels[] = Carbon::parse($key)->format($dateFormatPHP);
+            $chartIncome[] = $incomeDataRaw[$key] ?? 0;
+            $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+        }
+
+        // --- DOUGHNUT CHART (Kategori) ---
+        $doughnutMode = $request->input('doughnut_mode', 'pengeluaran');
+        $topCategories = (clone $queryFiltered)
+            ->whereHas('category', fn($q) => $q->where('tipe', $doughnutMode))
+            ->with('category')
+            ->selectRaw('category_id, SUM(jumlah) as total')
+            ->groupBy('category_id')
+            ->orderByDesc('total')
+            ->take(5)
+            ->get();
+
+        $doughnutLabels = $topCategories->map(fn($item) => optional($item->category)->nama_kategori ?? 'Tanpa Kategori');
+        $doughnutData = $topCategories->pluck('total');
+
+        // --- LIST TRANSAKSI (5 Terakhir) ---
+        $recentTransactions = (clone $queryFiltered)
+            ->with('category')
+            ->latest('tanggal_transaksi')
+            ->take(5)
+            ->get();
+
+
+        // =========================================================
+        // RESPONSE JSON
+        // =========================================================
+        return response()->json([
+            'summary' => [
+                // Gunakan hasil perhitungan dari Jalur 1 (Kebal Filter)
+                'saldo'       => $labaTotal, 
+                'pemasukan'   => $pemasukanTotal,
+                'pengeluaran' => $pengeluaranTotal,
+                'laba'        => $labaTotal
+            ],
+            'recent_transactions' => $recentTransactions, // Kena Filter
+            'line_chart' => [                             // Kena Filter
+                'labels' => $chartLabels,
+                'datasets' => [
+                    ['label' => 'Pemasukan', 'data' => $chartIncome],
+                    ['label' => 'Pengeluaran', 'data' => $chartExpense]
+                ]
+            ],
+            'doughnut_chart' => [                         // Kena Filter
+                'labels' => $doughnutLabels,
+                'data' => $doughnutData
+            ]
+        ]);
     }
 }

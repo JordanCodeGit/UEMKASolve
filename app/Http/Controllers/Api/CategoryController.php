@@ -15,105 +15,96 @@ use Illuminate\Validation\Rule;
 class CategoryController extends Controller
 {
     /**
-     * Dapatkan business_id milik user yang terotentikasi.
+     * Helper: Ambil ID Perusahaan langsung dari kolom 'id_perusahaan' di tabel users.
      */
-    private function getBusinessId(): int
+    private function getCurrentCompanyId()
     {
-        return Auth::user()->business->id;
+        $user = Auth::user();
+
+        // [UPDATE] Mengambil value langsung dari kolom 'id_perusahaan' milik user
+        if ($user && $user->id_perusahaan) {
+            return $user->id_perusahaan;
+        }
+
+        return null;
     }
 
-    /**
-     * Menampilkan daftar kategori milik user.
-     * Sesuai Aturan Otorisasi: difilter berdasarkan business_id.
-     */
     public function index(Request $request): JsonResponse
     {
-        $businessId = $this->getBusinessId();
+        $companyId = $this->getCurrentCompanyId();
 
-        $query = Category::where('business_id', $businessId)
-                         ->latest('created_at'); // Urutkan dari yg terbaru
+        // Jika user tidak punya id_perusahaan (belum diset), return kosong
+        if (!$companyId) {
+            return response()->json([], 200);
+        }
 
-        // (Opsional) Tambahkan filter berdasarkan tipe
-        if ($request->has('tipe')) {
-            $request->validate([
-                'tipe' => [Rule::in(['pemasukan', 'pengeluaran'])]
-            ]);
+        // [MAPPING] id_perusahaan (User) ---> business_id (Category)
+        $query = Category::where('business_id', $companyId)
+                         ->latest('created_at'); 
+
+        if ($request->has('tipe') && in_array($request->tipe, ['pemasukan', 'pengeluaran'])) {
             $query->where('tipe', $request->tipe);
         }
 
-        $categories = $query->get(); // Ambil semua kategori (bukan paginate, asumsi list tidak terlalu panjang)
-
-        return response()->json($categories, 200);
+        return response()->json($query->get(), 200);
     }
 
-    /**
-     * Menyimpan kategori baru.
-     * Validasi ditangani oleh StoreCategoryRequest.
-     */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
+        $companyId = $this->getCurrentCompanyId();
+
+        // Cek jika user belum punya perusahaan
+        if (!$companyId) {
+            return response()->json(['message' => 'Akun Anda belum terhubung dengan perusahaan manapun.'], 400);
+        }
+
         $validatedData = $request->validated();
+        
+        // [KUNCI] Masukkan ID Perusahaan user ke kolom business_id kategori
+        $validatedData['business_id'] = $companyId;
 
-        // Tambahkan business_id milik user ke data
-        $validatedData['business_id'] = $this->getBusinessId();
+        // [PERBAIKAN] Bersihkan input nama dari tag HTML (strip_tags)
+        $validatedData['nama_kategori'] = strip_tags($validatedData['nama_kategori']);
 
+        // Simpan ke Database
+        // (Ini yang akan error jika business_id tidak ada di $fillable Model)
         $category = Category::create($validatedData);
 
-        return response()->json($category, 201); // 201 Created
+        return response()->json($category, 201); 
     }
 
-    /**
-     * Menampilkan satu kategori spesifik.
-     * Sesuai Aturan Otorisasi: cek kepemilikan.
-     */
     public function show(Category $category): JsonResponse
     {
-        // Otorisasi: Pastikan kategori ini milik user yang login
-        if ($category->business_id !== $this->getBusinessId()) {
+        // Validasi kepemilikan
+        if ($category->business_id !== $this->getCurrentCompanyId()) {
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }
 
         return response()->json($category, 200);
     }
 
-    /**
-     * Memperbarui kategori.
-     * Sesuai Aturan Otorisasi: cek kepemilikan.
-     */
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
-        // Otorisasi: Pastikan kategori ini milik user yang login
-        if ($category->business_id !== $this->getBusinessId()) {
+        if ($category->business_id !== $this->getCurrentCompanyId()) {
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }
 
-        $validatedData = $request->validated();
+        $category->update($request->validated());
 
-        $category->update($validatedData);
-
+        // [PERBAIKAN] Bersihkan input saat update juga
+        if (isset($validatedData['nama_kategori'])) {
+            $validatedData['nama_kategori'] = strip_tags($validatedData['nama_kategori']);
+        }
         return response()->json($category, 200);
     }
 
-    /**
-     * Menghapus kategori (Soft Delete).
-     * Sesuai Aturan Otorisasi: cek kepemilikan.
-     */
     public function destroy(Category $category): Response
     {
-        // Otorisasi: Pastikan kategori ini milik user yang login
-        if ($category->business_id !== $this->getBusinessId()) {
-            return response()->json(['message' => 'Tidak ditemukan.'], 404);
+        if ($category->business_id !== $this->getCurrentCompanyId()) {
+            return response(['message' => 'Tidak ditemukan.'], 404);
         }
 
-        // Catatan: Anda mungkin ingin menambahkan logika di sini
-        // untuk mencegah penghapusan kategori yang masih digunakan oleh transaksi.
-        // if ($category->transactions()->exists()) {
-        //     return response()->json(['message' => 'Kategori tidak dapat dihapus karena masih memiliki transaksi.'], 409); // 409 Conflict
-        // }
-
-        // Lakukan Soft Delete (sesuai Aturan #2)
         $category->delete();
-
-        return response()->noContent(); // 204 No Content
+        return response()->noContent(); 
     }
 }

@@ -27,69 +27,91 @@
     <div class="divider">
         <span>atau</span>
     </div>
-    <button class="btn btn-google">
+    <a href="{{ route('login.google') }}" class="btn-login-google">
         <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google icon">
         Masuk dengan Google
-    </button>
+    </a>
 </div>
 @endsection     
 
 @push('scripts')
 <script>
-    // Tunggu sampai halaman selesai dimuat
     document.addEventListener('DOMContentLoaded', function() {
         
-        // 1. Ambil elemen form dan pesan
+        // 1. BERSIH-BERSIH SESSION LAMA (PENTING)
+        // Hapus token lama setiap kali buka halaman login agar tidak bentrok
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        console.log('Session lama telah dibersihkan.');
+
+        // 2. SETUP VARIABEL
         const loginForm = document.getElementById('login-form');
         const messageDiv = document.getElementById('form-message');
+        // Ambil tombol submit agar bisa di-disable saat loading
+        const submitBtn = loginForm.querySelector('button[type="submit"]'); 
 
-        // 2. Tambahkan event listener saat form di-submit
+        // 3. EVENT LISTENER SUBMIT
         loginForm.addEventListener('submit', function(e) {
-            
-            // 3. Hentikan submit form HTML biasa (agar halaman tidak refresh)
             e.preventDefault();
             
-            messageDiv.textContent = 'Memproses...'; // Pesan loading
+            // UI Loading
+            messageDiv.textContent = 'Memproses...';
+            messageDiv.style.color = 'blue';
+            submitBtn.disabled = true; // Cegah klik ganda
+            submitBtn.textContent = 'Loading...';
 
-            // 4. Ambil data dari form
+            // Ambil data form
             const formData = new FormData(loginForm);
             const data = Object.fromEntries(formData.entries());
 
-            // 5. Kirim data ke API Back-End Anda menggunakan Fetch
-            fetch('{{ url("/api/login") }}', { // Menggunakan URL API
+            // [PERBAIKAN UTAMA DI SINI] 
+            // 1. Gunakan route('login.process') yang ada di web.php (bukan /api/login)
+            // 2. Tambahkan Header 'X-CSRF-TOKEN' (Wajib untuk form web Laravel)
+            
+            fetch('{{ route("login.process") }}', { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json' // Minta respons JSON
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // <--- WAJIB ADA
                 },
-                body: JSON.stringify(data) // Kirim data sebagai JSON
+                body: JSON.stringify(data)
             })
-            .then(response => response.json()) // Ubah respons menjadi JSON
+            .then(response => {
+                // Cek jika error 419 (CSRF Token Mismatch)
+                if (response.status === 419) {
+                    throw new Error('Halaman kadaluarsa, silakan refresh browser.');
+                }
+                return response.json();
+            })
             .then(result => {
-                // 6. Tangani Respons dari Back-End
-                
                 if (result.access_token) {
-                    // JIKA SUKSES (dapat token)
+                    // --- JIKA SUKSES ---
                     messageDiv.textContent = 'Login berhasil! Mengarahkan...';
                     messageDiv.style.color = 'green';
                     
-                    // [PENTING] Simpan token di browser (localStorage)
+                    // Simpan Token untuk kebutuhan API di Dashboard nanti
                     localStorage.setItem('auth_token', result.access_token);
                     
-                    // Arahkan ke halaman dashboard
-                    window.location.href = '{{ url("/dashboard") }}'; 
+                    // Redirect ke Dashboard
+                    // Karena Session Web sudah dibuat di Controller, ini tidak akan mental lagi
+                    setTimeout(() => {
+                        window.location.href = '{{ route("dashboard") }}'; 
+                    }, 500);
                 
                 } else {
-                    // JIKA GAGAL (misal: "Email atau password salah")
-                    messageDiv.textContent = result.message || 'Terjadi kesalahan.';
-                    messageDiv.style.color = 'red';
+                    // --- JIKA GAGAL ---
+                    throw new Error(result.message || 'Email atau password salah.');
                 }
             })
             .catch(error => {
-                // Tangani error jaringan
-                console.error('Error:', error);
-                messageDiv.textContent = 'Tidak dapat terhubung ke server.';
+                console.error('Login Error:', error);
+                messageDiv.textContent = error.message;
                 messageDiv.style.color = 'red';
+                
+                // Reset Tombol
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Masuk';
             });
         });
     });

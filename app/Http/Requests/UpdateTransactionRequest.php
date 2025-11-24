@@ -10,26 +10,25 @@ class UpdateTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Auth::check();
     }
 
     public function rules(): array
     {
-        $businessId = Auth::user()->business->id;
+        $idPerusahaan = Auth::user()->id_perusahaan;
 
         return [
             // 'sometimes' berarti hanya validasi jika field itu dikirim
             'category_id' => [
-                'sometimes', // Opsional
                 'required',
                 'integer',
-                Rule::exists('categories', 'id')->where(function ($query) use ($businessId) {
-                    $query->where('business_id', $businessId);
+                Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
+                    $query->where('business_id', $idPerusahaan);
                 }),
             ],
-            'jumlah' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'catatan' => ['nullable', 'string', 'max:1000'],
-            'tanggal_transaksi' => ['sometimes', 'required', 'date_format:Y-m-d'],
+            'jumlah'            => ['required', 'numeric', 'min:1'],
+            'catatan'           => ['nullable', 'string', 'max:255'],
+            'tanggal_transaksi' => ['required', 'date'], 
         ];
     }
 
