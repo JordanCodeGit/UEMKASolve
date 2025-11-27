@@ -112,18 +112,37 @@
                 </div>
                 
                 <div class="form-group-modal">
-                    <label for="modal-tx-jumlah">Jumlah</label>
-                    <input type="number" id="modal-tx-jumlah" name="jumlah" class="form-input-modal" placeholder="Nominal transaksi" required>
+                    <label for="modal-tx-jumlah">Nominal</label>
+                    <input type="number" id="modal-tx-jumlah" name="jumlah" class="form-input-modal" placeholder="Nominal transaksi" 
+                    min="0x" 
+                    oninput="if(this.value.length > 15) this.value = this.value.slice(0, 15); this.value = Math.abs(this.value)" 
+                    onkeydown="if(event.key === '-' || event.key === 'e') event.preventDefault();"
+                    required>
                 </div>
 
                 <div class="form-group-modal">
-                    <label for="modal-tx-kategori-select">Kategori</label>
-                    <select id="modal-tx-kategori-select" name="category_id" class="form-input-modal" required>
-                        <option value="">Memuat kategori...</option>
-                    </select>
-                    <a href="#" id="open-kategori-modal-link" style="font-size: 13px; color: #16a34a; margin-top: 8px; display: inline-block;">
-                        <i class="fa-solid fa-plus"></i> Tambah Kategori
-                    </a>
+                    <label class="label-modal">Kategori</label>
+                    
+                    <input type="hidden" id="modal-tx-kategori-select" name="category_id">
+
+                    <div class="custom-dropdown" id="category-dropdown">
+                        
+                        <div class="dropdown-trigger" id="category-dropdown-btn">
+                            <span id="selected-category-text">-- Pilih Kategori --</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+
+                        <div class="dropdown-content">
+                            
+                            <div class="dropdown-scroll-area" id="category-list-container">
+                                <div class="dropdown-item placeholder">Memuat...</div>
+                            </div>
+                            
+                            <div class="dropdown-add-btn" id="open-kategori-modal-link">
+                                <i class="fa-solid fa-plus-circle"></i> Tambah Kategori Baru
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group-modal">
@@ -946,32 +965,61 @@
         
         // --- 5. [READ] Fungsi Mengisi Dropdown Kategori (DIPERBAIKI) ---
         async function populateCategoryDropdown(selectedTipe = 'pengeluaran', selectId = null) {
-            txKategoriSelect.innerHTML = '<option value="">Memuat kategori...</option>';
+            const listContainer = document.getElementById('category-list-container');
+            const triggerText = document.getElementById('selected-category-text');
+            const hiddenInput = document.getElementById('modal-tx-kategori-select');
+            
+            // Reset UI Loading
+            listContainer.innerHTML = '<div class="dropdown-item placeholder" style="cursor:default;">Memuat...</div>';
+            triggerText.textContent = '-- Pilih Kategori --';
+            hiddenInput.value = ''; // Reset value input hidden
+
             try {
                 const response = await fetch(`${API_CATEGORIES}?tipe=${selectedTipe}`, { headers: API_HEADERS_GET }); 
                 const categories = await response.json();
                 
-                txKategoriSelect.innerHTML = '<option value="">-- Pilih kategori --</option>';
+                // Bersihkan container
+                listContainer.innerHTML = '';
+
                 if (categories.length > 0) {
                     categories.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat.id;
-                        option.textContent = cat.nama_kategori;
-                        
-                        // [LOGIKA PENTING] Pilih kategori yang baru dibuat (selectId)
-                        // Pastikan tipe datanya sama (string vs number)
+                        // Buat elemen item
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item';
+                        item.textContent = cat.nama_kategori;
+                        item.dataset.value = cat.id; // Simpan ID di dataset
+
+                        // Cek jika item ini harus dipilih (default select)
                         if (selectId && String(cat.id) === String(selectId)) {
-                            option.selected = true;
+                            item.classList.add('selected');
+                            triggerText.textContent = cat.nama_kategori;
+                            hiddenInput.value = cat.id;
                         }
-                        
-                        txKategoriSelect.appendChild(option);
+
+                        // Event Klik per Item
+                        item.addEventListener('click', function() {
+                            // 1. Update Teks Trigger
+                            triggerText.textContent = cat.nama_kategori;
+                            // 2. Update Input Hidden (yang dikirim form)
+                            hiddenInput.value = cat.id;
+                            
+                            // 3. Update UI Selected
+                            document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('selected'));
+                            this.classList.add('selected');
+
+                            // 4. Tutup Dropdown
+                            document.getElementById('category-dropdown').classList.remove('active');
+                        });
+
+                        listContainer.appendChild(item);
                     });
                 } else {
-                    txKategoriSelect.innerHTML = '<option value="">-- Belum ada kategori --</option>';
+                    listContainer.innerHTML = '<div class="dropdown-item placeholder" style="cursor:default; color:#94a3b8;">Belum ada kategori</div>';
                 }
+
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                txKategoriSelect.innerHTML = '<option value="">Gagal memuat kategori</option>';
+                listContainer.innerHTML = '<div class="dropdown-item placeholder" style="color:red;">Gagal memuat</div>';
             }
         }
 

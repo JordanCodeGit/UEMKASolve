@@ -71,22 +71,33 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        if (!Auth::attempt($credentials)) {
+        // 1. Cek Apakah User Ada?
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user) {
+            // Email belum terdaftar
             return response()->json([
-                'message' => 'Email atau password salah.'
+                'message' => 'Email belum terdaftar.'
             ], 401);
         }
 
-        // [WAJIB] Buat Session Baru agar tidak stuck di halaman login
-        $request->session()->regenerate();
+        // 2. Cek Password
+        if (!Hash::check($credentials['password'], $user->password)) {
+            // Password salah
+            return response()->json([
+                'message' => 'Password salah.'
+            ], 401);
+        }
 
-        $user = Auth::user();
+        // --- JIKA LULUS ---
+        
+        // Login Session Web
+        Auth::login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
 
         // Buat Token API
         $deviceName = $request->input('device_name', $user->email);
         $token = $user->createToken($deviceName)->plainTextToken;
-
-        // Ambil data perusahaan (jika sudah ada)
         $perusahaan = $user->perusahaan;
 
         return response()->json([
@@ -97,8 +108,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at,
-                'id_perusahaan' => $user->id_perusahaan, // Kirim ID ini untuk cek di FE
+                'id_perusahaan' => $user->id_perusahaan,
                 'business' => $perusahaan ? [
                     'id' => $perusahaan->id,
                     'nama_usaha' => $perusahaan->nama_perusahaan,
@@ -174,18 +184,21 @@ class AuthController extends Controller
     }
 
     // --- Forgot & Reset Password (Tidak Berubah) ---
-    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
         $credentials = $request->validated();
         $status = Password::sendResetLink($credentials);
 
         if ($status == Password::RESET_LINK_SENT) {
-            return response()->json(['message' => trans($status)], 200);
+            // [PERBAIKAN] Jangan return JSON, tapi kembalikan ke halaman view dengan pesan sukses
+            return back()->with('status', __($status));
         }
-        return response()->json(['message' => trans($status)], 400);
+
+        // [PERBAIKAN] Kembalikan dengan error
+        return back()->withErrors(['email' => __($status)]);
     }
 
-    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request)
     {
         $credentials = $request->validated();
         $status = Password::reset($credentials, function (User $user, string $password) {
@@ -197,9 +210,11 @@ class AuthController extends Controller
         });
 
         if ($status == Password::PASSWORD_RESET) {
-            return response()->json(['message' => 'Password Anda telah berhasil direset.'], 200);
+            // [PERBAIKAN] Redirect ke halaman LOGIN dengan pesan sukses
+            return redirect()->route('login')->with('status', 'Password berhasil diubah! Silakan login.');
         }
-        return response()->json(['message' => trans($status)], 400);
+
+        return back()->withErrors(['email' => __($status)]);
     }
 
     public function redirectToGoogle()

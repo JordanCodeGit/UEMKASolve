@@ -21,7 +21,7 @@ class DashboardController extends Controller
     public function storeCompanySetup(Request $request)
     {
         $request->validate([
-            'nama_perusahaan' => 'required|string|max:255',
+            'nama_perusahaan' => 'required|string|max:32',
             'logo'            => 'nullable|image|max:2048',
         ]);
 

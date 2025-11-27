@@ -157,7 +157,7 @@
             
             <div class="form-group">
                 <label for="nama_perusahaan">Nama Usaha</label>
-                <input type="text" id="nama_perusahaan" name="nama_perusahaan" required>
+                <input type="text" id="nama_perusahaan" name="nama_perusahaan" maxlength ="32"required>
             </div>
 
             <div class="form-group">

@@ -338,8 +338,8 @@
             if (!text) return text;
             return text
                 .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
+                .replace(/</g, "&lt;")  // Mengubah < menjadi kode &lt; (tampil sebagai text <)
+                .replace(/>/g, "&gt;")  // Mengubah > menjadi kode &gt;
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }

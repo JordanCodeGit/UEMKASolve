@@ -84,7 +84,7 @@
                 
                 <div class="form-group-row">
                     <label for="nama_usaha">Nama Usaha</label>
-                    <input type="text" id="nama_usaha" name="nama_perusahaan" 
+                    <input type="text" id="nama_usaha" name="nama_perusahaan" maxlength="32"
                         value="{{ $user->perusahaan->nama_perusahaan ?? '' }}" 
                         placeholder="Contoh: Toko Kopi Saya">
                     <small>Nama usaha akan muncul di laporan PDF</small>

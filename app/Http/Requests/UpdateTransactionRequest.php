@@ -26,7 +26,7 @@ class UpdateTransactionRequest extends FormRequest
                     $query->where('business_id', $idPerusahaan);
                 }),
             ],
-            'jumlah'            => ['required', 'numeric', 'min:1'],
+            'jumlah'            => ['required', 'numeric', 'min:0', 'max:999999999999999'],
             'catatan'           => ['nullable', 'string', 'max:255'],
             'tanggal_transaksi' => ['required', 'date'], 
         ];
@@ -38,8 +38,10 @@ class UpdateTransactionRequest extends FormRequest
         return [
             'category_id.required' => 'Kategori wajib dipilih.',
             'category_id.exists' => 'Kategori yang dipilih tidak valid atau bukan milik Anda.',
-            'jumlah.required' => 'Jumlah nominal wajib diisi.',
-            'jumlah.numeric' => 'Jumlah nominal harus berupa angka.',
+            'jumlah.required' => 'Nominal wajib diisi.',
+            'jumlah.numeric' => 'Nominal harus berupa angka.',
+            'jumlah.min' => 'Nominal tidak boleh kurang dari 0.',
+            'jumlah.max' => 'Nominal transaksi tidak boleh lebih dari 15 digit.',
             'tanggal_transaksi.required' => 'Tanggal transaksi wajib diisi.',
             'tanggal_transaksi.date_format' => 'Format tanggal harus YYYY-MM-DD.',
         ];

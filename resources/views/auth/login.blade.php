@@ -5,34 +5,41 @@
 @section('content')
 <div class="auth-form">
     <h2>Masuk</h2>
+    
     <form action="#" method="POST" id="login-form">
-        <div id="form-message" style="color: red; margin-bottom: 15px; font-size: 14px;"></div>
+        <div id="form-message" style="color: red; margin-bottom: 15px; font-size: 14px; font-weight: bold; min-height: 20px;"></div>
+        
         <div class="form-group">
             <input type="email" name="email" id="email" placeholder="Email" required>
         </div>
+        
         <div class="form-group">
             <input type="password" name="password" id="password" placeholder="Password" required>
         </div>
+        
         <div class="form-options">
             <label class="checkbox-container">
                 <input type="checkbox" name="remember"> Ingat saya
             </label>
-            <a href="{{ url('/lupa-password') }}" class="forgot-password">Lupa Password?</a>
+            <a href="{{ route('password.request') }}" class="forgot-password">Lupa Password?</a>
         </div>
+        
         <div class="form-buttons">
             <button type="submit" class="btn btn-primary">Masuk</button>
             <a href="{{ url('/register') }}" class="btn btn-secondary">Daftar</a>
         </div>
     </form>
+    
     <div class="divider">
         <span>atau</span>
     </div>
+    
     <a href="{{ route('login.google') }}" class="btn-login-google">
         <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google icon">
         Masuk dengan Google
     </a>
 </div>
-@endsection     
+@endsection    
 
 @push('scripts')
 <script>
@@ -101,6 +108,7 @@
                 
                 } else {
                     // --- JIKA GAGAL ---
+                    // Tampilkan pesan error dari server (misal: "Email belum terdaftar")
                     throw new Error(result.message || 'Email atau password salah.');
                 }
             })

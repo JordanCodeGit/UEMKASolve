@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use Illuminate\Http\Request;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\CompanySetupController;
@@ -17,11 +18,6 @@ use App\Http\Controllers\Api\TransactionController;
 |
 */
 
-// Rute '/' (Root/Landing Page)
-Route::get('/', function () {
-    return view('welcome');
-});
-
 // Rute Halaman Auth Bawaan
 Route::get('/login', function () {
     return view('auth.login');
@@ -31,16 +27,21 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
+// 1. Halaman Lupa Password
 Route::get('/lupa-password', function () {
     return view('auth.forgot-password');
 })->name('password.request');
 
-Route::get('/reset-password/{token}', function (Request $request, $token) {
-    return view('auth.reset-password', [
-        'token' => $token,
-        'email' => $request->email
-    ]);
+// 2. Proses Kirim Email (POST)
+Route::post('/lupa-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+
+// 3. Halaman Reset Password (Link dari Email)
+Route::get('/reset-password/{token}', function (Illuminate\Http\Request $request, $token) {
+    return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
 })->name('password.reset');
+
+// 4. Proses Reset Password (POST)
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
 Route::get('/auth/google-success', function () {
     return view('auth.google-callback');

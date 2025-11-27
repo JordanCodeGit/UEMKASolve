@@ -40,7 +40,7 @@ class CategoryController extends Controller
 
         // [MAPPING] id_perusahaan (User) ---> business_id (Category)
         $query = Category::where('business_id', $companyId)
-                         ->latest('created_at'); 
+                         ->orderBy('nama_kategori', 'asc');
 
         if ($request->has('tipe') && in_array($request->tipe, ['pemasukan', 'pengeluaran'])) {
             $query->where('tipe', $request->tipe);
@@ -64,7 +64,7 @@ class CategoryController extends Controller
         $validatedData['business_id'] = $companyId;
 
         // [PERBAIKAN] Bersihkan input nama dari tag HTML (strip_tags)
-        $validatedData['nama_kategori'] = strip_tags($validatedData['nama_kategori']);
+        $validatedData['nama_kategori'] = $validatedData['nama_kategori'];
 
         // Simpan ke Database
         // (Ini yang akan error jika business_id tidak ada di $fillable Model)
@@ -93,7 +93,7 @@ class CategoryController extends Controller
 
         // [PERBAIKAN] Bersihkan input saat update juga
         if (isset($validatedData['nama_kategori'])) {
-            $validatedData['nama_kategori'] = strip_tags($validatedData['nama_kategori']);
+            $validatedData['nama_kategori'] = $validatedData['nama_kategori'];
         }
         return response()->json($category, 200);
     }

@@ -37,7 +37,7 @@ class StoreTransactionRequest extends FormRequest
                 }),
             ],
             // Sesuai Class Diagram & Aturan
-            'jumlah' => ['required', 'numeric', 'min:0'], // 'decimal' divalidasi sebagai 'numeric'
+            'jumlah' => ['required', 'numeric', 'min:0', 'max:999999999999999'], // 'decimal' divalidasi sebagai 'numeric'
             'catatan' => ['nullable', 'string', 'max:1000'],
             'tanggal_transaksi' => ['required', 'date'], // Format YYYY-MM-DD
         ];
@@ -48,8 +48,10 @@ class StoreTransactionRequest extends FormRequest
         return [
             'category_id.required' => 'Kategori wajib dipilih.',
             'category_id.exists' => 'Kategori yang dipilih tidak valid atau bukan milik Anda.',
-            'jumlah.required' => 'Jumlah nominal wajib diisi.',
-            'jumlah.numeric' => 'Jumlah nominal harus berupa angka.',
+            'jumlah.required' => 'Nominal wajib diisi.',
+            'jumlah.numeric' => 'Nominal harus berupa angka.',
+            'jumlah.min' => 'Nominal tidak boleh kurang dari 0.',
+            'jumlah.max' => 'Nominal transaksi tidak boleh lebih dari 15 digit.',
             'tanggal_transaksi.required' => 'Tanggal transaksi wajib diisi.',
             'tanggal_transaksi.date' => 'Format tanggal harus YYYY-MM-DD.',
         ];

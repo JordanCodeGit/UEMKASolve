@@ -1650,6 +1650,12 @@ select.form-input-modal {
     font-weight: 400;
 }
 
+/*agar bagian catatan tidak bisa di resize oleh user*/
+textarea.form-input-modal {
+    resize: none; /* KUNCI: Mencegah user mengubah ukuran */
+    height: 100px; /* Set tinggi tetap yang pas */
+    font-family: inherit; /* Agar font sama dengan input lain */
+}
 
 /* 5. Style Search Bar (MODIFIKASI) */
 .search-bar-lg {
@@ -2507,6 +2513,117 @@ select.form-input-modal {
 }
 .form-input-modal::placeholder {
     color: var(--text-secondary);
+}
+
+/* Wrapper Utama */
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+/* Tombol Pemicu (Mirip Input) */
+.dropdown-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #334155;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.dropdown-trigger:hover {
+    border-color: #cbd5e1;
+    background-color: #ffffff;
+}
+
+.custom-dropdown.active .dropdown-trigger {
+    border-color: #3b82f6; /* Biru saat aktif */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.arrow-icon {
+    font-size: 12px;
+    color: #94a3b8;
+    transition: transform 0.2s;
+}
+
+.custom-dropdown.active .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* Konten Dropdown (Pop-up) */
+.dropdown-content {
+    display: none; /* Default Hidden */
+    position: absolute;
+    top: 110%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 50;
+    overflow: hidden;
+}
+
+.custom-dropdown.active .dropdown-content {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Area Scroll (List Kategori) */
+.dropdown-scroll-area {
+    max-height: 200px; /* Batas tinggi agar bisa scroll */
+    overflow-y: auto;
+}
+
+/* Scrollbar Cantik */
+.dropdown-scroll-area::-webkit-scrollbar { width: 6px; }
+.dropdown-scroll-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+/* Item Kategori */
+.dropdown-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    color: #475569;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f9ff;
+    color: #0284c7;
+}
+
+.dropdown-item.selected {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
+}
+
+/* Tombol Tambah (Fixed di Bawah) */
+.dropdown-add-btn {
+    padding: 12px 15px;
+    background-color: #f0fdf4;
+    color: #16a34a;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid #dcfce7;
+    transition: background 0.2s;
+    font-size: 13px;
+}
+
+.dropdown-add-btn:hover {
+    background-color: #dcfce7;
 }
 
 /* 1. Container Biru Muda (Pembungkus Icon) */
@@ -3749,3 +3866,4 @@ select.form-input-modal {
     }
 
 }
+
