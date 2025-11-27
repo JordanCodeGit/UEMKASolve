@@ -18,6 +18,11 @@ use App\Http\Controllers\Api\TransactionController;
 |
 */
 
+// Rute '/' (Root/Landing Page)
+Route::get('/', function () {
+    return view('auth.login');
+});
+
 // Rute Halaman Auth Bawaan
 Route::get('/login', function () {
     return view('auth.login');
