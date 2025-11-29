@@ -65,200 +65,15 @@
                     <input type="text" id="modal-nama-kategori" name="nama_kategori" class="form-input-modal" placeholder="Masukkan nama kategori..." required>
                 </div>
                 
-                <div class="form-group icon-modal">
-                    <label class="block text-gray-700 text-sm font-bold mb-3">Pilih Ikon</label>
+                <div class="form-group-modal icon-modal">
+                    <label>Pilih Ikon</label>
 
-                    <input type="hidden" name="ikon" id="modal-ikon" required>
+                    <input type="hidden" name="ikon" id="modal-kat-ikon" required>
 
-                    <div class="icon-picker-container">
-                        
-                        <div class="icon-option" onclick="selectIcon(this, 'logo1.png')">
-                            <img src="{{ asset('icons/logo1.png') }}" alt="logo1">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo2.png')">
-                            <img src="{{ asset('icons/logo2.png') }}" alt="logo2">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo3.png')">
-                            <img src="{{ asset('icons/logo3.png') }}" alt="logo3">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo4.png')">
-                            <img src="{{ asset('icons/logo4.png') }}" alt="logo4">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo5.png')">
-                            <img src="{{ asset('icons/logo5.png') }}" alt="logo5">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo6.png')">
-                            <img src="{{ asset('icons/logo6.png') }}" alt="logo6">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo7.png')">
-                            <img src="{{ asset('icons/logo7.png') }}" alt="logo7">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo8.png')">
-                            <img src="{{ asset('icons/logo8.png') }}" alt="logo8">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo9.png')">
-                            <img src="{{ asset('icons/logo9.png') }}" alt="logo9">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo10.png')">
-                            <img src="{{ asset('icons/logo10.png') }}" alt="logo10">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo11.png')">
-                            <img src="{{ asset('icons/logo11.png') }}" alt="logo11">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo12.png')">
-                            <img src="{{ asset('icons/logo12.png') }}" alt="logo12">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo13.png')">
-                            <img src="{{ asset('icons/logo13.png') }}" alt="logo13">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo14.png')">
-                            <img src="{{ asset('icons/logo14.png') }}" alt="logo14">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo15.png')">
-                            <img src="{{ asset('icons/logo15.png') }}" alt="logo15">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo16.png')">
-                            <img src="{{ asset('icons/logo16.png') }}" alt="logo16">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo17.png')">
-                            <img src="{{ asset('icons/logo17.png') }}" alt="logo17">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo18.png')">
-                            <img src="{{ asset('icons/logo18.png') }}" alt="logo18">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo19.png')">
-                            <img src="{{ asset('icons/logo19.png') }}" alt="logo19">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo20.png')">
-                            <img src="{{ asset('icons/logo20.png') }}" alt="logo20">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo21.png')">
-                            <img src="{{ asset('icons/logo21.png') }}" alt="logo21">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo22.png')">
-                            <img src="{{ asset('icons/logo22.png') }}" alt="logo22">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo23.png')">
-                            <img src="{{ asset('icons/logo23.png') }}" alt="logo23">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo24.png')">
-                            <img src="{{ asset('icons/logo24.png') }}" alt="logo24">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo25.png')">
-                            <img src="{{ asset('icons/logo25.png') }}" alt="logo25">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo26.png')">
-                            <img src="{{ asset('icons/logo26.png') }}" alt="logo26">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo27.png')">
-                            <img src="{{ asset('icons/logo27.png') }}" alt="logo27">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo28.png')">
-                            <img src="{{ asset('icons/logo28.png') }}" alt="logo28">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo29.png')">
-                            <img src="{{ asset('icons/logo29.png') }}" alt="logo29">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo30.png')">
-                            <img src="{{ asset('icons/logo30.png') }}" alt="logo30">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo31.png')">
-                            <img src="{{ asset('icons/logo31.png') }}" alt="logo31">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo32.png')">
-                            <img src="{{ asset('icons/logo32.png') }}" alt="logo32">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo33.png')">
-                            <img src="{{ asset('icons/logo33.png') }}" alt="logo33">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo34.png')">
-                            <img src="{{ asset('icons/logo34.png') }}" alt="logo34">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo35.png')">
-                            <img src="{{ asset('icons/logo35.png') }}" alt="logo35">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo36.png')">
-                            <img src="{{ asset('icons/logo36.png') }}" alt="logo36">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo37.png')">
-                            <img src="{{ asset('icons/logo37.png') }}" alt="logo37">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo38.png')">
-                            <img src="{{ asset('icons/logo38.png') }}" alt="logo38">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo39.png')">
-                            <img src="{{ asset('icons/logo39.png') }}" alt="logo39">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo40.png')">
-                            <img src="{{ asset('icons/logo40.png') }}" alt="logo40">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo41.png')">
-                            <img src="{{ asset('icons/logo41.png') }}" alt="logo41">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo42.png')">
-                            <img src="{{ asset('icons/logo42.png') }}" alt="logo42">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo43.png')">
-                            <img src="{{ asset('icons/logo43.png') }}" alt="logo43">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo44.png')">
-                            <img src="{{ asset('icons/logo44.png') }}" alt="logo44">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo45.png')">
-                            <img src="{{ asset('icons/logo45.png') }}" alt="logo45">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo46.png')">
-                            <img src="{{ asset('icons/logo46.png') }}" alt="logo46">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo47.png')">
-                            <img src="{{ asset('icons/logo47.png') }}" alt="logo47">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo48.png')">
-                            <img src="{{ asset('icons/logo48.png') }}" alt="logo48">
-                        </div>
-
-                        </div>
+                    <div id="dynamic-icon-grid" class="icon-picker-container grid-pengeluaran">
+                    </div>
                     
-                    <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon terlebih dahulu.</small>
+                    <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon.</small>
                 </div>
                 
             </div>
@@ -311,6 +126,20 @@
             return;
         }
 
+        // --- Daftar Nama File Icon ---
+        const iconFiles = [
+            'Button.png', 'Button-1.png', 'Button-2.png', 'Button-3.png', 'Button-4.png',
+            'Button-5.png', 'Button-6.png', 'Button-7.png', 'Button-8.png', 'Button-9.png',
+            'Button-10.png', 'Button-11.png', 'Button-12.png', 'Button-13.png', 'Button-14.png',
+            'Button-15.png', 'Button-16.png', 'Button-17.png', 'Button-18.png', 'Button-19.png',
+            'Button-20.png', 'Button-21.png', 'Button-22.png', 'Button-23.png', 'Button-24.png',
+            'Button-25.png', 'Button-26.png', 'Button-27.png', 'Button-28.png', 'Button-29.png',
+            'Button-30.png', 'Button-31.png', 'Button-32.png', 'Button-33.png', 'Button-34.png',
+            'Button-35.png', 'Button-36.png', 'Button-37.png', 'Button-38.png', 'Button-39.png',
+            'Button-40.png', 'Button-41.png', 'Button-42.png', 'Button-43.png', 'Button-44.png',
+            'Button-45.png', 'Button-46.png', 'Button-47.png'
+        ];
+
         // --- Elemen Utama Halaman ---
         const listPemasukan = document.getElementById('category-list-pemasukan');
         const listPengeluaran = document.getElementById('category-list-pengeluaran');
@@ -330,7 +159,7 @@
         // Input Form
         const inputTipe = document.getElementById('modal-tipe');
         const inputNama = document.getElementById('modal-nama-kategori');
-        const inputIkon = document.getElementById('modal-ikon');
+        const inputIkon = document.getElementById('modal-kat-ikon');
         
         let currentEditingId = null; 
 
@@ -426,10 +255,14 @@
                 if (cat.ikon && (cat.ikon.includes('.png') || cat.ikon.includes('.jpg') || cat.ikon.includes('.svg') || cat.ikon.includes('.jpeg'))) {
                     
                     // Render sebagai IMAGE
-                    // Pastikan script ini ada di file .blade.php agar
-                    const iconUrl = `{{ asset('icons') }}/${cat.ikon}`;
+                    // Icon path bisa berupa "pengeluaran/Button.png" atau "Button.png"
+                    // Jika tidak ada folder prefix, gunakan tipe kategori
+                    let iconPath = cat.ikon;
+                    if (!iconPath.includes('/')) {
+                        iconPath = `${cat.tipe}/${iconPath}`;
+                    }
+                    const iconUrl = `{{ asset('icons') }}/${iconPath}`;
                     
-                    // Gunakan class Tailwind (w-5 h-5) agar ukurannya pas di tengah lingkaran
                     iconHtml = `<img src="${iconUrl}" alt="icon" class="w-6 h-6 object-contain">`;
                     
                 } else {
@@ -442,6 +275,9 @@
                 // 2. LOGIKA WARNA BACKGROUND
                 const bgClass = cat.tipe === 'pemasukan' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
                 
+                // Tambahkan class shape berdasarkan tipe
+                const shapeClass = cat.tipe === 'pemasukan' ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
+                
                 // 3. KEAMANAN XSS
                 const safeNama = escapeHtml(cat.nama_kategori);
                 // Jika ikon FontAwesome, aman karena sudah di-escape di atas. Jika Image, aman karena path server.
@@ -450,7 +286,7 @@
 
                 // 4. SUSUN HTML KE DALAM ITEM
                 item.innerHTML = `
-                    <span class="icon-wrapper ${bgClass} w-10 h-10 flex items-center justify-center rounded-full mr-3">
+                    <span class="icon-wrapper ${shapeClass} flex items-center justify-center mr-3">
                         ${iconHtml}
                     </span>
                     
@@ -483,6 +319,17 @@
             document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDeleteClick));
         }
 
+        // --- Helper: Reset Icon Selection ---
+        function resetIconSelection() {
+            const container = document.getElementById('dynamic-icon-grid');
+            if (container) {
+                container.querySelectorAll('.icon-option').forEach(el => {
+                    el.classList.remove('selected');
+                });
+            }
+            document.getElementById('modal-kat-ikon').value = '';
+        }
+
         // --- 3. [CREATE] Fungsi Modal "Tambah Kategori" ---
         function openAddModal() {
             currentEditingId = null;
@@ -498,6 +345,7 @@
             modalSubmitBtn.textContent = 'Tambah Kategori';
             modalMessage.textContent = '';
             setActiveTab('pengeluaran'); // Default tab
+            renderIconGrid('pengeluaran'); // Render icon grid
             modalOverlay.style.display = 'flex';
         }
         
@@ -527,14 +375,13 @@
             inputNama.value = btn.dataset.nama;
             inputTipe.value = tipe; // Set tipe di hidden input
             
+            // Render grid dan set active icon
+            renderIconGrid(tipe);
+            
             // Auto-select Icon di Grid
             if (btn.dataset.ikon) {
-                // Cari elemen icon di grid yang sesuai dan tambahkan class selected
-                const targetIcon = document.querySelector(`.icon-option[onclick*="'${btn.dataset.ikon}'"]`);
-                if (targetIcon) {
-                    selectIcon(targetIcon, btn.dataset.ikon);
-                }
-                document.getElementById('modal-ikon').value = btn.dataset.ikon;
+                selectIconLogic(btn.dataset.ikon, tipe);
+                document.getElementById('modal-kat-ikon').value = btn.dataset.ikon;
             }
             
             modalOverlay.style.display = 'flex';
@@ -620,6 +467,11 @@
             const formData = new FormData(modalForm);
             const data = Object.fromEntries(formData.entries());
 
+            // Tambahkan prefix folder type ke ikon
+            if (data.ikon) {
+                data.ikon = `${data.tipe}/${data.ikon}`;
+            }
+
             let url = API_CATEGORIES;
             let method = 'POST';
 
@@ -658,6 +510,7 @@
         }
         function setActiveTab(tipe) {
             inputTipe.value = tipe;
+            renderIconGrid(tipe); // Render icon grid saat ganti tab
             modalTabs.forEach(tab => {
                 if (tab.dataset.tabType === tipe) {
                     tab.classList.add('active');
@@ -666,7 +519,6 @@
                 }
             });
         }
-
         // --- 8. [DRAG & DROP] Update Tipe Kategori & UI ---
         async function handleCategoryDrop(event) {
             const categoryId = event.item.dataset.id;
@@ -688,24 +540,36 @@
                     throw new Error('Gagal update');
                 }
                 
-                // --- [PERBAIKAN UTAMA DI SINI] ---
-                // Update data atribut pada tombol edit agar modal judulnya benar
+                // --- UPDATE DATA ATRIBUT TOMBOL EDIT ---
                 const btnEdit = event.item.querySelector('.btn-edit');
                 if (btnEdit) {
-                    btnEdit.dataset.tipe = newTipe; // Ubah data-tipe="pemasukan"
+                    btnEdit.dataset.tipe = newTipe; // Ubah data-tipe untuk modal
                 }
 
-                // Update Visual Warna Background Icon (Hijau <-> Biru)
-                const iconWrapper = event.item.querySelector('.icon-wrapper-category');
+                // --- UPDATE WARNA BACKGROUND ICON SHAPE ---
+                const iconWrapper = event.item.querySelector('.icon-wrapper');
                 if (iconWrapper) {
-                    // Hapus kelas warna lama & baru (biar bersih)
-                    iconWrapper.classList.remove('bg-green-category', 'bg-blue-category');
+                    // Hapus class shape lama
+                    iconWrapper.classList.remove('icon-shape-pemasukan', 'icon-shape-pengeluaran');
                     
-                    // Tambahkan kelas warna baru sesuai tipe
+                    // Tambahkan class shape baru sesuai tipe
                     if (newTipe === 'pemasukan') {
-                        iconWrapper.classList.add('bg-green-category');
+                        iconWrapper.classList.add('icon-shape-pemasukan');
                     } else {
-                        iconWrapper.classList.add('bg-blue-category');
+                        iconWrapper.classList.add('icon-shape-pengeluaran');
+                    }
+                    
+                    // --- UPDATE ICON PNG SRC ---
+                    // Ambil nama file icon dari src yang sekarang
+                    const iconImg = iconWrapper.querySelector('img');
+                    if (iconImg) {
+                        // Extract nama file dari src
+                        // Contoh: /icons/pengeluaran/Button.png → Button.png
+                        const currentSrc = iconImg.src;
+                        const filename = currentSrc.split('/').pop();
+                        
+                        // Set src baru dengan folder tipe yang baru
+                        iconImg.src = `{{ asset('icons') }}/${newTipe}/${filename}`;
                     }
                 }
 
@@ -746,25 +610,76 @@
 
         // --- Panggilan Awal ---
         fetchCategories(); // Ambil data saat halaman dimuat
+
+        // --- Fungsi Render Icon Grid ---
+        function renderIconGrid(type) { // type = 'pemasukan' atau 'pengeluaran'
+            const container = document.getElementById('dynamic-icon-grid');
+            if (!container) return;
+            
+            container.innerHTML = ''; // Bersihkan isi lama
+            
+            // Ganti Class Container untuk CSS Warna
+            container.className = `icon-picker-container grid-${type}`;
+
+            // Tentukan folder asal (pemasukan/pengeluaran)
+            const folder = type; 
+
+            iconFiles.forEach(filename => {
+                const div = document.createElement('div');
+                div.className = 'icon-option';
+                
+                // Buat Gambar
+                const img = document.createElement('img');
+                // Path default (Warna Hijau/Biru)
+                img.src = `{{ asset('icons') }}/${folder}/${filename}`;
+                img.dataset.filename = filename; // Simpan nama file asli
+                img.alt = 'icon';
+                
+                // Event Klik (Logic Swap Gambar)
+                div.onclick = function() {
+                    selectIconLogic(filename, type);
+                };
+
+                div.appendChild(img);
+                container.appendChild(div);
+            });
+            
+            // Reset input hidden
+            document.getElementById('modal-kat-ikon').value = '';
+        }
+
+        // --- Fungsi Pilih Icon ---
+        function selectIconLogic(filename, type) {
+            const container = document.getElementById('dynamic-icon-grid');
+            
+            // 1. Reset semua icon lain
+            container.querySelectorAll('.icon-option').forEach(el => {
+                el.classList.remove('selected');
+                const img = el.querySelector('img');
+                // Balikin ke folder asal (pemasukan/pengeluaran)
+                const originalFilename = img.dataset.filename;
+                img.src = `{{ asset('icons') }}/${type}/${originalFilename}`;
+            });
+
+            // 2. Cari elemen dengan filename yang sesuai dan set sebagai selected
+            const targetOption = Array.from(container.querySelectorAll('.icon-option')).find(el => {
+                const img = el.querySelector('img');
+                return img.dataset.filename === filename;
+            });
+
+            if (targetOption) {
+                targetOption.classList.add('selected');
+                const activeImg = targetOption.querySelector('img');
+                // Gunakan folder 'netral' untuk icon putih/active
+                activeImg.src = `{{ asset('icons/netral') }}/${filename}`;
+            }
+
+            // 3. Simpan ke Input Hidden
+            document.getElementById('modal-kat-ikon').value = filename;
+        }
+
+        // Render icon grid default saat halaman dimuat
+        renderIconGrid('pengeluaran');
     });
-
-        // Fungsi Pilih Icon
-    function selectIcon(element, filename) {
-        // 1. Hapus class 'selected' dari semua icon yang ada
-        const allIcons = document.querySelectorAll('.icon-option');
-        allIcons.forEach(el => el.classList.remove('selected'));
-        
-        // 2. Tambahkan class 'selected' ke elemen yang diklik
-        element.classList.add('selected');
-        
-        // 3. Masukkan nama file ke input hidden agar terkirim ke database
-        document.getElementById('modal-ikon').value = filename;
-    }
-
-    // Fungsi Reset (Panggil ini saat tombol "Tambah Kategori" diklik untuk membuka modal)
-    function resetIconSelection() {
-        document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
-        document.getElementById('modal-ikon').value = '';
-    }
 </script>
 @endpush

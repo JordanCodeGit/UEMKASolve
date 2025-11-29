@@ -21,7 +21,7 @@
             </div>
             
             <div class="profile-info">
-                <h2 id="profile-name">{{ $user->perusahaan->nama_perusahaan ?? $user->name }}</h2>
+                <h2 id="profile-name">{{ $user->name }}</h2>
                 <span id="profile-email">{{ $user->email }}</span>
             </div>
         </div>
@@ -120,8 +120,10 @@
                 </div>
                 <div class="form-col">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" 
-                        value="{{ $user->email }}" required>
+                    <input type="email" id="email" value="{{ $user->email }}" disabled 
+                           style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;">
+                    
+                    <input type="hidden" name="email" value="{{ $user->email }}">
                 </div>
             </div>
 

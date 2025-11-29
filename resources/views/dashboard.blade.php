@@ -68,38 +68,51 @@
 <div class="chart-grid">
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Grafik Kas</h3>
-            <div class="filter-container">
-    
-                <div class="dropdown-with-icon" id="dashboard-filter-wrapper" style="position: relative; display: inline-block;">
-                    
-                    <div id="dashboard-filter-btn" class="dropdown-btn-custom" style="min-width: 130px; justify-content: space-between; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; display: flex; align-items: center; cursor: pointer;">
-                        <span>Bulan Ini</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: #64748b;"></i>
-                    </div>
-
-                    <div class="dropdown-menu-custom" id="dashboard-filter-menu" style="display: none;">
-                        <div class="dropdown-item active" data-value="bulan_ini">Bulan Ini</div>
-                        <div class="dropdown-item" data-value="bulan_lalu">Bulan Lalu</div>
-                        <div class="dropdown-item" data-value="semua">Semua</div>
+            <div class="card-title-with-icon">
+                <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
+                <h3 class="card-title">Grafik Kas</h3>
+            </div>
+            <div class="grafik-kas-header">
+                <div class="filter-container">
+        
+                    <div class="dropdown-with-icon" id="dashboard-filter-wrapper" style="position: relative; display: inline-block;">
                         
-                        <div class="dropdown-divider"></div>
-                        
-                        <div class="dropdown-item-custom">
-                            <label for="dashboard-month-picker">Pilih Bulan:</label>
-                            <input type="month" id="dashboard-month-picker" class="form-input-month">
+                        <div id="dashboard-filter-btn" class="dropdown-minimalis-grafik" style="min-width: 150px; justify-content: space-between; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); display: flex; align-items: center; cursor: pointer;">
+                            <i class="fa-solid fa-calendar" style="font-size: 14px; color: var(--text-secondary); margin-right: 6px;"></i>
+                            <span style="font-size: 13px; font-weight: 500;">Bulan Ini</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: var(--text-secondary); margin-left: auto;"></i>
                         </div>
-                    </div>
-                    
-                </div>
 
+                        <div class="dropdown-menu-custom" id="dashboard-filter-menu" style="display: none;">
+                            <div class="dropdown-item active" data-value="bulan_ini">Bulan Ini</div>
+                            <div class="dropdown-item" data-value="bulan_lalu">Bulan Lalu</div>
+                            <div class="dropdown-item" data-value="semua">Semua</div>
+                            
+                            <div class="dropdown-divider"></div>
+                            
+                            <div class="dropdown-item-custom">
+                                <label for="dashboard-month-picker">Pilih Bulan:</label>
+                                <input type="month" id="dashboard-month-picker" class="form-input-month">
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                </div>
+                
+                <div class="grafik-kas-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background-color: #5EDB65;"></span>
+                        <span class="legend-text">Pemasukan</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background-color: #FFA142;"></span>
+                        <span class="legend-text">Pengeluaran</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="card-body">
-            <div class="chart-legend">
-                <span><i class="fa-solid fa-circle text-blue"></i> Pemasukan</span>
-                <span><i class="fa-solid fa-circle text-orange"></i> Pengeluaran</span>
-            </div>
             <div class="chart-container" id="lineChartContainer">
                 <canvas id="lineChart"></canvas>
             </div>
@@ -108,19 +121,23 @@
     
     <div class="content-card">
         <div class="card-header">
-            <h3 class="card-title">Persentase Kas</h3>
-            <select id="doughnut-type-filter" class="dropdown-simple" onchange="loadDashboardData()">
+            <div class="card-title-with-icon">
+                <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
+                <h3 class="card-title">Persentase Kas</h3>
+            </div>
+            <select id="doughnut-type-filter" class="dropdown-minimalis" onchange="loadDashboardData()">
                 <option value="pengeluaran">Pengeluaran</option>
                 <option value="pemasukan">Pemasukan</option>
             </select>
         </div>
         <div class="card-body">
-            <div class="chart-container" id="doughnutChartContainer">
-                <canvas id="doughnutChart"></canvas>
-            </div>
-            
-            <ul class="doughnut-legend" id="doughnut-legend-list">
+            <div class="chart-container-horizontal">
+                <div class="chart-wrapper">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+                <ul class="doughnut-legend" id="doughnut-legend-list">
                 </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -129,7 +146,7 @@
     
     <div class="card-header">
         <h3>
-            <i class="fa-solid fa-table-cells-large"></i> 
+            <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
             Transaksi Terakhir
         </h3>
         
@@ -211,13 +228,19 @@
             return;
         }
         
-        labels.forEach((label, index) => {
+        // Ambil hanya 5 item pertama (top 5)
+        const topLabels = labels.slice(0, 5);
+        
+        topLabels.forEach((label, index) => {
             const color = colors[index % colors.length];
             const li = document.createElement('li');
-            li.innerHTML = `<span class="legend-dot" style="background-color: ${color}; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px;"></span> ${escapeHtml(label)}`;
+            li.innerHTML = `<span class="legend-color" style="background-color: ${color};"></span> ${escapeHtml(label)}`;
             legendList.appendChild(li);
         });
     }
+
+    // Global Filter Variable
+    let dashboardCurrentFilter = 'bulan_ini';
 
     document.addEventListener('DOMContentLoaded', function() {
         const token = localStorage.getItem('auth_token');
@@ -227,8 +250,6 @@
         const filterMenu = document.getElementById('dashboard-filter-menu');
         const filterPicker = document.getElementById('dashboard-month-picker');
         const btnSpan = filterBtn.querySelector('span');
-        
-        let currentFilter = 'bulan_ini'; // Default
 
         const setupForm = document.querySelector('form[action*="company-setup"]');
 
@@ -269,7 +290,7 @@
                 btnSpan.textContent = item.textContent;
 
                 // Set Filter & Load
-                currentFilter = item.dataset.value;
+                dashboardCurrentFilter = item.dataset.value;
                 filterMenu.style.display = 'none';
                 loadDashboardData(); // Reload Data
             });
@@ -283,7 +304,7 @@
                 const date = new Date(val + '-01');
                 btnSpan.textContent = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
                 
-                currentFilter = val; // "YYYY-MM"
+                dashboardCurrentFilter = val; // "YYYY-MM"
                 filterMenu.style.display = 'none';
                 loadDashboardData();
             }
@@ -296,52 +317,38 @@
             // 1. Parameter Search
             if (searchQuery) url.searchParams.append('search', searchQuery);
 
-            // 2. Parameter Tanggal (Dinamis dari Dropdown)
-            // Jika Anda punya dropdown di dashboard dengan ID 'dashboard-date-filter'
-            const dateFilterEl = document.getElementById('dashboard-date-filter'); 
-            const filterVal = dateFilterEl ? dateFilterEl.value : 'bulan_ini'; // Default
-            const doughnutFilterEl = document.getElementById('doughnut-type-filter');
-            const doughnutMode = doughnutFilterEl ? doughnutFilterEl.value : 'pengeluaran';
-            
-            url.searchParams.append('doughnut_mode', doughnutMode);
-
-            const now = new Date();
-            const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-            
+            // 2. Parameter Doughnut Mode
             const doughnutSelect = document.getElementById('doughnut-type-filter');
             if (doughnutSelect) {
-                // Kirim nilai dropdown ke API (pemasukan/pengeluaran)
                 url.searchParams.append('doughnut_mode', doughnutSelect.value);
             }
 
-            if (currentFilter === 'bulan_ini') {
+            // 3. Parameter Tanggal (Menggunakan Global dashboardCurrentFilter)
+            const now = new Date();
+            const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+            if (dashboardCurrentFilter === 'bulan_ini') {
                 const start = new Date(now.getFullYear(), now.getMonth(), 1);
                 const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 url.searchParams.append('start_date', fmt(start));
                 url.searchParams.append('end_date', fmt(end));
             
-            } else if (currentFilter === 'bulan_lalu') {
+            } else if (dashboardCurrentFilter === 'bulan_lalu') {
                 const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
                 const end = new Date(now.getFullYear(), now.getMonth(), 0);
                 url.searchParams.append('start_date', fmt(start));
                 url.searchParams.append('end_date', fmt(end));
             
-            } else if (currentFilter === 'semua') {
+            } else if (dashboardCurrentFilter === 'semua') {
                 // Jangan kirim tanggal, Controller akan otomatis pakai Mode Bulanan (All Time)
             
-            } else if (currentFilter.match(/^\d{4}-\d{2}$/)) { 
+            } else if (dashboardCurrentFilter.match(/^\d{4}-\d{2}$/)) { 
                 // Custom YYYY-MM
-                const [y, m] = currentFilter.split('-');
+                const [y, m] = dashboardCurrentFilter.split('-');
                 const start = new Date(y, m - 1, 1);
                 const end = new Date(y, m, 0);
                 url.searchParams.append('start_date', fmt(start));
                 url.searchParams.append('end_date', fmt(end));
-            }
-
-            
-            if (doughnutSelect) {
-                console.log("Mengambil mode donat:", doughnutSelect.value); // Debugging
-                url.searchParams.append('doughnut_mode', doughnutSelect.value);
             }
 
             // 4. Anti-Cache (Penting agar browser tidak menyimpan hasil lama)
@@ -419,16 +426,152 @@
             if(!ctx) return;
             if(lineChartInstance) lineChartInstance.destroy();
 
+            // Deteksi mode: jika filter adalah "semua", gunakan mode bulanan dinamis
+            const isBulananMode = (dashboardCurrentFilter === 'semua');
+            
+            let chartLabels, pemasukanData, pengeluaranData;
+
+            if (isBulananMode) {
+                // MODE BULANAN (Dinamis) - Gunakan label dari API langsung
+                chartLabels = chartData.labels || [];
+                pemasukanData = chartData.datasets[0]?.data || [];
+                pengeluaranData = chartData.datasets[1]?.data || [];
+            } else {
+                // MODE HARIAN (Statis 1-31) - Map ke full month
+                chartLabels = Array.from({length: 31}, (_, i) => String(i + 1));
+
+                const mapDataToFullMonth = (apiData, apiLabels) => {
+                    const fullData = new Array(31).fill(null);
+                    
+                    if (apiData && apiLabels) {
+                        apiData.forEach((value, index) => {
+                            const label = apiLabels[index];
+                            // Extract tanggal dari label (format: "29 Nov" -> "29")
+                            const dateMatch = label ? label.split(' ')[0] : null;
+                            if (dateMatch) {
+                                const dateNum = parseInt(dateMatch) - 1; // 0-indexed
+                                if (dateNum >= 0 && dateNum < 31) {
+                                    fullData[dateNum] = value;
+                                }
+                            }
+                        });
+                    }
+                    return fullData;
+                };
+
+                pemasukanData = mapDataToFullMonth(chartData.datasets[0]?.data, chartData.labels);
+                pengeluaranData = mapDataToFullMonth(chartData.datasets[1]?.data, chartData.labels);
+            }
+
+            // Hitung max value untuk dynamic Y-axis
+            const allData = [...pemasukanData, ...pengeluaranData].filter(v => v != null);
+            const maxValue = Math.max(...allData, 0);
+            const yAxisMax = Math.ceil(maxValue * 1.1 / 100000) * 100000; // Round up to nearest 100k
+
             lineChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: chartData.labels,
+                    labels: chartLabels,
                     datasets: [
-                        { label: 'Pemasukan', data: chartData.datasets[0].data, borderColor: chartColors.pemasukan, backgroundColor: chartColors.pemasukanBg, fill: true, tension: 0.4 },
-                        { label: 'Pengeluaran', data: chartData.datasets[1].data, borderColor: chartColors.pengeluaran, backgroundColor: chartColors.pengeluaranBg, fill: true, tension: 0.4 }
+                        { 
+                            label: 'Pemasukan', 
+                            data: pemasukanData, 
+                            borderColor: '#49CABE',
+                            backgroundColor: 'rgba(73, 202, 190, 0.1)',
+                            fill: true, 
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointBackgroundColor: '#49CABE',
+                            pointBorderColor: '#49CABE',
+                            pointBorderWidth: 0,
+                            pointHoverRadius: 0
+                        },
+                        { 
+                            label: 'Pengeluaran', 
+                            data: pengeluaranData, 
+                            borderColor: '#FFA142',
+                            backgroundColor: 'rgba(255, 161, 66, 0.1)',
+                            fill: true, 
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointBackgroundColor: '#FFA142',
+                            pointBorderColor: '#FFA142',
+                            pointBorderWidth: 0,
+                            pointHoverRadius: 0
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: { 
+                        legend: { 
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 12, weight: 600 },
+                            bodyFont: { size: 12 },
+                            titleMarginBottom: 8,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.parsed.y;
+                                    if (value === null || value === undefined) {
+                                        return context.dataset.label + ': -';
+                                    }
+                                    // Format dengan separator ribuan dan 2 desimal
+                                    const formatted = new Intl.NumberFormat('id-ID', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    }).format(value);
+                                    return context.dataset.label + ': Rp ' + formatted;
+                                },
+                                title: function(context) {
+                                    if (isBulananMode) {
+                                        return context[0].label;
+                                    } else {
+                                        return 'Tanggal ' + context[0].label;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: yAxisMax,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000).toFixed(0) + 'k';
+                                },
+                                font: { size: 12 },
+                                color: 'var(--text-secondary)',
+                                padding: 8
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 12 },
+                                color: 'var(--text-secondary)',
+                                padding: 8
+                            }
+                        }
+                    }
+                }
             });
         }
 
@@ -464,13 +607,55 @@
 
             if(msgEl) msgEl.style.display = 'none';
 
+            // Filter Top 5 - membuat array dengan index untuk sorting
+            const indexed = chartData.labels.map((label, i) => ({
+                label,
+                data: chartData.data[i],
+                index: i
+            }));
+            
+            // Sort by data descending dan ambil top 5
+            const top5 = indexed.sort((a, b) => b.data - a.data).slice(0, 5);
+            
+            // Buat data array baru untuk top 5
+            const topLabels = top5.map(item => item.label);
+            const topData = top5.map(item => item.data);
+            const topColors = top5.map(item => chartColors.doughnut[item.index % chartColors.doughnut.length]);
+
             doughnutChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: chartData.labels,
-                    datasets: [{ data: chartData.data, backgroundColor: chartColors.doughnut, borderWidth: 0 }]
+                    labels: topLabels,
+                    datasets: [{ data: topData, backgroundColor: topColors, borderWidth: 0 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '75%', 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 12, weight: 600 },
+                            bodyFont: { size: 12 },
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const formatted = new Intl.NumberFormat('id-ID', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    }).format(value);
+                                    return 'Rp ' + formatted;
+                                },
+                                title: function(context) {
+                                    return context[0].label;
+                                }
+                            }
+                        }
+                    } 
+                }
             });
         }
 
@@ -507,41 +692,69 @@
 
         // --- POPULATE TRANSACTIONS ---
         function populateTransactions(transactions) {
-            const list = document.getElementById('recent-transactions-list');
-            if (!list) return;
-            list.innerHTML = '';
+        const list = document.getElementById('recent-transactions-list');
+        if (!list) return;
+        list.innerHTML = ''; // Bersihkan loading
 
-            if (transactions.length === 0) {
-                list.innerHTML = '<li class="transaction-item" style="justify-content: center; color: #999;">Belum ada transaksi.</li>';
-                return;
-            }
-
-            transactions.forEach(tx => {
-                const li = document.createElement('li');
-                li.className = 'transaction-item';
-                
-                const isMasuk = tx.category.tipe === 'pemasukan';
-                const amountClass = isMasuk ? 'text-green' : 'text-red';
-                const sign = isMasuk ? '+' : '-';
-                const iconBg = isMasuk ? 'bg-green-light' : 'bg-blue-light';
-                
-                const iconClass = tx.category.ikon || 'fa-solid fa-question';
-                let iconHtml = iconClass.includes('.') 
-                    ? `<img src="{{ asset('icons') }}/${iconClass}" style="width:20px;">`
-                    : `<i class="${iconClass}"></i>`;
-
-                const date = new Date(tx.tanggal_transaksi);
-                const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-
-                li.innerHTML = `
-                    <div class="icon-circle ${iconBg}">${iconHtml}</div>
-                    <div class="transaction-details"><strong>${escapeHtml(tx.category.nama_kategori)}</strong></div>
-                    <div class="transaction-datetime"><small>${dateStr}</small></div>
-                    <div class="transaction-amount ${amountClass}">${sign}${formatRupiah(tx.jumlah)}</div>
-                `;
-                list.appendChild(li);
-            });
+        if (transactions.length === 0) {
+            list.innerHTML = '<li class="transaction-item" style="justify-content: center; color: #94a3b8; padding: 20px;">Belum ada transaksi.</li>';
+            return;
         }
+
+        transactions.forEach(tx => {
+            const li = document.createElement('li');
+            li.className = 'transaction-item';
+            
+            // Data Safe Check
+            const category = tx.category || {};
+            const isPemasukan = category.tipe === 'pemasukan';
+            
+            // Styling
+            const amountClass = isPemasukan ? 'text-green' : 'text-red';
+            const amountSign = isPemasukan ? '+' : '-';
+            const iconBg = isPemasukan ? 'bg-green-light' : 'bg-blue-light'; 
+            
+            // Icon Logic
+            const iconClass = category.ikon || 'fa-solid fa-question';
+            let iconHtml = iconClass.includes('.') 
+                ? `<img src="{{ asset('icons') }}/${iconClass}" alt="icon">`
+                : `<i class="${iconClass}"></i>`;
+
+            // Format Tanggal & Jam (Pisah baris)
+            const dateObj = new Date(tx.tanggal_transaksi);
+            const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            // Anti XSS
+            const safeKategori = escapeHtml(category.nama_kategori || 'Tanpa Kategori');
+            const safeCatatan = escapeHtml(tx.catatan || '');
+
+            // Render HTML Struktur Baru (Flexbox Row)
+            li.innerHTML = `
+                <div class="icon-circle ${iconBg}">
+                    ${iconHtml}
+                </div>
+                
+                <div class="transaction-details">
+                    <strong>${safeKategori}</strong>
+                </div>
+
+                <div class="transaction-datetime">
+                    <span>${dateStr}</span>
+                    <span class="time">${timeStr}</span>
+                </div>
+
+                <div class="transaction-note">
+                    ${safeCatatan}
+                </div>
+                
+                <div class="transaction-amount ${amountClass}">
+                    ${amountSign}${formatRupiah(tx.jumlah)}
+                </div>
+            `;
+            list.appendChild(li);
+        });
+    }
 
         // Event Listener Dropdown (Jika ada)
         const dateDropdown = document.getElementById('dashboard-date-filter');

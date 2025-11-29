@@ -1164,112 +1164,103 @@ body {
     color: var(--text-secondary);
 }
 
-.transaction-item p {
-    color: var(--text-primary);
-}
-.transaction-item span.text-sm {
-    color: var(--text-secondary);
-}
-
+/* LIST CONTAINER */
 .transaction-list {
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-
+/* ITEM TRANSAKSI (Baris) */
 .transaction-item {
     display: flex;
     align-items: center;
-    padding: 15px 5px;
-    border-bottom: 1px solid #f0f0f0;
+    justify-content: space-between; /* Kiri konten, Kanan nominal */
+    padding: 22px 0; /* Jarak atas bawah */
+    border-bottom: 1px solid #E5E7EB; /* Garis pemisah halus */
+    transition: background 0.2s;
 }
+
 .transaction-item:last-child {
-    border-bottom: none;
+    border-bottom: none; /* Hapus garis di item terakhir */
 }
 
-.transaction-item .amount.positive {
-    color: var(--color-primary-green);
-}
-.transaction-item .amount.negative {
-    color: var(--color-primary-red);
+.transaction-item:hover {
+    background-color: #fcfcfc; /* Efek hover sangat tipis */
 }
 
-.transaction-item .icon-circle {
-    width: 40px;
-    height: 40px;
+/* --- KOLOM-KOLOM DATA --- */
+
+/* 1. Ikon Bulat (Kiri) */
+.icon-circle {
+    width: 47px;
+    height: 47px;
     border-radius: 50%;
-    background-color: #e6f0ff;
-    color: #0052cc;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
-    font-size: 16px;
+    margin-right: 16px;
+    flex-shrink: 0;
+    margin-left: 24px;
+}
+.icon-circle img { width: 37px; height: 37px; object-fit: contain; }
+.icon-circle i { font-size: 30px; }
+
+/* Warna Background Icon */
+.bg-green-light { background-color: #dcfce7; color: #166534; }
+.bg-blue-light { background-color: #dbeafe; color: #1e40af; }
+
+/* 2. Detail (Nama Kategori) */
+.transaction-details {
+    flex: 1; /* Mengisi ruang sisa */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.transaction-details strong {
+    font-size: 18px;
+    color: #000000;
+    font-weight: 400;
+    margin-bottom: 2px;
+    margin-left: 2px;
 }
 
-.transaction-item .transaction-details {
-    flex-grow: 1;
-}
-.transaction-item .transaction-details strong {
-    display: block;
-    font-size: 15px;
+/* 3. Tanggal & Jam (Tengah/Bawah Nama) */
+.transaction-datetime {
+    display: flex;
+    flex-direction: column;
+    font-size: 17px;
     font-weight: 500;
-    color: #333;
+    color: #000000;
+    line-height: 1.3;
+    margin-right: 20px;
+    text-align: left; /* Atau left, sesuai selera */
+    min-width: 100px;
 }
-.transaction-item .transaction-details small {
-    color: #888;
-    font-size: 13px;
+.transaction-datetime .time { font-size: 15px; color: #6A7282; margin-top: 3px;}
+
+/* 4. Catatan (Opsional, disembunyikan di mobile atau dibuat truncate) */
+.transaction-note {
+    flex: 2; /* Lebih lebar */
+    color: #000000;
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 20px;
+    margin-left: 80px;
 }
 
-.transaction-item .transaction-note {
-    flex-grow: 2;
-    color: #555;
-    font-size: 14px;
-    padding: 0 20px;
+/* 5. Nominal (Kanan Mentok) */
+.transaction-amount {
+    font-weight: 500;
+    font-size: 18px;
+    text-align: right;
+    min-width: 120px;
+    margin-right: 50px;
 }
-
-.transaction-item .transaction-amount {
-    font-weight: 600;
-    font-size: 15px;
-}
-
-.transaction-table {
-    width: 100%;
-    border-collapse: collapse; /* Hilangkan spasi antar cell */
-}
-
-/* Header Tabel */
-.transaction-table th {
-    text-align: left;
-    padding: 18px 25px;
-    background-color: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 600;
-    border-bottom: 2px solid var(--border-color);
-}
-
-/* Baris Tabel */
-.transaction-table tr {
-    border-bottom: 1px solid var(--border-color);
-}
-.transaction-table tr:last-child {
-    border-bottom: none; /* Hapus garis di baris terakhir */
-}
-.transaction-table tr:hover {
-    background-color: var(--bg-secondary);
-}
-
-/* Cell Data */
-.transaction-table td {
-    padding: 16px 25px;
-    font-size: 15px;
-    color: var(--text-primary);
-    vertical-align: middle;
-}
-
-.transaction-table td strong {
-    font-weight: 600;
-}
+.text-green { color: #16a34a; }
+.text-red { color: #dc2626; }
 
 /* Badge Kategori */
 .badge-kategori {
@@ -2082,28 +2073,6 @@ textarea.form-input-modal {
     overflow: hidden; /* Agar header tidak keluar border-radius */
 }
 
-.card-body {
-    padding: 24px;
-}
-
-/* =========================================
-   2. BAGIAN HEADER (TITIK WARNA)
-   ========================================= */
-.card-header {
-    background-color: none; /* Abu-abu sangat muda */
-    padding: 16px 24px;
-    border-bottom: none;
-}
-
-.card-title {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #334155;
-    display: flex;
-    align-items: center;
-}
-
 /* Titik Hijau untuk Pemasukan */
 .dot-pemasukan::before {
     content: '';
@@ -2194,6 +2163,28 @@ textarea.form-input-modal {
     align-items: center;
     margin-right: 16px;
     flex-shrink: 0; /* Supaya icon tidak penyet */
+}
+
+/* Shape Pemasukan (Hijau Muda) */
+.icon-wrapper.icon-shape-pemasukan {
+    background-color: #DCFCE7;
+}
+
+.icon-wrapper.icon-shape-pemasukan img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Shape Pengeluaran (Biru Muda dengan Opacity) */
+.icon-wrapper.icon-shape-pengeluaran {
+    background-color: rgba(66, 156, 255, 0.3);
+}
+
+.icon-wrapper.icon-shape-pengeluaran img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 /* Warna Background Icon */
@@ -2494,6 +2485,16 @@ textarea.form-input-modal {
 }
 
 /* 6. Form Group di Modal */
+.form-group-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group-modal.icon-modal {
+    gap: 15px;
+}
+
 .form-group-modal label {
     display: block;
     font-weight: 500;
@@ -2626,72 +2627,138 @@ textarea.form-input-modal {
     background-color: #dcfce7;
 }
 
-/* 1. Container Biru Muda (Pembungkus Icon) */
+/* --- ICON PICKER GRID --- */
 .icon-picker-container {
-    background-color: #f0f7ff; /* Warna biru muda lembut */
-    padding: 20px;
-    border-radius: 16px; /* Sudut membulat */
-    border: 1px solid #dbeafe;
-    
-    /* Grid Layout */
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); /* Responsif */
-    gap: 12px; /* Jarak antar icon */
-    
-    max-height: 250px; /* Tinggi maksimal agar bisa discroll */
-    overflow-y: auto;  /* Scroll jika icon terlalu banyak */
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 12px;
+    padding: 15px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-/* 2. Kotak Putih (Item Icon) */
-.icon-option {
-    background-color: white;
-    width: 45px;
-    height: 45px;
-    border-radius: 12px; /* Sedikit kotak tapi tumpul (Squircle) */
+/* Icon Option (Default: Pemasukan - Hijau Muda) */
+.icon-picker-container.grid-pemasukan .icon-option {
+    background-color: #DCFCE7; /* Hijau muda */
+    border: 2px solid #DCFCE7;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 60px;
+}
+
+/* Icon Option (Default: Pengeluaran - Biru Muda) */
+.icon-picker-container.grid-pengeluaran .icon-option {
+    background-color: rgba(66, 156, 255, 0.15); /* Biru muda */
+    border: 2px solid rgba(66, 156, 255, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 60px;
+}
+
+/* Icon Image Styling */
+.icon-option img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: all 0.2s ease;
+}
+
+.icon-option i {
+    font-size: 24px;
+    transition: all 0.2s ease;
+}
+
+/* Hover Effect */
+.icon-option:hover {
+    transform: scale(1.08);
+    filter: brightness(0.9);
+}
+
+/* --- ACTIVE STATE (SAAT DIPILIH) --- */
+
+/* Active Pemasukan: Background Hijau Tua */
+.icon-picker-container.grid-pemasukan .icon-option.selected {
+    background-color: #16A34A !important;
+    border-color: #16A34A;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+}
+
+/* Active Pengeluaran: Background Biru Tua */
+.icon-picker-container.grid-pengeluaran .icon-option.selected {
+    background-color: #2B7FFF !important;
+    border-color: #2B7FFF;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(43, 127, 255, 0.4);
+}
+
+/* Selected Icon Color (Putih/Netral) */
+.icon-option.selected img {
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.icon-option.selected i {
+    color: white;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+/* --- ICON PICKER CONTAINER untuk MODAL KATEGORI --- */
+#icon-grid-container-kat {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+#icon-grid-container-kat .icon-option {
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 2px solid transparent; /* Border transparan default */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    padding: 4px;
 }
 
-/* 3. Gambar Icon di dalamnya */
-.icon-option img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    /* Filter ini opsional: Jika icon PNG Anda hitam, 
-       kode ini mengubahnya jadi biru seperti di gambar. 
-       Jika PNG Anda sudah biru, hapus filter ini. */
-    /* filter: invert(31%) sepia(96%) saturate(1989%) hue-rotate(203deg) brightness(93%) contrast(92%); */
-}
-
-/* 4. Efek Hover */
-.icon-option:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-/* 5. Efek Saat Dipilih (Active State) */
-.icon-option.selected {
-    border-color: #ffffff; /* Border Biru saat dipilih */
-    background-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Efek glow luar */
+#icon-grid-container-kat .icon-option:hover {
     transform: scale(1.05);
+    border-color: #ddd;
 }
 
-/* Custom Scrollbar (Biar makin mirip desain modern) */
-.icon-picker-container::-webkit-scrollbar {
-    width: 6px;
+/* ACTIVE STATE - Icon di-klik */
+#icon-grid-container-kat .icon-option.active {
+    border: 2px solid #666;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-.icon-picker-container::-webkit-scrollbar-track {
-    background: transparent;
+
+/* Icon image menjadi netral (grayscale) saat active */
+#icon-grid-container-kat .icon-option.active .icon-wrapper img {
+    filter: grayscale(100%) brightness(0.85);
 }
-.icon-picker-container::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 20px;
+
+/* Shape pengeluaran (biru) saat active */
+#icon-grid-container-kat.grid-pengeluaran .icon-option.active .icon-wrapper {
+    background: #2B7FFF !important;
+}
+
+/* Shape pemasukan (hijau) saat active */
+#icon-grid-container-kat.grid-pemasukan .icon-option.active .icon-wrapper {
+    background: #00A63E !important;
 }
 
 /* 8. Modal Footer */
@@ -2699,7 +2766,7 @@ textarea.form-input-modal {
     display: flex;
     justify-content: flex-end; /* Tombol ke kanan */
     gap: 10px;
-    padding: 15px 25px;
+    padding: 20px 25px;
     background-color: var(--bg-secondary); /* Latar footer */
     border-top: 1px solid var(--border-color);
 }
@@ -2707,7 +2774,7 @@ textarea.form-input-modal {
     background: #ffffff;
     color: #2385F2;
     border: 0.5px solid #2385F2;
-    padding: 10px 20px;
+    padding: 18px 20px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
@@ -3539,6 +3606,116 @@ textarea.form-input-modal {
 .user-profile-dropdown.active .fa-chevron-down {
     transform: rotate(180deg); /* Panah muter */
 }
+/* --- NOTIFICATION STYLES --- */
+
+/* Badge Merah Kecil */
+.notif-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444; /* Merah */
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+/* Dropdown Menu */
+.notif-dropdown {
+    display: none; /* Default Hidden */
+    position: absolute;
+    top: 120%;
+    right: -10px; /* Geser sedikit ke kiri */
+    width: 320px;
+    background: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideDownFade 0.2s ease-out;
+}
+
+/* Header Dropdown */
+.notif-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.notif-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1e293b;
+    font-weight: 700;
+}
+.mark-read {
+    font-size: 0.75rem;
+    color: #3b82f6;
+    cursor: pointer;
+}
+.mark-read:hover { text-decoration: underline; }
+
+/* List Container */
+.notif-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Item Notifikasi */
+.notif-item {
+    padding: 15px 20px;
+    display: flex;
+    gap: 15px;
+    border-bottom: 1px solid #f8fafc;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.notif-item:hover {
+    background-color: #f8fafc;
+}
+.notif-item:last-child { border-bottom: none; }
+
+/* Icon Item */
+.notif-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+.icon-blue-light { background-color: #eff6ff; color: #2563eb; } /* Biru (Cetak) */
+.icon-green-light { background-color: #ecfdf5; color: #10b981; } /* Hijau (Login) */
+
+/* Text Content */
+.notif-content { flex: 1; }
+.notif-title {
+    margin: 0 0 2px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+}
+.notif-desc {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+.notif-time {
+    display: block;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+
+/* Scrollbar Halus */
+.notif-list::-webkit-scrollbar { width: 4px; }
+.notif-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
 
 /* Animasi */
 @keyframes slideDownFade {
@@ -3588,135 +3765,29 @@ textarea.form-input-modal {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 16px;
-    margin-bottom: 12px;
+    padding-top: 16px;
+    padding-bottom: 27px;
+    margin-bottom: 0px;
     /* Garis pemisah abu-abu tipis di bawah header */
-    border-bottom: 1px solid #f0f2f5; 
+    border-bottom: 1px solid #E5E7EB; 
 }
 
 .card-transaksi-terakhir .card-header h3 {
     margin: 0;
-    font-size: 1.15rem; /* Sedikit lebih besar */
-    font-weight: 700;
-    color: #1a202c; /* Hitam pekat */
+    font-size: 22px; /* Sedikit lebih besar */
+    font-weight: 600;
+    color: #000000; /* Hitam pekat */
     display: flex;
     align-items: center;
     gap: 10px; /* Jarak antara ikon dan teks */
+    margin-left: 37px;
 }
-
-.card-transaksi-terakhir .card-header h3 i {
-    color: var(--primary-color, #0072ff); /* Sesuaikan dgn warna primer Anda */
-}
-
 /* (Opsional) Styling link "Lihat Semua" */
 .card-transaksi-terakhir .card-header .view-all {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--primary-color, #0072ff);
     text-decoration: none;
-}
-
-/* 3. List Transaksi (UL) */
-.transaction-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-/* 4. Item Transaksi (LI) - INI PENTING */
-.transaction-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 8px; /* Padding atas-bawah */
-    border-bottom: 1px solid #f0f2f5;
-    gap: 16px; /* Jarak antar kolom */
-    font-size: 0.9rem;
-}
-
-.transaction-list li:last-child {
-    border-bottom: none; /* Hapus border di item terakhir */
-}
-
-/* 5. Styling Kolom-kolom di dalam LI */
-
-/* Kolom 1: Ikon */
-/* Pastikan Anda punya style ini (atau sesuaikan) */
-.icon-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0; /* Agar ikon tidak penyet */
-}
-.icon-circle i {
-    font-size: 16px;
-}
-/* Ini memperbaiki bug warna di Gambar 2 Anda */
-.bg-green-light { 
-    background-color: #E6F7E7; /* Hijau Muda */
-    color: #5EDB65; /* Hijau Ikon */
-}
-.bg-blue-light { 
-    background-color: #EBF4FF; /* Biru Muda (sesuai Gbr 1) */
-    color: #4A90E2; /* Biru Ikon (sesuai Gbr 1) */
-}
-
-
-/* Kolom 2: Kategori */
-.transaction-details {
-    width: 160px; /* Beri lebar tetap agar rapi */
-    flex-shrink: 0;
-    font-weight: 600;
-    color: #2d3748;
-}
-
-/* Kolom 3: Tanggal & Waktu */
-.transaction-datetime {
-    width: 140px; /* Beri lebar tetap */
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    color: #718096; /* Abu-abu */
-}
-.transaction-datetime small {
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-.transaction-datetime small.time {
-    color: #a0aec0; /* Lebih muda */
-}
-
-/* Kolom 4: Catatan */
-.transaction-note {
-    flex-grow: 1; /* Biarkan kolom ini memanjang mengisi sisa ruang */
-    color: #718096;
-    padding: 0 16px;
-    /* Mencegah teks terlalu panjang & merusak layout */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.transaction-note small {
-    font-size: 0.85rem;
-}
-
-/* Kolom 5: Jumlah Uang */
-.transaction-amount {
-    font-weight: 700;
-    font-size: 0.95rem;
-    margin-left: auto; /* PENTING: Mendorong ke paling kanan */
-    padding-left: 16px;
-    white-space: nowrap; /* Jaga agar tidak terpotong */
-}
-
-/* Warna Teks Uang (Sudah ada di JS) */
-.text-green {
-    color: #38A169; /* Hijau Pemasukan (sesuai Gbr 1) */
-}
-.text-red {
-    color: #E53E3E; /* Merah Pengeluaran (sesuai Gbr 1) */
 }
 
 /* Styling untuk Popup Setup Perusahaan */
@@ -3777,6 +3848,37 @@ textarea.form-input-modal {
     cursor: pointer;
     margin-top: 1rem;
 }
+
+#toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999;
+        transform: translateX(150%); /* Sembunyi di kanan */
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #toast-notification.show {
+        transform: translateX(0); /* Muncul */
+    }
+
+    .toast-content {
+        background: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-left: 5px solid #10b981; /* Garis hijau */
+        min-width: 300px;
+    }
+
+    #toast-message {
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.95rem;
+    }
 
 @media (max-width: 768px) {
 
@@ -3866,4 +3968,294 @@ textarea.form-input-modal {
     }
 
 }
+
+/* ===== DIALOG MINIMALIS (Konfirmasi & Notifikasi) ===== */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.dialog-box {
+    background: var(--bg-primary);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 320px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.dialog-content {
+    margin-bottom: 24px;
+}
+
+.dialog-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.dialog-icon.success {
+    background: #DCFCE7;
+    color: #16a34a;
+}
+
+.dialog-icon.error {
+    background: #FEE2E2;
+    color: #dc2626;
+}
+
+.dialog-icon.warning {
+    background: #FEF3C7;
+    color: #f59e0b;
+}
+
+.dialog-icon.info {
+    background: #DBEAFE;
+    color: #0284c7;
+}
+
+#dialog-message {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    font-weight: 500;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.dialog-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.dialog-btn-confirm {
+    background: var(--color-primary-green);
+    color: white;
+}
+
+.dialog-btn-confirm:hover {
+    background: #0d7a4a;
+    transform: translateY(-2px);
+}
+
+.dialog-btn-cancel {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.dialog-btn-cancel:hover {
+    background: var(--border-color);
+}
+
+.dialog-btn-danger {
+    background: var(--color-primary-red) !important;
+}
+
+.dialog-btn-danger:hover {
+    background: #b82a0b !important;
+}
+
+/* ===== STYLE PERSENTASE KAS DASHBOARD ===== */
+
+/* Card title dengan icon */
+.card-title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.custom-title-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Dropdown minimalis */
+.dropdown-minimalis {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dropdown-minimalis:hover {
+    border-color: var(--color-primary-blue);
+}
+
+.dropdown-minimalis:focus {
+    outline: none;
+    border-color: var(--color-primary-blue);
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+/* Chart container horizontal - legend di sebelah kanan */
+.chart-container-horizontal {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.chart-wrapper {
+    flex: 0 0 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#doughnutChart {
+    max-width: 280px !important;
+    max-height: 280px !important;
+}
+
+/* Doughnut legend - positioning di sebelah kanan */
+.doughnut-legend {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.doughnut-legend li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.doughnut-legend .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* Responsive - untuk layar kecil */
+@media (max-width: 768px) {
+    .chart-container-horizontal {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .chart-wrapper {
+        flex: 1;
+        width: 100%;
+        max-width: 250px;
+        margin: 0 auto;
+    }
+
+    .doughnut-legend {
+        flex: 1;
+    }
+}
+
+/* Card title with icon */
+.card-title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.custom-title-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Dropdown minimalis untuk grafik */
+.dropdown-minimalis-grafik {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dropdown-minimalis-grafik:hover {
+    border-color: var(--color-primary-blue);
+    background: var(--bg-secondary);
+}
+
+/* Grafik Kas Header - Filter + Legend */
+.grafik-kas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 25px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 20px;
+}
+
+.grafik-kas-header .filter-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Legend Grafik Kas */
+.grafik-kas-legend {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+
 

@@ -57,18 +57,17 @@ class DashboardController extends Controller
         }
 
         // =========================================================
-        // 1. QUERY SUMMARY (KEBAL FILTER - ALL TIME)
+        // 1. QUERY SUMMARY (ALL TIME - TIDAK BERUBAH)
         // =========================================================
-        // Query ini murni hanya melihat id_perusahaan, tanpa peduli filter tanggal/search
-        $querySummary = Transaction::where('business_id', $idPerusahaan);
-        
-        $pemasukanTotal = (clone $querySummary)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $pengeluaranTotal = (clone $querySummary)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
-        $labaTotal = $pemasukanTotal - $pengeluaranTotal;
+        // Query ini untuk Saldo (selalu all time)
+        $querySaldo = Transaction::where('business_id', $idPerusahaan);
+        $pemasukanSaldo = (clone $querySaldo)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranSaldo = (clone $querySaldo)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $saldoTotal = $pemasukanSaldo - $pengeluaranSaldo;
 
 
         // =========================================================
-        // 2. QUERY CHART & LIST (KENA FILTER)
+        // 2. QUERY CHART & LIST & SUMMARY CARDS (KENA FILTER)
         // =========================================================
         // Query ini yang akan diobok-obok oleh filter user
         $queryFiltered = Transaction::where('business_id', $idPerusahaan);
@@ -84,7 +83,7 @@ class DashboardController extends Controller
             });
         }
 
-        // B. Filter Tanggal (Hanya Mempengaruhi Grafik & List)
+        // B. Filter Tanggal (Mempengaruhi Grafik, List, & Summary Cards)
         $isFilterActive = $request->filled('start_date') && $request->filled('end_date');
         
         if ($isFilterActive) {
@@ -101,6 +100,12 @@ class DashboardController extends Controller
             $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
             $dateFormatPHP = 'M Y'; 
         }
+
+        // --- SUMMARY CARDS (Pemasukan, Pengeluaran, Laba) ---
+        // Menggunakan queryFiltered agar terkena filter tanggal
+        $pemasukanPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $labaPeriod = $pemasukanPeriod - $pengeluaranPeriod;
 
         // --- LINE CHART (Cashflow) ---
         $incomeDataRaw = (clone $queryFiltered)
@@ -149,11 +154,12 @@ class DashboardController extends Controller
         // =========================================================
         return response()->json([
             'summary' => [
-                // Gunakan hasil perhitungan dari Jalur 1 (Kebal Filter)
-                'saldo'       => $labaTotal, 
-                'pemasukan'   => $pemasukanTotal,
-                'pengeluaran' => $pengeluaranTotal,
-                'laba'        => $labaTotal
+                // Saldo: All Time (tidak berubah dengan filter)
+                'saldo'       => $saldoTotal,
+                // Pemasukan, Pengeluaran, Laba: Bergantung pada filter tanggal
+                'pemasukan'   => $pemasukanPeriod,
+                'pengeluaran' => $pengeluaranPeriod,
+                'laba'        => $labaPeriod
             ],
             'recent_transactions' => $recentTransactions, // Kena Filter
             'line_chart' => [                             // Kena Filter

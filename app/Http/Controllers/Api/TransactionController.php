@@ -36,14 +36,14 @@ class TransactionController extends Controller
         }
 
         // =================================================================
-        // JALUR 1: QUERY UNTUK TABEL (KENA FILTER)
+        // 1. QUERY UTAMA (UNTUK TABEL & STATISTIK FILTER)
         // =================================================================
-        $queryList = Transaction::where('business_id', $idPerusahaan)
-                                ->with('category:id,nama_kategori,tipe,ikon');
+        $queryFiltered = Transaction::where('business_id', $idPerusahaan)
+                                    ->with('category:id,nama_kategori,tipe,ikon');
 
         // A. Filter Search
         if ($request->filled('search')) {
-             $queryList->where(function ($q) use ($request) {
+             $queryFiltered->where(function ($q) use ($request) {
                 $q->where('catatan', 'like', '%' . $request->search . '%')
                   ->orWhereHas('category', function ($catQuery) use ($request) {
                       $catQuery->where('nama_kategori', 'like', '%' . $request->search . '%');
@@ -55,62 +55,79 @@ class TransactionController extends Controller
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = $request->start_date . ' 00:00:00';
             $endDate   = $request->end_date . ' 23:59:59';
-            $queryList->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
+            $queryFiltered->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
         }
 
         // C. Filter Tipe
         if ($request->filled('tipe')) {
-            $queryList->whereHas('category', function (Builder $q) use ($request) {
+            $queryFiltered->whereHas('category', function (Builder $q) use ($request) {
                 $q->where('tipe', $request->tipe);
             });
         }
         
         // D. Filter Nominal
         if ($request->filled('min_nominal')) {
-            $queryList->where('jumlah', '>=', $request->min_nominal);
+            $queryFiltered->where('jumlah', '>=', $request->min_nominal);
         }
         if ($request->filled('max_nominal')) {
-            $queryList->where('jumlah', '<=', $request->max_nominal);
+            $queryFiltered->where('jumlah', '<=', $request->max_nominal);
         }
 
 
         // =================================================================
-        // JALUR 2: QUERY UNTUK SALDO/SUMMARY (KEBAL FILTER)
+        // 2. HITUNG TOTAL SESUAI FILTER (FOOTER)
         // =================================================================
-        // Kita buat query baru yang BERSIH, hanya filter by Perusahaan saja.
-        // Ini akan menghitung total uang REAL yang ada di database (All Time).
+        // Angka ini akan berubah-ubah mengikuti tanggal/search yang dipilih user
         
-        $querySummary = Transaction::where('business_id', $idPerusahaan);
-
-        // Hitung Pemasukan (All Time)
-        $totalPemasukan = (clone $querySummary)->whereHas('category', function (Builder $q) {
+        // Hitung Pemasukan (Filtered)
+        $pemasukanFiltered = (clone $queryFiltered)->whereHas('category', function (Builder $q) {
             $q->where('tipe', 'pemasukan');
         })->sum('jumlah');
 
-        // Hitung Pengeluaran (All Time)
-        $totalPengeluaran = (clone $querySummary)->whereHas('category', function (Builder $q) {
+        // Hitung Pengeluaran (Filtered)
+        $pengeluaranFiltered = (clone $queryFiltered)->whereHas('category', function (Builder $q) {
             $q->where('tipe', 'pengeluaran');
         })->sum('jumlah');
 
-        // Hitung Saldo Akhir (All Time)
-        $laba = $totalPemasukan - $totalPengeluaran;
+        // Hitung Laba (Filtered)
+        $labaFiltered = $pemasukanFiltered - $pengeluaranFiltered;
 
 
         // =================================================================
-        // EKSEKUSI DATA
+        // 3. HITUNG SALDO ASLI (ALL TIME - KEBAL FILTER)
         // =================================================================
+        // Ini menghitung uang real yang dimiliki user saat ini
+        
+        $queryAllTime = Transaction::where('business_id', $idPerusahaan);
 
-        // Ambil data tabel dari $queryList (yang sudah difilter)
-        $transactions = $queryList->latest('tanggal_transaksi')
-                                  ->paginate($request->input('per_page', 10))
-                                  ->withQueryString();
+        $totalMasukAll = (clone $queryAllTime)->whereHas('category', function (Builder $q) {
+            $q->where('tipe', 'pemasukan');
+        })->sum('jumlah');
+
+        $totalKeluarAll = (clone $queryAllTime)->whereHas('category', function (Builder $q) {
+            $q->where('tipe', 'pengeluaran');
+        })->sum('jumlah');
+
+        $saldoReal = $totalMasukAll - $totalKeluarAll;
+
+
+        // =================================================================
+        // 4. AMBIL DATA PAGINASI (UNTUK TABEL)
+        // =================================================================
+        $transactions = $queryFiltered->latest('tanggal_transaksi')
+                                      ->paginate($request->input('per_page', 10))
+                                      ->withQueryString();
 
         return response()->json([
-            'pagination' => $transactions, // Data Tabel (Berubah sesuai filter)
-            'summary' => [                 // Data Saldo (TETAP / All Time)
-                'total_pemasukan' => $totalPemasukan,
-                'total_pengeluaran' => $totalPengeluaran,
-                'laba' => $laba
+            'pagination' => $transactions,
+            'summary' => [
+                // Footer menggunakan data Terfilter
+                'total_pemasukan' => $pemasukanFiltered,
+                'total_pengeluaran' => $pengeluaranFiltered,
+                'laba' => $labaFiltered, 
+                
+                // Header Saldo menggunakan data All Time (Ditambahkan key baru)
+                'saldo_real' => $saldoReal 
             ]
         ], 200);
     }
@@ -121,7 +138,7 @@ class TransactionController extends Controller
     public function store(StoreTransactionRequest $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'jumlah' => 'required|numeric|min:1',
+            'jumlah' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
             'tanggal_transaksi' => 'required|date',
             'catatan' => 'nullable|string|max:255',

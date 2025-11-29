@@ -113,10 +113,8 @@
                 
                 <div class="form-group-modal">
                     <label for="modal-tx-jumlah">Nominal</label>
-                    <input type="number" id="modal-tx-jumlah" name="jumlah" class="form-input-modal" placeholder="Nominal transaksi" 
-                    min="0x" 
-                    oninput="if(this.value.length > 15) this.value = this.value.slice(0, 15); this.value = Math.abs(this.value)" 
-                    onkeydown="if(event.key === '-' || event.key === 'e') event.preventDefault();"
+                    <input type="text" id="modal-tx-jumlah" name="jumlah" class="form-input-modal" placeholder="Nominal transaksi" 
+                    inputmode="decimal"
                     required>
                 </div>
 
@@ -188,14 +186,6 @@
                     </select>
                 </div>
                 <div class="form-group-modal">
-                    <label style="font-weight:600; margin-bottom:5px; display:block;">Rentang Tanggal</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="date" id="filter-start-date" class="form-input-modal">
-                        <input type="date" id="filter-end-date" class="form-input-modal">
-                    </div>
-                </div>
-
-                <div class="form-group-modal">
                     <label style="font-weight:600; margin-bottom:5px; display:block;">Rentang Nominal (Rp)</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <input type="number" id="filter-min-nominal" class="form-input-modal" placeholder="Min">
@@ -251,193 +241,9 @@
 
                     <input type="hidden" name="ikon" id="modal-ikon" required>
 
-                    <div class="icon-picker-container">
-                        
-                        <div class="icon-option" onclick="selectIcon(this, 'logo1.png')">
-                            <img src="{{ asset('icons/logo1.png') }}" alt="logo1">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo2.png')">
-                            <img src="{{ asset('icons/logo2.png') }}" alt="logo2">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo3.png')">
-                            <img src="{{ asset('icons/logo3.png') }}" alt="logo3">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo4.png')">
-                            <img src="{{ asset('icons/logo4.png') }}" alt="logo4">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo5.png')">
-                            <img src="{{ asset('icons/logo5.png') }}" alt="logo5">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo6.png')">
-                            <img src="{{ asset('icons/logo6.png') }}" alt="logo6">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo7.png')">
-                            <img src="{{ asset('icons/logo7.png') }}" alt="logo7">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo8.png')">
-                            <img src="{{ asset('icons/logo8.png') }}" alt="logo8">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo9.png')">
-                            <img src="{{ asset('icons/logo9.png') }}" alt="logo9">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo10.png')">
-                            <img src="{{ asset('icons/logo10.png') }}" alt="logo10">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo11.png')">
-                            <img src="{{ asset('icons/logo11.png') }}" alt="logo11">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo12.png')">
-                            <img src="{{ asset('icons/logo12.png') }}" alt="logo12">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo13.png')">
-                            <img src="{{ asset('icons/logo13.png') }}" alt="logo13">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo14.png')">
-                            <img src="{{ asset('icons/logo14.png') }}" alt="logo14">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo15.png')">
-                            <img src="{{ asset('icons/logo15.png') }}" alt="logo15">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo16.png')">
-                            <img src="{{ asset('icons/logo16.png') }}" alt="logo16">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo17.png')">
-                            <img src="{{ asset('icons/logo17.png') }}" alt="logo17">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo18.png')">
-                            <img src="{{ asset('icons/logo18.png') }}" alt="logo18">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo19.png')">
-                            <img src="{{ asset('icons/logo19.png') }}" alt="logo19">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo20.png')">
-                            <img src="{{ asset('icons/logo20.png') }}" alt="logo20">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo21.png')">
-                            <img src="{{ asset('icons/logo21.png') }}" alt="logo21">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo22.png')">
-                            <img src="{{ asset('icons/logo22.png') }}" alt="logo22">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo23.png')">
-                            <img src="{{ asset('icons/logo23.png') }}" alt="logo23">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo24.png')">
-                            <img src="{{ asset('icons/logo24.png') }}" alt="logo24">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo25.png')">
-                            <img src="{{ asset('icons/logo25.png') }}" alt="logo25">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo26.png')">
-                            <img src="{{ asset('icons/logo26.png') }}" alt="logo26">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo27.png')">
-                            <img src="{{ asset('icons/logo27.png') }}" alt="logo27">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo28.png')">
-                            <img src="{{ asset('icons/logo28.png') }}" alt="logo28">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo29.png')">
-                            <img src="{{ asset('icons/logo29.png') }}" alt="logo29">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo30.png')">
-                            <img src="{{ asset('icons/logo30.png') }}" alt="logo30">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo31.png')">
-                            <img src="{{ asset('icons/logo31.png') }}" alt="logo31">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo32.png')">
-                            <img src="{{ asset('icons/logo32.png') }}" alt="logo32">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo33.png')">
-                            <img src="{{ asset('icons/logo33.png') }}" alt="logo33">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo34.png')">
-                            <img src="{{ asset('icons/logo34.png') }}" alt="logo34">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo35.png')">
-                            <img src="{{ asset('icons/logo35.png') }}" alt="logo35">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo36.png')">
-                            <img src="{{ asset('icons/logo36.png') }}" alt="logo36">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo37.png')">
-                            <img src="{{ asset('icons/logo37.png') }}" alt="logo37">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo38.png')">
-                            <img src="{{ asset('icons/logo38.png') }}" alt="logo38">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo39.png')">
-                            <img src="{{ asset('icons/logo39.png') }}" alt="logo39">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo40.png')">
-                            <img src="{{ asset('icons/logo40.png') }}" alt="logo40">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo41.png')">
-                            <img src="{{ asset('icons/logo41.png') }}" alt="logo41">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo42.png')">
-                            <img src="{{ asset('icons/logo42.png') }}" alt="logo42">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo43.png')">
-                            <img src="{{ asset('icons/logo43.png') }}" alt="logo43">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo44.png')">
-                            <img src="{{ asset('icons/logo44.png') }}" alt="logo44">
-                        </div>
-                        <div class="icon-option" onclick="selectIcon(this, 'logo45.png')">
-                            <img src="{{ asset('icons/logo45.png') }}" alt="logo45">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo46.png')">
-                            <img src="{{ asset('icons/logo46.png') }}" alt="logo46">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo47.png')">
-                            <img src="{{ asset('icons/logo47.png') }}" alt="logo47">
-                        </div>
-
-                        <div class="icon-option" onclick="selectIcon(this, 'logo48.png')">
-                            <img src="{{ asset('icons/logo48.png') }}" alt="logo48">
-                        </div>
-
-                        </div>
+                    <div class="icon-picker-container" id="icon-grid-container-kat">
+                        <!-- Icon grid akan di-render oleh JavaScript -->
+                    </div>
                     
                     <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon terlebih dahulu.</small>
                 </div>
@@ -450,6 +256,20 @@
             </div>
         </form>
         
+    </div>
+</div>
+
+<!-- Modal Dialog Minimalis untuk Konfirmasi & Notifikasi -->
+<div class="dialog-overlay" id="dialog-overlay" style="display: none;">
+    <div class="dialog-box">
+        <div class="dialog-content">
+            <div class="dialog-icon" id="dialog-icon"></div>
+            <p id="dialog-message"></p>
+        </div>
+        <div class="dialog-actions">
+            <button type="button" class="dialog-btn dialog-btn-cancel" id="dialog-btn-cancel" style="display: none;">Batal</button>
+            <button type="button" class="dialog-btn dialog-btn-confirm" id="dialog-btn-confirm">OK</button>
+        </div>
     </div>
 </div>
 
@@ -467,8 +287,12 @@
     }
     
     function formatDate(dateString) {
-        const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
         
+        const date = new Date(dateString); 
+        
+        // Validasi agar tidak error 'Invalid Date'
+        if (isNaN(date.getTime())) return dateString; 
+
         const fullDate = date.toLocaleDateString('id-ID', { 
             day: 'numeric', 
             month: 'long', 
@@ -548,6 +372,130 @@
             'Cache-Control': 'no-cache'
         };
 
+        // --- UTILITY FUNCTION: Format Nominal dengan Comma & Dot ---
+        function formatNominal(value) {
+            // Hapus semua character kecuali angka dan koma
+            value = String(value).replace(/[^0-9,]/g, '');
+            
+            // Split berdasarkan koma
+            let parts = value.split(',');
+            
+            // Batasi integer part ke 15 digit
+            if (parts[0].length > 15) {
+                parts[0] = parts[0].slice(0, 15);
+            }
+            
+            // Hanya boleh 1 koma, jika lebih gabung bagian desimal
+            if (parts.length > 2) {
+                parts = [parts[0], parts.slice(1).join('')];
+            }
+            
+            // Batasi desimal ke 2 digit
+            if (parts[1]) {
+                parts[1] = parts[1].slice(0, 2);
+            }
+            
+            // Format dengan titik setiap 3 digit
+            let formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            
+            // Return format
+            return parts.length > 1 && parts[1] ? formatted + ',' + parts[1] : formatted;
+        }
+
+        // --- UTILITY FUNCTION: Dialog Minimalis untuk Konfirmasi & Notifikasi ---
+        function showDialog(message, icon = 'info', isConfirm = false) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('dialog-overlay');
+                const messageEl = document.getElementById('dialog-message');
+                const iconEl = document.getElementById('dialog-icon');
+                const btnConfirm = document.getElementById('dialog-btn-confirm');
+                const btnCancel = document.getElementById('dialog-btn-cancel');
+
+                messageEl.textContent = message;
+                
+                // Set icon
+                iconEl.className = `dialog-icon ${icon}`;
+                if (icon === 'success') iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+                else if (icon === 'error') iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                else if (icon === 'warning') iconEl.innerHTML = '<i class="fa-solid fa-exclamation"></i>';
+                else iconEl.innerHTML = '<i class="fa-solid fa-info"></i>';
+
+                // Set tombol
+                if (isConfirm) {
+                    btnCancel.style.display = 'block';
+                    btnConfirm.textContent = 'Ya, Hapus';
+                    btnConfirm.classList.add('dialog-btn-danger');
+                } else {
+                    btnCancel.style.display = 'none';
+                    btnConfirm.textContent = 'OK';
+                    btnConfirm.classList.remove('dialog-btn-danger');
+                }
+
+                // Show overlay
+                overlay.style.display = 'flex';
+
+                // Handle clicks
+                const handleConfirm = () => {
+                    overlay.style.display = 'none';
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    overlay.style.display = 'none';
+                    cleanup();
+                    resolve(false);
+                };
+
+                const cleanup = () => {
+                    btnConfirm.removeEventListener('click', handleConfirm);
+                    btnCancel.removeEventListener('click', handleCancel);
+                };
+
+                btnConfirm.addEventListener('click', handleConfirm);
+                btnCancel.addEventListener('click', handleCancel);
+            });
+        }
+
+        // --- UTILITY FUNCTION: Render Icon Grid untuk Kategori Modal ---
+        function renderIconGrid(type = 'pengeluaran') {
+            const container = document.getElementById('icon-grid-container-kat');
+            if (!container) return;
+
+            // Set class berdasarkan tipe untuk CSS selector
+            container.className = `icon-picker-container grid-${type}`;
+
+            // Nama icon: Button.png, Button-1.png, Button-2.png, ... Button-47.png
+            const icons = ['Button.png'];
+            for (let i = 1; i <= 47; i++) {
+                icons.push(`Button-${i}.png`);
+            }
+
+            const iconBasePath = '{{ asset("icons") }}';
+            const shapeClass = type === 'pemasukan' ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
+            
+            container.innerHTML = icons.map(icon => `
+                <div class="icon-option" onclick="selectIconKat(this, '${type}/${icon}')">
+                    <div class="icon-wrapper ${shapeClass}">
+                        <img src="${iconBasePath}/${type}/${icon}" alt="${icon}" 
+                            onerror="this.src='${iconBasePath}/netral/Button.png'">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- UTILITY FUNCTION: Select Icon untuk Kategori Modal ---
+        function selectIconKat(element, iconValue) {
+            // Hapus class active dari semua
+            document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Tambah class active ke yang dipilih
+            element.classList.add('active');
+            // Set value
+            document.getElementById('modal-ikon').value = iconValue;
+        }
+
         /*FUNGSI PILIH BULAN DARI DROPDOWN*/
         let currentMonthFilter = 'bulan_ini'; 
 
@@ -608,6 +556,7 @@
 
         // --- 1. [READ] Fungsi Mengambil & Merender Transaksi ---
         // --- 1. FUNGSI FETCH DATA (PERBAIKAN) ---
+        // --- FUNGSI FETCH DATA (VERSI BERSIH TANPA CUSTOM DATE) ---
         async function fetchTransactions(url = null) {
             let targetUrl;
             if (url) {
@@ -616,40 +565,40 @@
                 targetUrl = new URL(API_TRANSACTIONS);
             }
 
-            // [PERBAIKAN UTAMA DI SINI]
-            // Kita ambil elemen HTML-nya LANSUNG di dalam fungsi ini agar tidak "undefined"
+            // 1. DEKLARASI VARIABEL
             const searchInputEl = document.getElementById('search-input');
-            const dateDropdownEl = document.getElementById('current-month-filter');
-
-            // Ambil nilainya dengan pengecekan aman (Safe Check)
-            const searchVal = searchInputEl ? searchInputEl.value : '';
-            if (searchVal) targetUrl.searchParams.set('search', searchVal);
-            const filterMode = (typeof currentMonthFilter !== 'undefined') ? currentMonthFilter : 'bulan_ini';
-
-            const customStart = document.getElementById('filter-start-date').value;
-            const customEnd = document.getElementById('filter-end-date').value;
-            const minNominal = document.getElementById('filter-min-nominal').value;
-            const maxNominal = document.getElementById('filter-max-nominal').value;
+            
+            // Elemen Filter Modal (Hanya Tipe & Nominal)
+            const minNominalEl = document.getElementById('filter-min-nominal');
+            const maxNominalEl = document.getElementById('filter-max-nominal');
             const tipeFilterEl = document.getElementById('filter-tipe');
+
+            // Ambil Nilai
+            const searchVal = searchInputEl ? searchInputEl.value : '';
+            const minNominal = minNominalEl ? minNominalEl.value : '';
+            const maxNominal = maxNominalEl ? maxNominalEl.value : '';
             const tipeVal = tipeFilterEl ? tipeFilterEl.value : '';
 
+            // 2. SET PARAMETER URL
+            
+            // A. Search
+            if (searchVal) targetUrl.searchParams.set('search', searchVal);
 
+            // B. Filter Tipe
+            if (tipeVal) targetUrl.searchParams.set('tipe', tipeVal);
+
+            // C. Filter Nominal
             if (minNominal) targetUrl.searchParams.set('min_nominal', minNominal);
             if (maxNominal) targetUrl.searchParams.set('max_nominal', maxNominal);
 
-            if (tipeVal) {
-                targetUrl.searchParams.set('tipe', tipeVal);
-            }
-
-            const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            // D. Filter Tanggal (Hanya dari Dropdown / Variabel Global)
             const now = new Date();
+            const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            
+            // Ambil dari variabel global dropdown
+            const filterMode = (typeof currentMonthFilter !== 'undefined') ? currentMonthFilter : 'bulan_ini';
 
-            if (customStart && customEnd) {
-                // Prioritas 1: Filter Custom Range (Modal Filter)
-                targetUrl.searchParams.set('start_date', customStart);
-                targetUrl.searchParams.set('end_date', customEnd);
-            } 
-            else if (filterMode === 'bulan_ini') {
+            if (filterMode === 'bulan_ini') {
                 const start = new Date(now.getFullYear(), now.getMonth(), 1);
                 const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 targetUrl.searchParams.set('start_date', fmt(start));
@@ -662,7 +611,7 @@
                 targetUrl.searchParams.set('end_date', fmt(end));
             
             } else if (filterMode.match(/^\d{4}-\d{2}$/)) { 
-                // Prioritas 3: Custom Month Picker (YYYY-MM)
+                // Format YYYY-MM (Picker)
                 const [y, m] = filterMode.split('-');
                 const year = parseInt(y);
                 const monthIndex = parseInt(m) - 1; 
@@ -670,21 +619,13 @@
                 const end = new Date(year, monthIndex + 1, 0);
                 targetUrl.searchParams.set('start_date', fmt(start));
                 targetUrl.searchParams.set('end_date', fmt(end));
-            } else if (filterMode === 'semua') {
-                // Tidak kirim parameter tanggal, biar API ambil semua
-            
-            }  else {
-                // Fallback ke Filter Range Manual (Start - End) dari Modal Filter Lanjutan
-                const customStart = document.getElementById('filter-start-date').value;
-                const customEnd = document.getElementById('filter-end-date').value;
-                if (customStart && customEnd) {
-                    targetUrl.searchParams.set('start_date', customStart);
-                    targetUrl.searchParams.set('end_date', customEnd);
-                }
             }
+            // Jika 'semua', tidak kirim parameter tanggal
 
-            // Tampilkan Loading
-            transactionListContainer.innerHTML = '<div class="transaction-row" style="justify-content: center; padding: 30px; color: #64748b;">Sedang memuat data...</div>';
+            // 3. EKSEKUSI FETCH
+            if(transactionListContainer) {
+                transactionListContainer.innerHTML = '<div class="transaction-row" style="justify-content: center; padding: 30px;">Sedang memuat data...</div>';
+            }
 
             try {
                 const response = await fetch(targetUrl.toString(), { headers: API_HEADERS_GET });
@@ -696,7 +637,6 @@
 
                 const jsonData = await response.json(); 
 
-                // Render Tabel
                 if (jsonData.pagination && jsonData.pagination.data) {
                     renderTransactionRows(jsonData.pagination.data);
                     renderPaginationLinks(jsonData.pagination.links);
@@ -704,15 +644,17 @@
                     renderTransactionRows([]);
                 }
 
-                // Render Saldo
                 if (jsonData.summary) {
-                    // Pastikan fungsi ini ada (lihat di bawah)
-                    updateFooterSummary(jsonData.summary); 
+                    if (typeof updateFooterSummary === 'function') {
+                        updateFooterSummary(jsonData.summary);
+                    }
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                transactionListContainer.innerHTML = '<div class="transaction-row" style="color:red; justify-content:center; padding:30px;">Gagal memuat data.</div>';
+                if(transactionListContainer) {
+                    transactionListContainer.innerHTML = '<div class="transaction-row" style="color:red; justify-content:center; padding:30px;">Gagal memuat data.</div>';
+                }
             }
         }
 
@@ -790,7 +732,13 @@
             const selected = document.querySelectorAll('.check-item:checked');
             if (selected.length === 0) return;
 
-            if (!confirm(`Yakin ingin menghapus ${selected.length} transaksi terpilih?`)) return;
+            const confirmed = await showDialog(
+                `Yakin ingin menghapus ${selected.length} transaksi terpilih?`,
+                'warning',
+                true
+            );
+
+            if (!confirmed) return;
 
             // Kumpulkan ID
             const ids = Array.from(selected).map(cb => cb.dataset.id);
@@ -808,7 +756,9 @@
                 } catch(e) { console.error(e); }
             }
 
-            alert(`Berhasil menghapus ${successCount} transaksi.`);
+            // Tampilkan notifikasi berhasil dengan icon ceklis
+            await showDialog(`Berhasil menghapus ${successCount} transaksi.`, 'success', false);
+            
             fetchTransactions(); // Refresh Tabel
             document.getElementById('bulk-delete-btn').style.display = 'none';
             checkAllBtn.checked = false;
@@ -816,13 +766,13 @@
 
         function escapeHtml(text) {
         if (!text) return text;
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         // --- FUNGSI BUKA MODAL EDIT (LOGIKA PENTING) ---
         window.openEditModal = function(tx) {
@@ -835,7 +785,7 @@
             document.getElementById('modal-tx-id').value = tx.id;
             
             // 3. Isi Input Biasa
-            document.getElementById('modal-tx-jumlah').value = parseInt(tx.jumlah); // Hapus .00
+            document.getElementById('modal-tx-jumlah').value = formatNominal(tx.jumlah.toString());
             document.getElementById('modal-tx-catatan').value = tx.catatan || '';
 
             // 4. Isi Tanggal (Format Harus YYYY-MM-DDTHH:mm)
@@ -901,12 +851,26 @@
                 const isPemasukan = category.tipe === 'pemasukan';
                 const amountClass = isPemasukan ? 'text-green' : 'text-red';
                 const amountSign = isPemasukan ? '+' : '-';
-                const iconBg = isPemasukan ? 'bg-green-light' : 'bg-blue-light'; 
                 
-                const iconClass = category.ikon || 'fa-solid fa-question';
-                let iconHtml = iconClass.includes('.') 
-                    ? `<img src="{{ asset('icons') }}/${iconClass}" alt="icon" style="width:24px; height:24px; object-fit:contain;">`
-                    : `<i class="${iconClass}"></i>`;
+                // Tentukan shape class berdasarkan tipe
+                const shapeClass = isPemasukan ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
+                
+                // Logika icon (gambar atau FontAwesome)
+                let iconHtml = '';
+                if (category.ikon && (category.ikon.includes('.png') || category.ikon.includes('.jpg') || category.ikon.includes('.svg') || category.ikon.includes('.jpeg'))) {
+                    // Render sebagai IMAGE
+                    // Icon path bisa berupa "pengeluaran/Button.png" atau "Button.png"
+                    let iconPath = category.ikon;
+                    if (!iconPath.includes('/')) {
+                        iconPath = `${category.tipe}/${iconPath}`;
+                    }
+                    const iconUrl = `{{ asset('icons') }}/${iconPath}`;
+                    iconHtml = `<img src="${iconUrl}" alt="icon" style="width:24px; height:24px; object-fit:contain;">`;
+                } else {
+                    // Render sebagai FontAwesome (Default)
+                    const iconClass = category.ikon || 'fa-solid fa-question';
+                    iconHtml = `<i class="${iconClass}"></i>`;
+                }
 
                 const safeCatatan = escapeHtml(tx.catatan || '-');
                 const safeNamaKategori = category.nama_kategori 
@@ -922,7 +886,7 @@
                     </div>
                     
                     <div class="cell-kategori">
-                        <span class="icon-wrapper ${iconBg}">${iconHtml}</span>
+                        <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
                         ${safeNamaKategori}
                     </div>
                     
@@ -1023,6 +987,26 @@
             }
         }
 
+        // --- EVENT LISTENER UNTUK BUKA/TUTUP DROPDOWN ---
+        // Tambahkan kode ini di dalam DOMContentLoaded (di bawah populateCategoryDropdown)
+        const catDropdown = document.getElementById('category-dropdown');
+        const catTrigger = document.getElementById('category-dropdown-btn');
+
+        // 1. Toggle Buka/Tutup
+        if (catTrigger) {
+            catTrigger.addEventListener('click', function(e) {
+                e.stopPropagation(); // Cegah event bubbling
+                catDropdown.classList.toggle('active');
+            });
+        }
+
+        // 2. Tutup jika klik di luar
+        document.addEventListener('click', function(e) {
+            if (catDropdown && !catDropdown.contains(e.target)) {
+                catDropdown.classList.remove('active');
+            }
+        });
+
         // --- 6. [CREATE] Fungsi Buka Modal Transaksi ---
         openAddTxBtn.addEventListener('click', function() {
             txForm.reset();
@@ -1031,16 +1015,16 @@
             // [LOGIKA BARU: DETEKSI JAM LOKAL USER]
             const now = new Date();
             
-            // Menggeser waktu UTC ke waktu Lokal User (WIB/WITA/WIT)
-            // getTimezoneOffset() mengembalikan selisih menit (WIB = -420)
-            // Kita kurangi negatif, jadinya ditambah.
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            // Trik untuk mengubah waktu menjadi format input datetime-local (YYYY-MM-DDTHH:MM)
+            // tanpa terpengaruh konversi UTC browser.
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
             
-            // Format ke string ISO: "2025-11-24T14:05"
-            // slice(0, 16) membuang detik dan zona waktu di belakang
-            const currentLocalTime = now.toISOString().slice(0, 16);
+            const currentLocalTime = `${year}-${month}-${day}T${hours}:${minutes}`;
             
-            // Masukkan ke input
             document.getElementById('modal-tx-tanggal').value = currentLocalTime; 
             
             setActiveTab(txModalTabs, txTipeHidden, 'pengeluaran'); 
@@ -1056,6 +1040,19 @@
 
             const formData = new FormData(txForm);
             const data = Object.fromEntries(formData.entries());
+
+            // Clean format nominal: hapus titik (ribuan) dan ganti koma dengan titik (desimal)
+            const cleanJumlah = data.jumlah.replace(/\./g, '').replace(',', '.');
+            const jumlah = parseFloat(cleanJumlah);
+            
+            // Validasi jumlah (maksimal 15 digit = 999999999999999)
+            if (isNaN(jumlah) || jumlah < 0 || jumlah > 999999999999999) {
+                txMessage.textContent = 'Error: Nominal harus antara 0 hingga Rp 999.999.999.999.999';
+                return;
+            }
+            
+            // Update data dengan nilai clean
+            data.jumlah = cleanJumlah;
 
             // Cek apakah ada ID? Jika ada = Edit, Jika tidak = Baru
             const id = document.getElementById('modal-tx-id').value;
@@ -1095,6 +1092,12 @@
             }
         });
 
+        // --- Event Listener untuk Input Nominal dengan Comma Formatting ---
+        const nominalInput = document.getElementById('modal-tx-jumlah');
+        nominalInput.addEventListener('input', function() {
+            this.value = formatNominal(this.value);
+        });
+
         // --- 8. [CREATE Kategori] Buka Modal Kategori ---
         openKategoriModalLink.addEventListener('click', function(e) {
             e.preventDefault();
@@ -1106,6 +1109,10 @@
             const currentTxTipe = txTipeHidden.value;
             
             setActiveTab(katModalTabs, katTipeHidden, currentTxTipe);
+            
+            // Render icon grid sesuai dengan tipe yang aktif
+            renderIconGrid(currentTxTipe);
+            
             katModalOverlay.style.display = 'flex';
         });
 
@@ -1116,6 +1123,12 @@
 
             const formData = new FormData(katForm);
             const data = Object.fromEntries(formData.entries());
+
+            // Hapus prefix type dari ikon jika ada (ambil hanya filename)
+            // Input value: "pengeluaran/Button.png" -> kirim: "Button.png"
+            if (data.ikon && data.ikon.includes('/')) {
+                data.ikon = data.ikon.split('/')[1];
+            }
 
             try {
                 const response = await fetch(API_CATEGORIES, {
@@ -1187,6 +1200,8 @@
             tab.addEventListener('click', () => {
                 const tipe = tab.dataset.katTabType;
                 setActiveTab(katModalTabs, katTipeHidden, tipe);
+                // Render icon grid saat tab diubah
+                renderIconGrid(tipe);
             });
         });
         
@@ -1225,7 +1240,7 @@
             // Cek apakah elemen ada sebelum diisi (Mencegah Error Null)
             if (elMasuk) elMasuk.textContent = formatRupiah(summary.total_pemasukan);
             if (elKeluar) elKeluar.textContent = formatRupiah(summary.total_pengeluaran);
-            if (saldoDisplay) saldoDisplay.textContent = formatRupiah(summary.laba);
+            if (saldoDisplay) saldoDisplay.textContent = formatRupiah(summary.saldo_real);
             
             if (elLaba) {
                 elLaba.textContent = formatRupiah(summary.laba);

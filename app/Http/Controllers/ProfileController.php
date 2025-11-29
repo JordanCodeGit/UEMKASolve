@@ -73,7 +73,7 @@
 
             // 1. Tentukan Aturan Validasi Dasar
             $rules = [
-                'name' => 'required|string|max:255',
+                'name' => 'required|string|max:32',
                 'email' => 'required|email|max:255|unique:users,email,' . $user->id,
                 'password' => 'nullable|min:8|confirmed',
             ];
@@ -93,7 +93,6 @@
 
             // 3. Update Nama & Email
             $user->name = $request->name;
-            $user->email = $request->email;
 
             // 4. Update Password
             if ($request->filled('password')) {
