@@ -162,8 +162,58 @@
     <!-- GRAFIK KAS -->
     @if($sections['grafik'] ?? false)
         <div class="section">
-            <div class="section-title">Grafik Kas</div>
-            <p style="padding: 20px; text-align: center; color: #666;">Grafik akan ditampilkan dalam versi interaktif di dashboard</p>
+            <div class="section-title">Grafik Kas - Analisis Transaksi</div>
+            
+            <!-- Line Chart -->
+            @if(!empty($lineChartBase64))
+                <div style="margin-bottom: 30px; text-align: center;">
+                    <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #333;">Tren Pemasukan vs Pengeluaran Harian</h4>
+                    <img src="{{ $lineChartBase64 }}" alt="Grafik Kas Harian" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+                </div>
+            @endif
+            
+            <!-- Doughnut Chart -->
+            @if(!empty($doughnutChartBase64))
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #333;">Distribusi Persentase Kategori</h4>
+                    <img src="{{ $doughnutChartBase64 }}" alt="Distribusi Kategori" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+                </div>
+            @endif
+
+            <!-- Breakdown Table -->
+            @if(!empty($categoryBreakdown))
+                <div style="margin-top: 20px;">
+                    <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #333;">Detail Breakdown Kategori</h4>
+                    <table class="table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Kategori</th>
+                                <th style="width: 15%; text-align: center;">Tipe</th>
+                                <th style="width: 15%; text-align: center;">Jumlah</th>
+                                <th style="width: 40%; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($categoryBreakdown as $category)
+                                <tr>
+                                    <td>{{ $category['nama'] }}</td>
+                                    <td style="text-align: center; font-size: 11px;">
+                                        <span style="padding: 2px 6px; border-radius: 3px; {{ $category['tipe'] === 'pemasukan' ? 'background-color: #d4edda; color: #155724;' : 'background-color: #f8d7da; color: #721c24;' }}">
+                                            {{ ucfirst($category['tipe']) }}
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center;">{{ $category['count'] }}</td>
+                                    <td style="text-align: right; {{ $category['tipe'] === 'pemasukan' ? 'color: #4caf50; font-weight: bold;' : 'color: #f44336; font-weight: bold;' }}">
+                                        {{ $category['tipe'] === 'pemasukan' ? '+' : '-' }} Rp {{ number_format($category['total'], 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p style="padding: 20px; text-align: center; color: #666;">Tidak ada data kategori untuk periode ini.</p>
+            @endif
         </div>
     @endif
 

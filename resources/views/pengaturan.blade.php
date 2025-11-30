@@ -4,6 +4,59 @@
 
 @section('content')
 
+<style>
+    /* Responsive untuk Pengaturan - Desktop */
+    @media (max-width: 1024px) {
+        .profile-header-container {
+            padding: 30px 20px;
+        }
+        
+        .profile-header-content {
+            gap: 15px;
+            padding: 0 15px;
+        }
+        
+        .profile-avatar-placeholder {
+            width: 150px;
+            height: 150px;
+        }
+    }
+    
+    /* Responsive untuk Pengaturan - Tablet */
+    @media (max-width: 768px) {
+        .content-card.settings-card {
+            margin: 0;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+            background-color: #f5f7fa;
+        }
+        
+        .settings-content-card {
+            padding: 0 !important;
+            border-radius: 0;
+        }
+        
+        .profile-header-content {
+            top: -30px;
+            right: 0;
+        }
+    }
+    
+    /* Responsive untuk Pengaturan - Mobile */
+    @media (max-width: 480px) {
+        .content-card.settings-card {
+            margin: 0;
+            border-radius: 0;
+            padding: 0;
+        }
+        
+        .settings-content-card {
+            padding: 0 !important;
+        }
+    }
+</style>
+
 <div class="content-card settings-card">
 
     <div class="profile-header-container">
@@ -132,7 +185,7 @@
             @if(Auth::user()->password !== null)
                 <div class="form-group-row">
                     <label for="current_password">Password Saat Ini</label>
-                    <div class="password-wrapper"> 
+                    <div class="password-wrapper-settings"> 
                         <input type="password" id="current_password" name="current_password" placeholder="••••••••">
                         <i class="fa-solid fa-eye password-toggle-icon"></i>
                     </div>
@@ -145,7 +198,7 @@
             
             <div class="form-group-row">
                 <label for="password">Password Baru</label>
-                <div class="password-wrapper">
+                <div class="password-wrapper-settings">
                     <input type="password" id="password" name="password" placeholder="••••••••">
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>
@@ -153,7 +206,7 @@
 
             <div class="form-group-row">
                 <label for="password_confirmation">Konfirmasi Password Baru</label>
-                <div class="password-wrapper">
+                <div class="password-wrapper-settings">
                     <input type="password" id="password_confirmation" name="password_confirmation" placeholder="••••••••">
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>

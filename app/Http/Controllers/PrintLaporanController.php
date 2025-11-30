@@ -82,6 +82,70 @@ class PrintLaporanController extends Controller
             // Get recent transactions (limit to 10)
             $transactions = $allTransactions->take(10);
 
+            // Calculate breakdown by category for Grafik Kas
+            $categoryBreakdown = [];
+            $categoryLabels = [];
+            $categoryPemasukanData = [];
+            $categoryPengeluaranData = [];
+            
+            foreach ($allTransactions as $tx) {
+                if (!$tx->category) continue;
+                
+                $categoryName = $tx->category->nama_kategori;
+                $categoryType = $tx->category->tipe;
+                
+                if (!isset($categoryBreakdown[$categoryName])) {
+                    $categoryBreakdown[$categoryName] = [
+                        'nama' => $categoryName,
+                        'tipe' => $categoryType,
+                        'total' => 0,
+                        'count' => 0
+                    ];
+                }
+                
+                $categoryBreakdown[$categoryName]['total'] += (float)$tx->jumlah;
+                $categoryBreakdown[$categoryName]['count'] += 1;
+            }
+
+            // Prepare chart data (daily breakdown)
+            $dailyData = [];
+            foreach ($allTransactions as $tx) {
+                $date = $tx->tanggal_transaksi->format('d');
+                
+                if (!isset($dailyData[$date])) {
+                    $dailyData[$date] = [
+                        'pemasukan' => 0,
+                        'pengeluaran' => 0
+                    ];
+                }
+                
+                if ($tx->category && $tx->category->tipe === 'pemasukan') {
+                    $dailyData[$date]['pemasukan'] += (float)$tx->jumlah;
+                } else {
+                    $dailyData[$date]['pengeluaran'] += (float)$tx->jumlah;
+                }
+            }
+
+            // Sort by date
+            ksort($dailyData);
+            
+            $chartLabels = array_keys($dailyData);
+            $chartPemasukanValues = [];
+            $chartPengeluaranValues = [];
+            
+            foreach ($dailyData as $data) {
+                $chartPemasukanValues[] = $data['pemasukan'];
+                $chartPengeluaranValues[] = $data['pengeluaran'];
+            }
+
+            // Generate chart URLs using QuickChart API
+            $lineChartUrl = $this->generateLineChartUrl($chartLabels, $chartPemasukanValues, $chartPengeluaranValues);
+            $doughnutChartUrl = $this->generateDoughnutChartUrl($categoryBreakdown);
+            
+            // Download dan convert chart images to base64
+            $lineChartBase64 = $this->getChartAsBase64($lineChartUrl);
+            $doughnutChartBase64 = $this->getChartAsBase64($doughnutChartUrl);
+
             $summary = [
                 'saldo_real' => $saldoTotal,
                 'total_pemasukan' => $pemasukanPeriod,
@@ -96,6 +160,9 @@ class PrintLaporanController extends Controller
                 'sections' => $sections,
                 'summary' => $summary,
                 'transactions' => $transactions,
+                'categoryBreakdown' => $categoryBreakdown,
+                'lineChartBase64' => $lineChartBase64,
+                'doughnutChartBase64' => $doughnutChartBase64,
                 'company' => [
                     'name' => $user->perusahaan?->nama_perusahaan ?? 'Usaha Saya',
                 ]
@@ -123,4 +190,133 @@ class PrintLaporanController extends Controller
             return response()->json(['error' => 'Failed to generate PDF: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Generate Line Chart URL using QuickChart API
+     */
+    private function generateLineChartUrl($labels, $pemasukanData, $pengeluaranData)
+    {
+        // Validate and convert to arrays
+        if (!is_array($labels)) {
+            $labels = [];
+        }
+        if (!is_array($pemasukanData)) {
+            $pemasukanData = [];
+        }
+        if (!is_array($pengeluaranData)) {
+            $pengeluaranData = [];
+        }
+
+        // Build QuickChart Chart.js config
+        $chartConfig = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Pemasukan',
+                        'data' => $pemasukanData,
+                        'borderColor' => '#4caf50',
+                        'backgroundColor' => 'rgba(76, 175, 80, 0.1)',
+                        'borderWidth' => 2,
+                        'tension' => 0.4,
+                        'fill' => true
+                    ],
+                    [
+                        'label' => 'Pengeluaran',
+                        'data' => $pengeluaranData,
+                        'borderColor' => '#f44336',
+                        'backgroundColor' => 'rgba(244, 67, 54, 0.1)',
+                        'borderWidth' => 2,
+                        'tension' => 0.4,
+                        'fill' => true
+                    ]
+                ]
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => true,
+                'plugins' => [
+                    'legend' => [
+                        'position' => 'top'
+                    ]
+                ],
+                'scales' => [
+                    'y' => [
+                        'beginAtZero' => true
+                    ]
+                ]
+            ]
+        ];
+
+        $encodedConfig = urlencode(json_encode($chartConfig));
+        return "https://quickchart.io/chart?c={$encodedConfig}&w=800&h=400";
+    }
+
+    /**
+     * Generate Doughnut Chart URL using QuickChart API
+     */
+    private function generateDoughnutChartUrl($categoryBreakdown)
+    {
+        $labels = [];
+        $data = [];
+        $colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+        $backgroundColors = [];
+
+        $colorIndex = 0;
+        foreach ($categoryBreakdown as $category) {
+            $labels[] = $category['nama'];
+            $data[] = $category['total'];
+            $backgroundColors[] = $colors[$colorIndex % count($colors)];
+            $colorIndex++;
+        }
+
+        // Build QuickChart Chart.js config
+        $chartConfig = [
+            'type' => 'doughnut',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'data' => $data,
+                        'backgroundColor' => $backgroundColors,
+                        'borderColor' => '#fff',
+                        'borderWidth' => 2
+                    ]
+                ]
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => true,
+                'plugins' => [
+                    'legend' => [
+                        'position' => 'bottom'
+                    ]
+                ]
+            ]
+        ];
+
+        $encodedConfig = urlencode(json_encode($chartConfig));
+        return "https://quickchart.io/chart?c={$encodedConfig}&w=600&h=400";
+    }
+
+    /**
+     * Download chart image dari URL dan convert ke base64
+     */
+    private function getChartAsBase64($chartUrl)
+    {
+        try {
+            $imageContent = @file_get_contents($chartUrl);
+            if ($imageContent === false) {
+                \Log::warning('Failed to download chart from: ' . $chartUrl);
+                return null;
+            }
+            
+            return 'data:image/png;base64,' . base64_encode($imageContent);
+        } catch (\Exception $e) {
+            \Log::error('Error converting chart to base64: ' . $e->getMessage());
+            return null;
+        }
+    }
 }
+

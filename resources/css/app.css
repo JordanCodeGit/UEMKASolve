@@ -3537,8 +3537,16 @@ textarea.form-input-modal {
     width: 100% !important;
 }
 
+/* Password wrapper khusus untuk halaman Pengaturan (48% width dalam form-group-row) */
+.password-wrapper-settings {
+    position: relative !important; /* Jangkar */
+    display: block !important;     /* JANGAN flex, harus block agar input full */
+    width: 48% !important;
+}
+
 /* 2. INPUT: Paksa Lebar Penuh & Box Sizing */
-.password-wrapper input {
+.password-wrapper input,
+.password-wrapper-settings input {
     width: 100% !important;
     box-sizing: border-box !important; /* Agar padding masuk dalam hitungan lebar */
     
@@ -3554,7 +3562,8 @@ textarea.form-input-modal {
     height: auto;
 }
 
-.password-wrapper input:focus {
+.password-wrapper input:focus,
+.password-wrapper-settings input:focus {
     outline: none;
     border-color: #007BFF;
 }
@@ -4524,6 +4533,8 @@ textarea.form-input-modal {
     font-weight: 500;
     color: var(--text-primary);
 }
+
+
 
 
 
