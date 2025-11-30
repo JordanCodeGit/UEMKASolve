@@ -22,8 +22,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'], // Email wajib diisi dan formatnya benar
-            'password' => ['required', 'string'],      // Password wajib diisi
+            'email' => ['required', 'string', 'email'],      // Email wajib diisi dan formatnya benar
+            'password' => ['required', 'string'],            // Password wajib diisi
+            'remember' => ['nullable', 'boolean'],           // Remember me checkbox (opsional)
             // 'device_name' => ['required', 'string'], // Opsional: nama perangkat untuk token Sanctum
         ];
     }

@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\CheckCompanySetup::class,
+            // \App\Http\Middleware\CheckUserActivity::class, // TEMPORARILY DISABLED - Testing session persistence
         ]);
 
         // Middleware API (seperti throttle) biasanya sudah diatur di $middleware->api(...)

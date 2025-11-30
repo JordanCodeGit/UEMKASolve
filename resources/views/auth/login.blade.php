@@ -14,7 +14,10 @@
         </div>
         
         <div class="form-group">
-            <input type="password" name="password" id="password" placeholder="Password" required>
+            <div class="password-wrapper">
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <i class="fa-solid fa-eye password-toggle-icon"></i>
+            </div>
         </div>
         
         <div class="form-options">
@@ -71,6 +74,12 @@
             const formData = new FormData(loginForm);
             const data = Object.fromEntries(formData.entries());
 
+            // FIX: Convert checkbox value "on" ke boolean true/false
+            // Checkbox HTML: <input type="checkbox" name="remember">
+            // Ketika di-cek: formData.get('remember') = "on"
+            // Ketika tidak: formData.get('remember') = undefined
+            data.remember = data.remember === 'on' ? true : false;
+
             // [PERBAIKAN UTAMA DI SINI] 
             // 1. Gunakan route('login.process') yang ada di web.php (bukan /api/login)
             // 2. Tambahkan Header 'X-CSRF-TOKEN' (Wajib untuk form web Laravel)
@@ -120,6 +129,28 @@
                 // Reset Tombol
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Masuk';
+            });
+        });
+
+        // 4. TOGGLE PASSWORD VISIBILITY
+        document.querySelectorAll('.password-toggle-icon').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                
+                // Pastikan elemen yang ditemukan benar-benar INPUT
+                if (input && input.tagName === 'INPUT') {
+                    if (input.type === 'password') {
+                        // Password → Text (Buka mata)
+                        input.type = 'text';
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    } else {
+                        // Text → Password (Tutup mata)
+                        input.type = 'password';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    }
+                }
             });
         });
     });

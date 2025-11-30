@@ -43,6 +43,17 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
     return redirect(env('FRONTEND_URL', 'http://localhost:3000').'/email-verified');
 })->middleware(['signed'])->name('verification.verify');
 
+// ========== ACTIVITY TRACKING ==========
+// Route untuk update last activity (mencegah auto logout)
+Route::post('/update-activity', function (Request $request) {
+    if ($request->user()) {
+        // Middleware CheckUserActivity akan update cache otomatis
+        // Endpoint ini ada untuk explicit update dari frontend
+        return response()->json(['message' => 'Activity updated']);
+    }
+    return response()->json(['message' => 'Unauthorized'], 401);
+})->middleware(['auth:sanctum'])->name('activity.update');
+// =========================================
 
 // --- Rute lain yang butuh otentikasi masuk ke sini ---
 Route::middleware(['auth:sanctum'])->group(function () {

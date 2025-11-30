@@ -218,7 +218,7 @@
             }, 4000); // 4000 ms = 4 detik
         }
 
-        // --- 3. LOGIKA MATA PASSWORD (Opsional untuk Tab Akun nanti) ---
+        // --- 3. LOGIKA MATA PASSWORD (Toggle Eye Icon) ---
         document.querySelectorAll('.password-toggle-icon').forEach(icon => {
             icon.addEventListener('click', function() {
                 const input = this.previousElementSibling;
@@ -226,13 +226,15 @@
                 // Pastikan elemen yang ditemukan benar-benar INPUT
                 if (input && input.tagName === 'INPUT') {
                     if (input.type === 'password') {
+                        // Password → Text (Buka mata)
                         input.type = 'text';
-                        this.classList.remove('fa-eye-slash');
-                        this.classList.add('fa-eye');
-                    } else {
-                        input.type = 'password';
                         this.classList.remove('fa-eye');
                         this.classList.add('fa-eye-slash');
+                    } else {
+                        // Text → Password (Tutup mata)
+                        input.type = 'password';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
                     }
                 }
             });

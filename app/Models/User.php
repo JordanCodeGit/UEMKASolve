@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens; // Untuk Sanctum
 use Illuminate\Database\Eloquent\Relations\HasOne; // Import HasOne
+use App\Notifications\VerifyEmailNotification; // Import custom notification
 
 class User extends Authenticatable implements MustVerifyEmail // Implementasikan MustVerifyEmail
 {
@@ -56,5 +57,14 @@ class User extends Authenticatable implements MustVerifyEmail // Implementasikan
     {
         // User ini 'milik' (belongsTo) satu Perusahaan
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+    }
+
+    /**
+     * Send the email verification notification.
+     * Override untuk menggunakan custom notification
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 }

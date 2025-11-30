@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') - Uemkas</title>
     <link rel="icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/png">
@@ -129,6 +130,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const themeToggle = document.getElementById('theme-toggle');
+            if (!themeToggle) return; // Guard clause - exit jika element tidak ada
+            
             const body = document.body;
             const icon = themeToggle.querySelector('i');
 
@@ -136,8 +139,10 @@
             const currentTheme = localStorage.getItem('theme');
             if (currentTheme === 'dark') {
                 body.classList.add('dark-mode');
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
+                if (icon) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
             }
 
             // 2. Event listener untuk tombol
@@ -146,20 +151,27 @@
                 
                 if (body.classList.contains('dark-mode')) {
                     // Jika beralih ke Dark Mode
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
+                    if (icon) {
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                    }
                     localStorage.setItem('theme', 'dark'); // Simpan pilihan
                 } else {
                     // Jika beralih ke Light Mode
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
+                    if (icon) {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                    }
                     localStorage.setItem('theme', 'light'); // Simpan pilihan
                 }
             });
+
+            // ===== PROFILE & NOTIFICATION HANDLERS (Merged DOMContentLoaded) =====
         });
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- SETUP ELEMENTS ---
             const profileBtn = document.getElementById('profileTriggerBtn');
             const dropdownMenu = document.getElementById('headerDropdownMenu');
             const logoutBtn = document.getElementById('headerLogoutBtn');
@@ -184,15 +196,27 @@
                 else if (ua.indexOf('Android') > -1) os = 'Android';
                 else if (ua.indexOf('iPhone') > -1 || ua.indexOf('iPad') > -1) os = 'iOS';
 
-                // Detect Browser
-                if (ua.indexOf('Chrome') > -1 && ua.indexOf('Chromium') === -1 && ua.indexOf('Edge') === -1) browser = 'Google Chrome';
-                else if (ua.indexOf('Safari') > -1 && ua.indexOf('Chrome') === -1) browser = 'Safari';
+                // Detect Browser (Check Edge BEFORE Chrome untuk menghindari false positive)
+                if (ua.indexOf('Edg') > -1 || ua.indexOf('Edge') > -1) browser = 'Microsoft Edge';
                 else if (ua.indexOf('Firefox') > -1) browser = 'Mozilla Firefox';
-                else if (ua.indexOf('Edge') > -1 || ua.indexOf('Edg') > -1) browser = 'Microsoft Edge';
+                else if (ua.indexOf('Chrome') > -1 && ua.indexOf('Chromium') === -1) browser = 'Google Chrome';
+                else if (ua.indexOf('Safari') > -1) browser = 'Safari';
                 else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) browser = 'Opera';
                 else if (ua.indexOf('Trident') > -1) browser = 'Internet Explorer';
 
                 return { browser, os };
+            }
+
+            // ===== FUNGSI: SIMPAN & LOAD RIWAYAT LOGIN =====
+            function saveLoginHistory(loginData) {
+                let history = JSON.parse(localStorage.getItem('login_history')) || [];
+                history.unshift(loginData); // Tambah ke awal (newest first)
+                history = history.slice(0, 10); // Batas 10 riwayat terakhir
+                localStorage.setItem('login_history', JSON.stringify(history));
+            }
+
+            function getLoginHistory() {
+                return JSON.parse(localStorage.getItem('login_history')) || [];
             }
 
             // ===== 1. NOTIFIKASI LOGIN =====
@@ -208,41 +232,96 @@
                 minute: '2-digit'
             });
             
-            notifications.push({
-                type: 'login',
-                title: 'Login Berhasil',
-                desc: `${userName} login pada ${loginTime} menggunakan ${browser} di ${os}`,
-                time: 'Baru saja',
-                icon: '{{ asset("icons/notif_login.png") }}'
+            // Simpan ke riwayat login
+            const currentLogin = {
+                user: userName,
+                browser: browser,
+                os: os,
+                time: now.toISOString(),
+                timeDisplay: loginTime
+            };
+            saveLoginHistory(currentLogin);
+            
+            // Generate HTML untuk riwayat login (scrollable)
+            const loginHistory = getLoginHistory();
+            let historyHTML = `
+                <div style="max-height: 250px; overflow-y: auto; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                    <p style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 8px; padding: 0 8px;">📋 Riwayat Login Terbaru:</p>
+                    <div style="max-height: 200px; overflow-y: auto;">
+            `;
+            
+            loginHistory.forEach((login, idx) => {
+                const loginDate = new Date(login.time).toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const isCurrentLogin = idx === 0 ? '<span style="background: #22c55e; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: bold;">Baru</span>' : '';
+                
+                historyHTML += `
+                    <div style="padding: 8px; background: ${idx % 2 === 0 ? '#f8fafc' : 'white'}; border-left: 3px solid ${idx === 0 ? '#22c55e' : '#cbd5e1'}; margin-bottom: 6px; font-size: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                            <span style="font-weight: 600; color: #1e293b;">${login.user}</span>
+                            ${isCurrentLogin}
+                        </div>
+                        <div style="color: #64748b; font-size: 0.75rem;">
+                            <div>🌐 ${login.browser} • ${login.os}</div>
+                            <div style="margin-top: 2px;">📅 ${loginDate}</div>
+                        </div>
+                    </div>
+                `;
             });
-
-            // ===== 2. NOTIFIKASI H-7 SEBELUM AKHIR BULAN =====
+            
+            historyHTML += `
+                    </div>
+                </div>
+            `;
+            
+            // ===== CHECK MONTH-END STATUS =====
             const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysUntilMonthEnd = lastDayOfMonth - now.getDate();
             
-            if (daysUntilMonthEnd <= 7 && daysUntilMonthEnd >= 0) {
+            // ===== 1. NOTIFIKASI H-3 SEBELUM AKHIR BULAN (PRIORITAS TINGGI - DI ATAS) =====
+            if (daysUntilMonthEnd <= 3 && daysUntilMonthEnd >= 0) {
                 const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
                 const currentMonth = monthNames[now.getMonth()];
+                const daysLabel = daysUntilMonthEnd === 0 ? 'hari ini (hari terakhir bulan)' : `dalam ${daysUntilMonthEnd} hari`;
                 
                 notifications.push({
                     type: 'print',
                     title: 'Waktunya Cetak Buku Kas!',
-                    desc: `Periode ${currentMonth} akan berakhir dalam ${daysUntilMonthEnd} hari. Segera cetak laporan Anda.`,
+                    desc: `Periode ${currentMonth} akan berakhir ${daysLabel}. Segera cetak laporan Anda.`,
                     time: 'Pengingat',
                     icon: '<i class="fa-solid fa-print"></i>'
                 });
             }
 
+            // ===== 2. NOTIFIKASI LOGIN =====
+            notifications.push({
+                type: 'login',
+                title: 'Login Berhasil',
+                desc: `Semua riwayat login Anda tersimpan di bawah.`,
+                descExtended: historyHTML,
+                time: 'Baru saja',
+                icon: '{{ asset("icons/notif_login.png") }}'
+            });
+
             // ===== CHECK BADGE STATE FROM LOCALSTORAGE =====
-            const notifViewed = sessionStorage.getItem('notif_viewed');
-            if (notifViewed !== 'true') {
-                notifBadge.style.display = 'block';
-            } else {
-                notifBadge.style.display = 'none';
+            if (notifBadge) {
+                const notifViewed = sessionStorage.getItem('notif_viewed');
+                if (notifViewed !== 'true') {
+                    notifBadge.style.display = 'block';
+                } else {
+                    notifBadge.style.display = 'none';
+                }
             }
 
             // --- RENDER NOTIFIKASI ---
             function renderNotifications() {
+                if (!notifList) return; // Guard clause
+                
                 notifList.innerHTML = '';
                 
                 if (notifications.length === 0) {
@@ -265,6 +344,9 @@
                         iconHTML = notif.icon;
                     }
                     
+                    // Jika ada riwayat login, tampilkan dengan scrollable area
+                    const extendedContent = notif.descExtended ? `${notif.descExtended}` : '';
+                    
                     item.innerHTML = `
                         <div class="notif-icon ${iconClass}">
                             ${iconHTML}
@@ -272,6 +354,7 @@
                         <div class="notif-content">
                             <p class="notif-title">${notif.title}</p>
                             <p class="notif-desc">${notif.desc}</p>
+                            ${extendedContent}
                             <span class="notif-time">${notif.time}</span>
                         </div>
                     `;
@@ -282,86 +365,92 @@
             // --- EVENT LISTENERS ---
             
             // Toggle Menu & Mark as Viewed
-            notifBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                notifMenu.style.display = notifMenu.style.display === 'block' ? 'none' : 'block';
-                
-                // Mark as viewed - hide badge
-                if (notifMenu.style.display === 'block') {
-                    sessionStorage.setItem('notif_viewed', 'true');
-                    notifBadge.style.display = 'none';
-                }
-            });
+            if (notifBtn && notifMenu) {
+                notifBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifMenu.style.display = notifMenu.style.display === 'block' ? 'none' : 'block';
+                    
+                    // Mark as viewed - hide badge
+                    if (notifMenu.style.display === 'block') {
+                        sessionStorage.setItem('notif_viewed', 'true');
+                        notifBadge.style.display = 'none';
+                    }
+                });
+            }
 
             // Close Outside Click
-            document.addEventListener('click', (e) => {
-                if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
-                    notifMenu.style.display = 'none';
-                }
-            });
+            if (notifBtn && notifMenu) {
+                document.addEventListener('click', (e) => {
+                    if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
+                        notifMenu.style.display = 'none';
+                    }
+                });
+            }
 
             // Clear Notif (Hanya Visual)
             window.clearNotifications = function() {
                 notifications.length = 0; // Kosongkan array
                 renderNotifications();
                 sessionStorage.setItem('notif_viewed', 'true');
-                notifBadge.style.display = 'none';
+                if (notifBadge) notifBadge.style.display = 'none';
             };
 
             // Render notifikasi saat pertama kali load
-            renderNotifications();
+            if (notifList) renderNotifications();
 
             // 1. Toggle Menu saat klik Profil
             if (profileBtn) {
                 profileBtn.addEventListener('click', function(e) {
                     e.stopPropagation(); // Cegah event bubbling
-                    this.classList.toggle('active');
+                    profileBtn.classList.toggle('active'); // Toggle class active
                 });
             }
 
             // 2. Tutup menu jika klik di luar
             document.addEventListener('click', function(e) {
                 if (profileBtn && !profileBtn.contains(e.target)) {
-                    profileBtn.classList.remove('active');
+                    profileBtn.classList.remove('active'); // Hapus class active
                 }
             });
 
-            // 3. LOGIKA LOGOUT (API Request)
+            // 3. LOGIKA LOGOUT (Form Submission - bukan AJAX)
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     e.stopPropagation();
 
                     // UI Loading
-                    const originalText = this.innerHTML;
                     this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Keluar...</span>';
                     this.style.pointerEvents = 'none'; // Cegah klik ganda
 
-                    const token = localStorage.getItem('auth_token');
-
-                    try {
-                        // Panggil Route Logout
-                        // Pastikan route '/logout' di web.php mengarah ke AuthController@logout
-                        await fetch('{{ url("/logout") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}', // Wajib untuk Web Route
-                                'Authorization': 'Bearer ' + token      // Wajib untuk hapus Token API
-                            }
-                        });
-                    } catch (error) {
-                        console.error("Logout error:", error);
-                        // Tetap lanjutkan logout di browser meskipun API error
-                    } finally {
-                        // BERSIH-BERSIH TOKEN LOKAL
-                        localStorage.removeItem('auth_token');
-                        localStorage.removeItem('user_data');
-                        
-                        // Redirect ke Login
-                        window.location.href = '{{ route("login") }}';
-                    }
+                    // BERSIH-BERSIH TOKEN LOKAL DULU
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    localStorage.removeItem('login_history');
+                    sessionStorage.clear();
+                    
+                    // Buat form hidden untuk logout
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ url("/logout") }}';
+                    form.style.display = 'none';
+                    
+                    // Tambah CSRF token
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    
+                    form.appendChild(csrfToken);
+                    document.body.appendChild(form);
+                    
+                    // Submit form (server akan invalidate session & cookies)
+                    form.submit();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(form);
+                    }, 1000);
                 });
             }
         });

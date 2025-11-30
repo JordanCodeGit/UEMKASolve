@@ -1,13 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\CompanySetupController;
 use App\Http\Controllers\ProfileController; 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PrintLaporanController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 /*
 |--------------------------------------------------------------------------
 | Rute Publik (Boleh diakses tanpa login)
@@ -20,17 +25,59 @@ use App\Http\Controllers\Api\TransactionController;
 
 // Rute '/' (Root/Landing Page)
 Route::get('/', function () {
+    // SECURITY: Jika sudah login, redirect ke dashboard
+    if (Auth::check()) {
+        return redirect('/dashboard');
+    }
     return view('auth.login');
 });
 
 // Rute Halaman Auth Bawaan
 Route::get('/login', function () {
+    // SECURITY: Jika sudah login, redirect ke dashboard
+    if (Auth::check()) {
+        return redirect('/dashboard');
+    }
     return view('auth.login');
 })->name('login');
 
 Route::get('/register', function () {
+    // SECURITY: Jika sudah login, redirect ke dashboard
+    if (Auth::check()) {
+        return redirect('/dashboard');
+    }
     return view('auth.register');
 })->name('register');
+
+// ========== EMAIL VERIFICATION ROUTES ==========
+// Halaman verifikasi email berhasil
+Route::get('/email-verified', function () {
+    return view('auth.email-verified');
+})->name('email.verified');
+
+// Route untuk memverifikasi email (dari link di email)
+Route::get('/verify-email/{id}/{hash}', function (Request $request, $id, $hash) {
+    // Cari user berdasarkan ID
+    $user = User::findOrFail($id);
+    
+    // Validasi hash
+    if (sha1($user->getEmailForVerification()) !== $hash) {
+        return redirect('/login')->with('error', 'Link verifikasi tidak valid!');
+    }
+    
+    // Cek apakah sudah diverifikasi sebelumnya
+    if ($user->hasVerifiedEmail()) {
+        return redirect('/login')->with('success', 'Email sudah diverifikasi sebelumnya!');
+    }
+    
+    // Mark email sebagai verified
+    $user->markEmailAsVerified();
+    
+    Log::info('Email verified for user: ' . $user->email);
+    
+    return redirect('/email-verified');
+})->middleware(['signed'])->name('verification.verify');
+// ================================================
 
 // 1. Halaman Lupa Password
 Route::get('/lupa-password', function () {
@@ -54,6 +101,14 @@ Route::get('/auth/google-success', function () {
 
 Route::post('/login-process', [AuthController::class, 'login'])->name('login.process');
 Route::middleware('auth')->post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// ===== TESTING ROUTE (DELETE SESSION UNTUK TESTING) =====
+Route::get('/test-clear-session', function () {
+    Auth::guard('web')->logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/login')->with('success', 'Session cleared! Now you can test without login.');
+})->name('test.clear.session');
 
 
 /*
@@ -96,6 +151,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/kategori', function () {
         return view('kategori');
     })->name('kategori');
+
+    // Rute API untuk Dashboard Data (untuk print laporan)
+    Route::get('/api/dashboard-data', [DashboardController::class, 'getData'])->name('dashboard.data');
+
+    // Rute untuk generate PDF laporan
+    Route::post('/api/print-laporan', [PrintLaporanController::class, 'generatePdf'])->name('print.laporan');
 
     // 3. PERBAIKAN: Rute /pengaturan yang duplikat dihapus.
     // Ini adalah satu-satunya rute pengaturan yang benar.

@@ -25,12 +25,17 @@
             <input type="hidden" name="email" value="{{ $email }}">
 
             <div class="form-group">
-                <input type="password" name="password" id="password" placeholder="Password Baru" required>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="password" placeholder="Password Baru" required>
+                    <i class="fa-solid fa-eye password-toggle-icon"></i>
+                </div>
             </div>
             
             <div class="form-group">
-                <input type="password" name="password_confirmation" id="password_confirmation"
-                    placeholder="Konfirmasi Password Baru" required>
+                <div class="password-wrapper">
+                    <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Konfirmasi Password Baru" required>
+                    <i class="fa-solid fa-eye password-toggle-icon"></i>
+                </div>
             </div>
 
             {{-- Area pesan dihapus karena sudah diganti @if($errors) di atas --}}
@@ -43,3 +48,32 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // TOGGLE PASSWORD VISIBILITY
+        document.querySelectorAll('.password-toggle-icon').forEach(icon => {
+            icon.addEventListener('click', function(e) {
+                e.preventDefault();
+                const input = this.previousElementSibling;
+                
+                // Pastikan elemen yang ditemukan benar-benar INPUT
+                if (input && input.tagName === 'INPUT') {
+                    if (input.type === 'password') {
+                        // Password → Text (Buka mata)
+                        input.type = 'text';
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    } else {
+                        // Text → Password (Tutup mata)
+                        input.type = 'password';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    }
+                }
+            });
+        });
+    });
+</script>
+@endpush

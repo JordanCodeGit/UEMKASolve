@@ -21,6 +21,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -43,20 +44,31 @@ class AuthController extends Controller
                 'id_perusahaan' => null, // Biarkan kosong
             ]);
 
+            Log::info('User created for registration: ' . $user->email);
+
             // CATATAN: Kita TIDAK membuat perusahaan di sini.
             // Biarkan user membuatnya nanti lewat Pop-up di Dashboard.
 
+            // Trigger Registered event untuk mengirim email verifikasi
+            Log::info('Triggering Registered event for: ' . $user->email);
             event(new Registered($user));
 
             DB::commit();
 
+            Log::info('Registration successful for: ' . $user->email);
+
             return response()->json([
-                'message' => 'Registrasi berhasil. Silakan login.',
-                'user' => $user
+                'message' => 'Registrasi berhasil. Silakan cek email untuk verifikasi.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
             ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Registration error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat registrasi.',
                 // 'error' => $e->getMessage() // Uncomment untuk debug
@@ -66,10 +78,15 @@ class AuthController extends Controller
 
     /**
      * Handle Login Request
+     * 
+     * Remember Me Feature:
+     * - Jika checkbox 'remember' di-check: session berlaku 12 jam (720 menit)
+     * - Jika checkbox 'remember' tidak di-check: session berlaku selama browser terbuka
      */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
+        $rememberMe = $request->boolean('remember'); // Ambil nilai remember checkbox
 
         // 1. Cek Apakah User Ada?
         $user = User::where('email', $credentials['email'])->first();
@@ -89,10 +106,19 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // 3. Cek Email Verifikasi
+        if (!$user->email_verified_at) {
+            // Email belum diverifikasi
+            return response()->json([
+                'message' => 'Email belum diverifikasi. Silakan cek email Anda untuk link verifikasi.'
+            ], 403);
+        }
+
         // --- JIKA LULUS ---
         
-        // Login Session Web
-        Auth::login($user, $request->boolean('remember'));
+        // Login Session Web dengan Remember Me
+        Log::info('User login - Remember Me: ' . ($rememberMe ? 'YES (12 hours)' : 'NO (browser session)'));
+        Auth::login($user, $rememberMe); // True = remember me selama 12 jam, False = session browser only
         $request->session()->regenerate();
 
         // Buat Token API
@@ -168,11 +194,14 @@ class AuthController extends Controller
     /**
      * Handle user logout request.
      */
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request)
     {
-        // Hapus token API
+        // Hapus token API (jika ada)
         if ($request->user()) {
-            $request->user()->currentAccessToken()->delete();
+            $token = $request->user()->currentAccessToken();
+            if ($token) {
+                $token->delete();
+            }
         }
 
         // Hapus Session Web
@@ -180,7 +209,13 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logout berhasil.'], 200);
+        // Jika request adalah AJAX/JSON, return JSON response
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Logout berhasil.'], 200);
+        }
+
+        // Jika request normal, redirect ke login
+        return redirect()->route('login')->with('success', 'Logout berhasil.');
     }
 
     // --- Forgot & Reset Password (Tidak Berubah) ---

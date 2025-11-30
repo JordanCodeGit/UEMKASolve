@@ -273,6 +273,60 @@
     </div>
 </div>
 
+<!-- Modal Print Laporan Keuangan -->
+<div class="modal-overlay" id="print-laporan-overlay" style="display: none;">
+    <div class="modal-box" style="max-width: 550px; max-height: 90vh; overflow-y: auto;">
+        
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="{{ asset('icons/print_icon.png') }}" alt="Print" style="width: 24px; height: 24px;">
+                <h2>Preview Laporan Keuangan</h2>
+            </div>
+            <button class="modal-close-btn" data-close-modal="print-laporan-overlay">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            
+            <!-- Checkbox Options -->
+            <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="checkbox-ringkasan" name="ringkasan_keuangan" checked>
+                        <span style="font-weight: 500; color: #333;">Sertakan ringkasan keuangan</span>
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="checkbox-grafik" name="grafik_kas" checked>
+                        <span style="font-weight: 500; color: #333;">Sertakan grafik kas</span>
+                    </label>
+                </div>
+                
+                <div>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="checkbox-rincian" name="rincian_transaksi" checked>
+                        <span style="font-weight: 500; color: #333;">Sertakan rincian transaksi</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div id="print-preview-container" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: white; min-height: 300px;">
+                <!-- Preview akan di-render oleh JavaScript -->
+            </div>
+            
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary-modal" data-close-modal="print-laporan-overlay">Batal</button>
+            <button type="button" class="btn btn-primary-modal" id="btn-download-pdf">Download sebagai PDF</button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -319,10 +373,10 @@
     }
 
     // Fungsi Pilih Ikon untuk Modal Tambah Kategori
-    function selectIcon(element, filename) {
-        document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
-        element.classList.add('selected');
-        document.getElementById('modal-kat-ikon').value = filename;
+    function selectIconKat(element, filename) {
+        document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('modal-ikon').value = filename;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -361,10 +415,13 @@
         const API_CATEGORIES = '{{ url("/api/categories") }}';
         const API_DASHBOARD = '{{ url("/api/dashboard") }}';
         
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
         const API_HEADERS = {
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
         };
         const API_HEADERS_GET = {
             'Accept': 'application/json',
@@ -475,11 +532,10 @@
             const shapeClass = type === 'pemasukan' ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
             
             container.innerHTML = icons.map(icon => `
-                <div class="icon-option" onclick="selectIconKat(this, '${type}/${icon}')">
-                    <div class="icon-wrapper ${shapeClass}">
-                        <img src="${iconBasePath}/${type}/${icon}" alt="${icon}" 
-                            onerror="this.src='${iconBasePath}/netral/Button.png'">
-                    </div>
+                <div class="icon-option" onclick="selectIconKat(this, '${type}/${icon}')" data-neutral-icon="${iconBasePath}/netral/${icon}" data-type-icon="${iconBasePath}/${type}/${icon}">
+                    <img class="icon-type" src="${iconBasePath}/${type}/${icon}" alt="${icon}" 
+                        onerror="this.src='${iconBasePath}/netral/${icon}'">
+                    <img class="icon-neutral" src="${iconBasePath}/netral/${icon}" alt="${icon}" style="display: none;">
                 </div>
             `).join('');
         }
@@ -488,13 +544,213 @@
         function selectIconKat(element, iconValue) {
             // Hapus class active dari semua
             document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => {
+                const typeIcon = el.querySelector('.icon-type');
+                const neutralIcon = el.querySelector('.icon-neutral');
+                // Tampilkan icon tipe, sembunyikan icon netral
+                if (typeIcon) typeIcon.style.display = 'block';
+                if (neutralIcon) neutralIcon.style.display = 'none';
                 el.classList.remove('active');
             });
             // Tambah class active ke yang dipilih
             element.classList.add('active');
+            const typeIcon = element.querySelector('.icon-type');
+            const neutralIcon = element.querySelector('.icon-neutral');
+            // Sembunyikan icon tipe, tampilkan icon netral saat active
+            if (typeIcon) typeIcon.style.display = 'none';
+            if (neutralIcon) neutralIcon.style.display = 'block';
             // Set value
             document.getElementById('modal-ikon').value = iconValue;
         }
+        const btnCetakLaporan = document.getElementById('btn-cetak-laporan');
+        const printLaporanOverlay = document.getElementById('print-laporan-overlay');
+        const checkboxRingkasan = document.getElementById('checkbox-ringkasan');
+        const checkboxGrafik = document.getElementById('checkbox-grafik');
+        const checkboxRincian = document.getElementById('checkbox-rincian');
+        const previewContainer = document.getElementById('print-preview-container');
+        const btnDownloadPdf = document.getElementById('btn-download-pdf');
+        
+        // Store current print data
+        let currentPrintData = null;
+
+        // Open print modal and load data
+        btnCetakLaporan.addEventListener('click', async function() {
+            printLaporanOverlay.style.display = 'flex';
+            await loadPrintData();
+            updatePrintPreview();
+        });
+
+        // Fetch data for print preview
+        async function loadPrintData() {
+            try {
+                const response = await fetch('/api/dashboard-data', { headers: API_HEADERS_GET });
+                if (!response.ok) throw new Error('Failed to load dashboard data');
+                currentPrintData = await response.json();
+            } catch (error) {
+                console.error('Error loading print data:', error);
+                currentPrintData = {};
+            }
+        }
+
+        // Update preview based on checkbox selections
+        function updatePrintPreview() {
+            previewContainer.innerHTML = '';
+            
+            // Include Ringkasan Keuangan
+            if (checkboxRingkasan.checked && currentPrintData) {
+                previewContainer.innerHTML += renderRingkasanKeuangan();
+            }
+            
+            // Include Grafik Kas
+            if (checkboxGrafik.checked && currentPrintData) {
+                previewContainer.innerHTML += renderGrafikKas();
+            }
+            
+            // Include Rincian Transaksi
+            if (checkboxRincian.checked && currentPrintData) {
+                previewContainer.innerHTML += renderRincianTransaksi();
+            }
+
+            if (!checkboxRingkasan.checked && !checkboxGrafik.checked && !checkboxRincian.checked) {
+                previewContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">Pilih minimal satu opsi untuk ditampilkan</p>';
+            }
+        }
+
+        // Render Ringkasan Keuangan Section
+        function renderRingkasanKeuangan() {
+            const summary = currentPrintData.summary || {};
+            return `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #007BFF;">Ringkasan Keuangan</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="padding: 12px; background: #f0f7ff; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">SALDO</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #007BFF;">${formatRupiah(summary.saldo_real || 0)}</p>
+                        </div>
+                        <div style="padding: 12px; background: #e8f5e9; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">PEMASUKAN</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #4caf50;">${formatRupiah(summary.total_pemasukan || 0)}</p>
+                        </div>
+                        <div style="padding: 12px; background: #ffebee; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">PENGELUARAN</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #f44336;">${formatRupiah(summary.total_pengeluaran || 0)}</p>
+                        </div>
+                        <div style="padding: 12px; background: #fff3e0; border-radius: 6px;">
+                            <p style="margin: 0; font-size: 12px; color: #666;">LABA</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: bold; color: #ff9800;">${formatRupiah(summary.laba || 0)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render Grafik Kas Section
+        function renderGrafikKas() {
+            return `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #FF9800;">Grafik Kas</h3>
+                    <p style="color: #999; font-size: 13px; text-align: center; padding: 30px 0;">Grafik akan ditampilkan dalam PDF</p>
+                </div>
+            `;
+        }
+
+        // Render Rincian Transaksi Section (from recent transactions)
+        function renderRincianTransaksi() {
+            const transactions = currentPrintData.recent_transactions || [];
+            if (transactions.length === 0) {
+                return `<div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #4CAF50;">Rincian Transaksi</h3>
+                    <p style="color: #999; text-align: center;">Tidak ada transaksi</p>
+                </div>`;
+            }
+
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #4CAF50;">Rincian Transaksi</h3>
+                    <div style="font-size: 12px;">
+            `;
+
+            transactions.slice(0, 10).forEach(tx => {
+                const isIncome = tx.category?.tipe === 'pemasukan';
+                const color = isIncome ? '#4caf50' : '#f44336';
+                const sign = isIncome ? '+' : '-';
+                
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <div>
+                            <p style="margin: 0; font-weight: 500;">${tx.category?.nama_kategori || 'N/A'}</p>
+                            <p style="margin: 3px 0 0 0; color: #999; font-size: 11px;">${formatDate(tx.tanggal_transaksi)}</p>
+                        </div>
+                        <p style="margin: 0; font-weight: bold; color: ${color};">${sign}${formatRupiah(tx.jumlah)}</p>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            return html;
+        }
+
+        // Checkbox change listeners
+        checkboxRingkasan.addEventListener('change', updatePrintPreview);
+        checkboxGrafik.addEventListener('change', updatePrintPreview);
+        checkboxRincian.addEventListener('change', updatePrintPreview);
+
+        // Download PDF
+        btnDownloadPdf.addEventListener('click', async function() {
+            const selectedSections = {
+                ringkasan: checkboxRingkasan.checked,
+                grafik: checkboxGrafik.checked,
+                rincian: checkboxRincian.checked
+            };
+
+            if (!selectedSections.ringkasan && !selectedSections.grafik && !selectedSections.rincian) {
+                await showDialog('Pilih minimal satu opsi untuk di-print', 'warning');
+                return;
+            }
+
+            // Disable button and show loading
+            btnDownloadPdf.disabled = true;
+            btnDownloadPdf.textContent = 'Membuat PDF...';
+
+            try {
+                const response = await fetch('/api/print-laporan', {
+                    method: 'POST',
+                    headers: API_HEADERS,
+                    body: JSON.stringify({
+                        sections: selectedSections
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Laporan_Keuangan_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    // Close modal and show success
+                    closeModal(printLaporanOverlay);
+                    await showDialog('PDF berhasil diunduh', 'success');
+                } else {
+                    // Try to parse error message
+                    try {
+                        const errorData = await response.json();
+                        await showDialog('Gagal membuat PDF: ' + (errorData.error || 'Kesalahan tidak diketahui'), 'error');
+                    } catch (e) {
+                        await showDialog('Gagal membuat PDF: HTTP ' + response.status, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                await showDialog('Terjadi kesalahan saat membuat PDF: ' + error.message, 'error');
+            } finally {
+                btnDownloadPdf.disabled = false;
+                btnDownloadPdf.textContent = 'Download sebagai PDF';
+            }
+        });
 
         /*FUNGSI PILIH BULAN DARI DROPDOWN*/
         let currentMonthFilter = 'bulan_ini'; 
@@ -1124,11 +1380,8 @@
             const formData = new FormData(katForm);
             const data = Object.fromEntries(formData.entries());
 
-            // Hapus prefix type dari ikon jika ada (ambil hanya filename)
-            // Input value: "pengeluaran/Button.png" -> kirim: "Button.png"
-            if (data.ikon && data.ikon.includes('/')) {
-                data.ikon = data.ikon.split('/')[1];
-            }
+            // Keep the full icon path (e.g., "pengeluaran/Button.png")
+            // This allows the display code to know which folder the icon is in
 
             try {
                 const response = await fetch(API_CATEGORIES, {

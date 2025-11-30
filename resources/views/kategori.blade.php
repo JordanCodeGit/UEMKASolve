@@ -324,7 +324,7 @@
             const container = document.getElementById('dynamic-icon-grid');
             if (container) {
                 container.querySelectorAll('.icon-option').forEach(el => {
-                    el.classList.remove('selected');
+                    el.classList.remove('active');
                 });
             }
             document.getElementById('modal-kat-ikon').value = '';
@@ -646,6 +646,21 @@
             
             // Reset input hidden
             document.getElementById('modal-kat-ikon').value = '';
+            
+            // --- Setup scroll event untuk menampilkan/menyembunyikan scrollbar ---
+            let scrollTimeout;
+            container.addEventListener('scroll', function() {
+                // Tambah class 'scrolling' saat user scroll
+                container.classList.add('scrolling');
+                
+                // Clear timeout sebelumnya
+                clearTimeout(scrollTimeout);
+                
+                // Hapus class 'scrolling' 1 detik setelah scroll berhenti
+                scrollTimeout = setTimeout(() => {
+                    container.classList.remove('scrolling');
+                }, 1000);
+            });
         }
 
         // --- Fungsi Pilih Icon ---
@@ -654,21 +669,21 @@
             
             // 1. Reset semua icon lain
             container.querySelectorAll('.icon-option').forEach(el => {
-                el.classList.remove('selected');
+                el.classList.remove('active');
                 const img = el.querySelector('img');
                 // Balikin ke folder asal (pemasukan/pengeluaran)
                 const originalFilename = img.dataset.filename;
                 img.src = `{{ asset('icons') }}/${type}/${originalFilename}`;
             });
 
-            // 2. Cari elemen dengan filename yang sesuai dan set sebagai selected
+            // 2. Cari elemen dengan filename yang sesuai dan set sebagai active
             const targetOption = Array.from(container.querySelectorAll('.icon-option')).find(el => {
                 const img = el.querySelector('img');
                 return img.dataset.filename === filename;
             });
 
             if (targetOption) {
-                targetOption.classList.add('selected');
+                targetOption.classList.add('active');
                 const activeImg = targetOption.querySelector('img');
                 // Gunakan folder 'netral' untuk icon putih/active
                 activeImg.src = `{{ asset('icons/netral') }}/${filename}`;

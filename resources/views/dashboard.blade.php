@@ -7,11 +7,13 @@
 <div class="summary-grid">
 
     <div class="summary-card summary-saldo">
-        <div class="icon-box icon-white">
-            <i class="fa-solid fa-wallet"></i>
-        </div>
         <div class="card-content">
-            <p>SALDO</p>
+            <div class="card-header">
+                <div class="icon-box icon-white">
+                    <img src="{{ asset('icons/saldo.png') }}" alt="Saldo" class="icon-img">
+                </div>
+                <p>SALDO</p>
+            </div>
             <h3 id="summary-saldo">Memuat...</h3>
         </div>
     </div>
@@ -20,15 +22,19 @@
         <div class="card-content">
             <div class="card-header">
                 <div class="icon-box icon-blue">
-                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <img src="{{ asset('icons/wallet.png') }}" alt="Pemasukan" class="icon-img">
                 </div>
-                <p>PEMASUKAN</p>
+                <p>Pemasukan</p>
             </div>
             <h3 id="summary-pemasukan">Memuat...</h3>
-            <span class="percentage-badge badge-green" id="summary-pemasukan-pct"></span>
+            <div class="percentage-badge badge-green" id="summary-pemasukan-pct">
+                <img class="pct-icon" id="summary-pemasukan-pct-icon" src="{{ asset('icons/upp_green.png') }}" alt="Trend">
+                <span id="summary-pemasukan-pct-text"></span>
+            </div>
         </div>
         <div class="card-trend-icon icon-green" id="summary-pemasukan-trend">
-            <i class="fa-solid fa-arrow-trend-up"></i>
+            <div class="trend-icon-bg trend-bg-blue"></div>
+            <img src="{{ asset('icons/up.png') }}" alt="Trend" class="trend-icon" id="summary-pemasukan-arrow">
         </div>
     </div>
 
@@ -36,15 +42,19 @@
         <div class="card-content">
             <div class="card-header">
                 <div class="icon-box icon-blue">
-                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <img src="{{ asset('icons/wallet.png') }}" alt="Pengeluaran" class="icon-img">
                 </div>
-                <p>PENGELUARAN</p>
+                <p>Pengeluaran</p>
             </div>
             <h3 id="summary-pengeluaran">Memuat...</h3>
-            <span class="percentage-badge badge-red" id="summary-pengeluaran-pct"></span>
+            <div class="percentage-badge badge-red" id="summary-pengeluaran-pct">
+                <img class="pct-icon" id="summary-pengeluaran-pct-icon" src="{{ asset('icons/upp_orange.png') }}" alt="Trend">
+                <span id="summary-pengeluaran-pct-text"></span>
+            </div>
         </div>
         <div class="card-trend-icon icon-red" id="summary-pengeluaran-trend">
-            <i class="fa-solid fa-arrow-trend-down"></i>
+            <div class="trend-icon-bg trend-bg-orange"></div>
+            <img src="{{ asset('icons/up_orange.png') }}" alt="Trend" class="trend-icon" id="summary-pengeluaran-arrow">
         </div>
     </div>
     
@@ -52,22 +62,26 @@
         <div class="card-content">
             <div class="card-header">
                 <div class="icon-box icon-blue">
-                    <i class="fa-solid fa-chart-line"></i>
+                    <img src="{{ asset('icons/money.png') }}" alt="Laba" class="icon-img">
                 </div>
-                <p>LABA</p>
+                <p>Laba</p>
             </div>
             <h3 id="summary-laba">Memuat...</h3>
-            <span class="percentage-badge badge-green" id="summary-laba-pct"></span>
+            <div class="percentage-badge badge-green" id="summary-laba-pct">
+                <img class="pct-icon" id="summary-laba-pct-icon" src="{{ asset('icons/upp_green.png') }}" alt="Trend">
+                <span id="summary-laba-pct-text"></span>
+            </div>
         </div>
         <div class="card-trend-icon icon-green" id="summary-laba-trend">
-            <i class="fa-solid fa-arrow-trend-up"></i>
+            <div class="trend-icon-bg trend-bg-blue"></div>
+            <img src="{{ asset('icons/up.png') }}" alt="Trend" class="trend-icon" id="summary-laba-arrow">
         </div>
     </div>
 </div>
 
 <div class="chart-grid">
     <div class="content-card">
-        <div class="card-header">
+        <div class="card-header card-header-grafik-kas">
             <div class="card-title-with-icon">
                 <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
                 <h3 class="card-title">Grafik Kas</h3>
@@ -77,8 +91,8 @@
         
                     <div class="dropdown-with-icon" id="dashboard-filter-wrapper" style="position: relative; display: inline-block;">
                         
-                        <div id="dashboard-filter-btn" class="dropdown-minimalis-grafik" style="min-width: 150px; justify-content: space-between; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); display: flex; align-items: center; cursor: pointer;">
-                            <i class="fa-solid fa-calendar" style="font-size: 14px; color: var(--text-secondary); margin-right: 6px;"></i>
+                        <div id="dashboard-filter-btn" class="dropdown-minimalis-grafik" style="min-width: 150px; justify-content: space-between; padding: 10px 14px; border: none; border-radius: 8px; background: var(--bg-primary); display: flex; align-items: center; cursor: pointer;">
+                            <img src="{{ asset('icons/kalendar.png') }}" alt="calendar" style="font-size: 14px; color: var(--text-secondary); margin-right: 6px; width: 16px; height: 16px;">
                             <span style="font-size: 13px; font-weight: 500;">Bulan Ini</span>
                             <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: var(--text-secondary); margin-left: auto;"></i>
                         </div>
@@ -97,22 +111,22 @@
                         </div>
                         
                     </div>
+                    
+                    <div class="grafik-kas-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background-color: #5EDB65;"></span>
+                            <span class="legend-text">Pemasukan</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background-color: #FFA142;"></span>
+                            <span class="legend-text">Pengeluaran</span>
+                        </div>
+                    </div>
 
-                </div>
-                
-                <div class="grafik-kas-legend">
-                    <div class="legend-item">
-                        <span class="legend-dot" style="background-color: #5EDB65;"></span>
-                        <span class="legend-text">Pemasukan</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-dot" style="background-color: #FFA142;"></span>
-                        <span class="legend-text">Pengeluaran</span>
-                    </div>
                 </div>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body card-body-grafik-kas">
             <div class="chart-container" id="lineChartContainer">
                 <canvas id="lineChart"></canvas>
             </div>
@@ -120,7 +134,7 @@
     </div>
     
     <div class="content-card">
-        <div class="card-header">
+        <div class="card-header card-header-persentase-kas">
             <div class="card-title-with-icon">
                 <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
                 <h3 class="card-title">Persentase Kas</h3>
@@ -130,7 +144,7 @@
                 <option value="pemasukan">Pemasukan</option>
             </select>
         </div>
-        <div class="card-body">
+        <div class="card-body card-body-persentase-kas">
             <div class="chart-container-horizontal">
                 <div class="chart-wrapper">
                     <canvas id="doughnutChart"></canvas>
@@ -249,7 +263,7 @@
         const filterBtn = document.getElementById('dashboard-filter-btn');
         const filterMenu = document.getElementById('dashboard-filter-menu');
         const filterPicker = document.getElementById('dashboard-month-picker');
-        const btnSpan = filterBtn.querySelector('span');
+        const btnSpan = filterBtn ? filterBtn.querySelector('span') : null;
 
         const setupForm = document.querySelector('form[action*="company-setup"]');
 
@@ -268,47 +282,57 @@
         }
 
         // 1. Toggle Menu
-        filterBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            filterMenu.style.display = filterMenu.style.display === 'flex' ? 'none' : 'flex';
-        });
+        if (filterBtn && filterMenu) {
+            filterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                filterMenu.style.display = filterMenu.style.display === 'flex' ? 'none' : 'flex';
+            });
+        }
 
         // 2. Tutup Menu Klik Luar
-        document.addEventListener('click', (e) => {
-            if (!filterMenu.contains(e.target) && !filterBtn.contains(e.target)) {
-                filterMenu.style.display = 'none';
-            }
-        });
+        if (filterBtn && filterMenu) {
+            document.addEventListener('click', (e) => {
+                if (!filterMenu.contains(e.target) && !filterBtn.contains(e.target)) {
+                    filterMenu.style.display = 'none';
+                }
+            });
+        }
 
         // 3. Klik Opsi (Bulan Ini/Lalu/Semua)
-        filterMenu.querySelectorAll('.dropdown-item').forEach(item => {
-            item.addEventListener('click', () => {
-                // Update UI
-                filterMenu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
-                filterPicker.value = ''; 
-                btnSpan.textContent = item.textContent;
+        if (filterMenu) {
+            filterMenu.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    // Update UI
+                    filterMenu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    if (filterPicker) filterPicker.value = '';
+                    if (btnSpan) btnSpan.textContent = item.textContent;
 
-                // Set Filter & Load
-                dashboardCurrentFilter = item.dataset.value;
-                filterMenu.style.display = 'none';
-                loadDashboardData(); // Reload Data
+                    // Set Filter & Load
+                    dashboardCurrentFilter = item.dataset.value;
+                    filterMenu.style.display = 'none';
+                    loadDashboardData(); // Reload Data
+                });
             });
-        });
+        }
 
         // 4. Custom Picker
-        filterPicker.addEventListener('change', function() {
-            const val = this.value;
-            if(val) {
-                filterMenu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
-                const date = new Date(val + '-01');
-                btnSpan.textContent = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-                
-                dashboardCurrentFilter = val; // "YYYY-MM"
-                filterMenu.style.display = 'none';
-                loadDashboardData();
-            }
-        });
+        if (filterPicker) {
+            filterPicker.addEventListener('change', function() {
+                const val = this.value;
+                if(val) {
+                    if (filterMenu) {
+                        filterMenu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+                    }
+                    const date = new Date(val + '-01');
+                    if (btnSpan) btnSpan.textContent = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                    
+                    dashboardCurrentFilter = val; // "YYYY-MM"
+                    if (filterMenu) filterMenu.style.display = 'none';
+                    loadDashboardData();
+                }
+            });
+        }
 
         // --- FUNGSI LOAD DATA ---
         async function loadDashboardData(searchQuery = '') {
@@ -372,9 +396,33 @@
                     document.getElementById('summary-pengeluaran').textContent = formatRupiah(data.summary.pengeluaran);
                     document.getElementById('summary-laba').textContent = formatRupiah(data.summary.laba);
                     
+                    // Update percentage badges
+                    const pemasukanPct = data.summary.pemasukan_percent_change || 0;
+                    const pengeluaranPct = data.summary.pengeluaran_percent_change || 0;
+                    const labaPct = data.summary.laba_percent_change || 0;
+
+                    // Update Pemasukan percentage and icon
+                    const pemasukanText = (pemasukanPct >= 0 ? '+' : '') + pemasukanPct.toFixed(2) + '%';
+                    document.getElementById('summary-pemasukan-pct-text').textContent = pemasukanText;
+                    document.getElementById('summary-pemasukan-pct-icon').src = pemasukanPct >= 0 ? '{{ asset("icons/upp_green.png") }}' : '{{ asset("icons/down_orange.png") }}';
+
+                    // Update Pengeluaran percentage and icon
+                    const pengeluaranText = (pengeluaranPct >= 0 ? '+' : '') + pengeluaranPct.toFixed(2) + '%';
+                    document.getElementById('summary-pengeluaran-pct-text').textContent = pengeluaranText;
+                    document.getElementById('summary-pengeluaran-pct-icon').src = pengeluaranPct >= 0 ? '{{ asset("icons/upp_orange.png") }}' : '{{ asset("icons/down_orange.png") }}';
+
+                    // Update Laba percentage and icon
+                    const labaText = (labaPct >= 0 ? '+' : '') + labaPct.toFixed(2) + '%';
+                    document.getElementById('summary-laba-pct-text').textContent = labaText;
+                    document.getElementById('summary-laba-pct-icon').src = labaPct >= 0 ? '{{ asset("icons/upp_green.png") }}' : '{{ asset("icons/down_orange.png") }}';
+                    
                     // [FIX ERROR 1] Update UI Panah (Dengan Pengecekan Elemen)
-                    updateTrendUI('summary-laba-trend', 'summary-laba-pct', data.summary.laba >= 0, false);
+                    // Pemasukan: positif = up (hijau), negatif = down (merah)
+                    updateTrendUI('summary-pemasukan-trend', 'summary-pemasukan-pct', data.summary.pemasukan >= 0, false);
+                    // Pengeluaran: tinggi = down (merah), rendah = up (hijau)
                     updateTrendUI('summary-pengeluaran-trend', 'summary-pengeluaran-pct', data.summary.pengeluaran > 0, true);
+                    // Laba: positif = up (hijau), negatif = down (merah)
+                    updateTrendUI('summary-laba-trend', 'summary-laba-pct', data.summary.laba >= 0, false);
                 }
 
                 // B. Render Charts
@@ -400,12 +448,12 @@
             
             if (!container || !badge) return; // Stop jika elemen HTML tidak ada
 
-            const icon = container.querySelector('i');
+            const arrow = container.querySelector('.trend-icon');
             
             let color = 'green'; // Default untung
             if (isReverse) { // Untuk pengeluaran (Naik = Buruk/Merah)
                 color = isPositive ? 'red' : 'green';
-            } else { // Untuk Laba (Naik = Bagus/Hijau)
+            } else { // Untuk Pemasukan & Laba (Naik = Bagus/Hijau)
                 color = isPositive ? 'green' : 'red';
             }
 
@@ -413,10 +461,18 @@
             container.className = `card-trend card-trend-icon icon-${color}`; // Pastikan class CSS ada
             badge.className = `percentage-badge badge-${color}`;
             
-            if(icon) {
-                // Arrow Up jika positif (terlepas baik/buruk), Down jika negatif
-                // Tapi sederhananya kita pakai logika warna di atas saja
-                icon.className = isPositive ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-arrow-trend-down';
+            if(arrow) {
+                // Tentukan icon path berdasarkan tipe (pemasukan/laba vs pengeluaran) dan kondisi (positif vs negatif)
+                let iconPath = '{{ asset("icons/up.png") }}'; // Default
+                
+                if (isReverse) { // Pengeluaran
+                    iconPath = isPositive ? '{{ asset("icons/up_orange.png") }}' : '{{ asset("icons/down_orange.png") }}';
+                } else { // Pemasukan & Laba
+                    iconPath = isPositive ? '{{ asset("icons/up.png") }}' : '{{ asset("icons/down.png") }}';
+                }
+                
+                arrow.src = iconPath;
+                arrow.style.transform = 'rotate(0deg)'; // Tidak perlu rotate lagi, sudah ada down.png
             }
         }
 
@@ -588,7 +644,6 @@
             const ctx = document.getElementById('doughnutChart');
             const msgEl = document.getElementById('doughnut-empty-msg');
             if(!ctx) return;
-
             if(doughnutChartInstance) doughnutChartInstance.destroy();
 
             // Cek Data Kosong
@@ -663,18 +718,6 @@
         function updateSummaryCard(id, value) {
             const el = document.getElementById(id);
             if(el) el.textContent = formatRupiah(value);
-        }
-
-        function updateTrendUI(containerId, badgeId, isPositive, isReverse) {
-            const container = document.getElementById(containerId);
-            const badge = document.getElementById(badgeId);
-            if (!container || !badge) return;
-
-            const icon = container.querySelector('i');
-            let color = isReverse ? (isPositive ? 'red' : 'green') : (isPositive ? 'green' : 'red');
-
-            container.className = `card-trend-right card-trend-icon icon-${color}`; // Sesuaikan dengan class CSS baru Anda
-            if(icon) icon.className = isPositive ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-arrow-trend-down';
         }
 
         function createDoughnutLegend(labels, colors) {
@@ -764,6 +807,43 @@
 
         // Init
         loadDashboardData();
+
+        // ========== AUTO-LOGOUT ACTIVITY TRACKING ==========
+        // Kirim signal aktivitas setiap 10 menit ke backend
+        // Ini untuk prevent auto-logout 20 jam (jika user aktif)
+        setInterval(() => {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                fetch('{{ url("/api/update-activity") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                }).catch(error => {
+                    console.log('Activity update failed (expected jika idle)', error);
+                });
+            }
+        }, 10 * 60 * 1000); // Update setiap 10 menit
+        
+        // Tracking aktivitas user (mouse, keyboard, scroll)
+        let activityTimeout;
+        function resetActivityTimer() {
+            clearTimeout(activityTimeout);
+            
+            // Set timeout 6 jam - jika tidak ada aktivitas, clear lastActivity
+            // Tapi tetap track untuk server (middleware yang handle auto-logout 20 jam)
+        }
+        
+        // Track events
+        document.addEventListener('mousemove', resetActivityTimer);
+        document.addEventListener('keypress', resetActivityTimer);
+        document.addEventListener('scroll', resetActivityTimer);
+        document.addEventListener('click', resetActivityTimer);
+        
+        // Initialize
+        resetActivityTimer();
+        // ===================================================
     });
 </script>
 @endpush

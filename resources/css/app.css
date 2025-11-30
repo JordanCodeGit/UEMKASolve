@@ -134,6 +134,12 @@ body {
     margin-bottom: 20px;
 }
 
+.form-group.password-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
 .form-group input {
     width: 100%;
     padding: 12px 15px;
@@ -142,9 +148,37 @@ body {
     font-size: 16px;
 }
 
+.form-group.password-group input {
+    padding-right: 45px; /* Ruang untuk icon mata */
+}
+
 .form-group input:focus {
     outline: none;
     border-color: #007BFF;
+}
+
+/* Toggle Password Button */
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 18px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #1e293b;
+}
+
+.toggle-password:active {
+    transform: scale(0.95);
 }
 
 /* Form Options (Remember me & Forgot password) */
@@ -319,25 +353,33 @@ body {
     text-decoration: none;
     display: flex;
     align-items: center;
-    padding: 14px 18px;
-    border-radius: 10px;
+    padding: 12px 20px;
+    border-radius: 8px;
     transition: all 0.3s ease;
     font-weight: 500;
+    font-size: 15px;
 }
 .sidebar-nav a i {
-    margin-right: 15px;
+    margin-right: 16px;
     font-size: 18px;
     width: 20px;
     text-align: center;
 }
 .sidebar-nav a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 50px 0 0 50px;
+    margin-right: -20px;
+    padding-right: 40px;
 }
 
 .sidebar-nav a.active {
-    background-color: var(--sidebar-bg-active);
-    color: var(--sidebar-text-active);
+    background-color: #ffffff;
+    color: #2385F2;
     font-weight: 600;
+    border-radius: 30px 0 0 30px;
+    padding: 12px 24px;
+    margin-right: -20px;
+    padding-right: 40px;
 }
 
 .sidebar-footer {
@@ -903,10 +945,17 @@ body {
     margin-right: 15px;
 }
 
+.summary-card .icon-box .icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
 .summary-card .card-content {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    flex: 1;
 }
 
 .summary-card .card-content p {
@@ -917,7 +966,7 @@ body {
 }
 
 .summary-card .card-content h3 {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
@@ -926,15 +975,57 @@ body {
 .summary-card .card-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 3px;
+}
+
+.summary-card .card-header p {
+    font-size: 22px;
+    color: #000000;
+    font-weight: 600;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .card-trend-icon {
     font-size: 24px;
     padding-top: 5px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
 }
-.icon-green { color: var(--color-primary-green, #00875a); }
-.icon-red { color: var(--color-primary-red, #de350b); }
+
+.trend-icon-bg {
+    position: absolute;
+    width: 60px;
+    height: 150px;
+    border-radius: 10px;
+    top: -49px;
+    right: 0;
+    z-index: 0;
+}
+
+.trend-bg-blue {
+    background-color: rgba(45, 139, 242, 0.1);
+}
+
+.trend-bg-orange {
+    background-color: rgba(255, 161, 66, 0.1);
+}
+
+.trend-icon {
+    width: 40px;
+    height: 40px;
+    right: 8px;
+    top: -3px;
+    object-fit: contain;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
 
 
 /* Styling Ikon (Kotak Melengkung) */
@@ -956,12 +1047,33 @@ body {
 .percentage-badge {
     font-size: 14px;
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;;
+    margin-left: -7px;
 }
+
+.percentage-badge .pct-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.percentage-badge.badge-green {
+    color: var(--color-primary-green, #00875a);
+}
+
+.percentage-badge.badge-red {
+    color: #FFA142;
+}
+
 .badge-green { color: var(--color-primary-green, #00875a); }
 .badge-red { color: var(--color-primary-red, #de350b); }
+.icon-green { color: var(--color-primary-green, #00875a); }
+.icon-red { color: var(--color-primary-red, #de350b); }
 
 .summary-card .card-footer {
     margin-left: auto; /* Dorong ke paling kanan */
@@ -974,24 +1086,70 @@ body {
 .text-blue { color: #0072ff; }
 
 .summary-card.summary-saldo {
-    background: var(--color-primary-blue, #0d6efd); /* Biru solid */
+    background: linear-gradient(135deg, #2385F2 0%, #3B9EFF 100%);
     color: white;
-    justify-content: flex-start; /* Hapus space-between */
-    gap: 15px;
     border: none;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 8px 24px rgba(35, 133, 242, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
 }
-.summary-card.summary-saldo .card-content p,
-.summary-card.summary-saldo .card-content h3 {
-    color: white;
+
+.summary-card.summary-saldo .card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    width: 100%;
 }
+
+.summary-card.summary-saldo .card-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
 .summary-card.summary-saldo .icon-box {
     background-color: rgba(255, 255, 255, 0.2);
     color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    margin-right: 0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.summary-card:nth-child(2) .icon-box { background-color: #e6f7f0; color: #00875a; } 
-.summary-card:nth-child(3) .icon-box { background-color: #ffebe6; color: #FFA142; } 
-.summary-card:nth-child(4) .icon-box { background-color: #e6f7f0; color: #00875a; }
+.summary-card.summary-saldo .icon-box .icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.summary-card.summary-saldo .card-header p {
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 1px;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.summary-card.summary-saldo .card-content h3 {
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.summary-card:nth-child(2) .icon-box { background-color: #2D8BF2; color: #2D8BF2; } 
+.summary-card:nth-child(3) .icon-box { background-color: #FFA142; color: #FFA142; } 
+.summary-card:nth-child(4) .icon-box { background-color: #16A34A; color: #16A34A; }
 
 
 /* Baris 2: Grid Grafik */
@@ -1013,15 +1171,51 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 25px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 15px 25px;
     gap: 15px;
 }
 
+/* Specific styling for Grafik Kas */
+.card-header-grafik-kas {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    padding: 15px 25px !important;
+    border-bottom: none !important;
+    gap: 20px !important;
+}
+
+.card-header-grafik-kas .card-title-with-icon {
+    display: flex;
+    margin-top: 27px;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-header-grafik-kas .grafik-kas-header {
+    display: flex;
+    align-items: flex-start;
+}
+
+.card-body-grafik-kas {
+    padding: 0px 20px 20px 20px !important;
+}
+
+/* Specific styling for Persentase Kas */
+.card-header-persentase-kas {
+    padding: 15px 25px !important;
+    border-bottom: none !important;
+}
+
+.card-body-persentase-kas {
+    padding: 20px !important;
+}
+
 .content-card .card-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #000000;
 }
 
 .card-header-icon {
@@ -1088,7 +1282,7 @@ body {
 }
 
 .content-card .card-body {
-    padding: 25px;
+    padding: 20px;
     flex-grow: 1;
 }
 
@@ -1122,7 +1316,8 @@ body {
 }
 
 #lineChartContainer {
-    height: 250px;
+    height: 230px;
+    margin-top: -10px;
 }
 
 #doughnutChartContainer {
@@ -2420,13 +2615,14 @@ textarea.form-input-modal {
 /* 2. Modal Box (Kontainer Putih) */
 .modal-box {
     background-color: var(--bg-primary);
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 520px; /* Lebar maksimal modal */
     overflow: hidden; /* Agar sudut tetap bulat */
     display: flex;
     flex-direction: column;
+    scrollbar-color: transparent transparent; /* Sembunyikan scrollbar */
 }
 
 /* 3. Modal Header */
@@ -2630,49 +2826,87 @@ textarea.form-input-modal {
 /* --- ICON PICKER GRID --- */
 .icon-picker-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
-    padding: 15px;
+    padding: 20px;
     background-color: var(--bg-secondary);
-    border-radius: 8px;
-    max-height: 300px;
+    border-radius: 12px;
+    max-height: 350px;
+    max-width: 450px;
     overflow-y: auto;
+    overflow-x: hidden;
+    margin: 0 auto;
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+}
+
+/* Scrollbar styling untuk Chrome/Edge/Safari - Hidden by default */
+.icon-picker-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.icon-picker-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.icon-picker-container::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 0.3s ease;
+}
+
+.icon-picker-container::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(59, 130, 246, 0.7);
+}
+
+/* Active scrollbar - muncul saat scrolling */
+.icon-picker-container.scrolling::-webkit-scrollbar-thumb {
+    background-color: rgba(59, 130, 246, 0.5);
+}
+
+.icon-picker-container.scrolling {
+    scrollbar-color: rgba(59, 130, 246, 0.5) transparent;
 }
 
 /* Icon Option (Default: Pemasukan - Hijau Muda) */
 .icon-picker-container.grid-pemasukan .icon-option {
-    background-color: #DCFCE7; /* Hijau muda */
-    border: 2px solid #DCFCE7;
-    border-radius: 10px;
-    padding: 10px;
+    background-color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+    border-radius: 12px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 60px;
+    aspect-ratio: 1 / 1;
+    position: relative;
 }
 
 /* Icon Option (Default: Pengeluaran - Biru Muda) */
 .icon-picker-container.grid-pengeluaran .icon-option {
-    background-color: rgba(66, 156, 255, 0.15); /* Biru muda */
-    border: 2px solid rgba(66, 156, 255, 0.3);
-    border-radius: 10px;
-    padding: 10px;
+    background-color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+    border-radius: 12px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 60px;
+    aspect-ratio: 1 / 1;
+    position: relative;
 }
 
 /* Icon Image Styling */
 .icon-option img {
-    width: 100%;
-    height: 100%;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     transition: all 0.2s ease;
+    display: block;
 }
 
 .icon-option i {
@@ -2680,38 +2914,64 @@ textarea.form-input-modal {
     transition: all 0.2s ease;
 }
 
+/* Default state - icon type visible, neutral hidden */
+.icon-option .icon-type {
+    display: block !important;
+    visibility: visible !important;
+}
+
+.icon-option .icon-neutral {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 /* Hover Effect */
 .icon-option:hover {
-    transform: scale(1.08);
-    filter: brightness(0.9);
+    background-color: rgba(191, 219, 254, 0.6);
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Hover saat active - tetap tampilkan icon neutral */
+.icon-option.active:hover .icon-type {
+    display: none !important;
+}
+
+.icon-option.active:hover .icon-neutral {
+    display: block !important;
 }
 
 /* --- ACTIVE STATE (SAAT DIPILIH) --- */
 
-/* Active Pemasukan: Background Hijau Tua */
-.icon-picker-container.grid-pemasukan .icon-option.selected {
-    background-color: #16A34A !important;
-    border-color: #16A34A;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+/* Active Pemasukan: Background Hijau Netral Muda */
+.icon-picker-container.grid-pemasukan .icon-option.active {
+    background-color: #00A63E;
+    border: 2px solid #00A63E;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
 }
 
-/* Active Pengeluaran: Background Biru Tua */
-.icon-picker-container.grid-pengeluaran .icon-option.selected {
-    background-color: #2B7FFF !important;
-    border-color: #2B7FFF;
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(43, 127, 255, 0.4);
+/* Active Pengeluaran: Background Biru Netral */
+.icon-picker-container.grid-pengeluaran .icon-option.active {
+    background-color: #3B82F6;
+    border: 2px solid #3B82F6;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
-/* Selected Icon Color (Putih/Netral) */
-.icon-option.selected img {
-    filter: brightness(1.1) contrast(1.1);
+/* Selected Icon Color (Putih Netral) */
+.icon-option.active .icon-type {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
-.icon-option.selected i {
-    color: white;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+.icon-option.active .icon-neutral {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    filter: brightness(1.2) drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
 
 /* --- ICON PICKER CONTAINER untuk MODAL KATEGORI --- */
@@ -2742,7 +3002,6 @@ textarea.form-input-modal {
 
 /* ACTIVE STATE - Icon di-klik */
 #icon-grid-container-kat .icon-option.active {
-    border: 2px solid #666;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -2923,7 +3182,7 @@ textarea.form-input-modal {
 
 /* Summary Cards Grid */
 .summary-card {
-    background-color: var(--bg-secondary); /* Latar abu-abu */
+    background-color: #ffffff; /* Latar abu-abu */
     border-radius: 12px;
     padding: 20px;
     display: flex;
@@ -3275,7 +3534,7 @@ textarea.form-input-modal {
 .password-wrapper {
     position: relative !important; /* Jangkar */
     display: block !important;     /* JANGAN flex, harus block agar input full */
-    width: 49% !important;
+    width: 100% !important;
 }
 
 /* 2. INPUT: Paksa Lebar Penuh & Box Sizing */
@@ -3284,27 +3543,26 @@ textarea.form-input-modal {
     box-sizing: border-box !important; /* Agar padding masuk dalam hitungan lebar */
     
     /* Beri ruang kosong di kanan supaya teks tidak menabrak ikon */
-    padding: 12px 45px 12px 16px !important;
+    padding: 12px 45px 12px 15px !important;
     
     /* Style bawaan Anda */
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 170px;
+    font-size: 16px;
     color: #334155;
     background-color: #fff;
-    height: 48px;
+    height: auto;
 }
 
 .password-wrapper input:focus {
     outline: none;
-    border-color: #40C9C4;
-    box-shadow: 0 0 0 3px rgba(64, 201, 196, 0.1);
+    border-color: #007BFF;
 }
 
 /* 3. IKON: Wajib Absolute & Lebar Tetap */
 .password-toggle-icon {
     position: absolute !important; /* Mengambang di atas input */
-    right: 15px !important;        /* Jarak dari kanan */
+    right: 12px !important;        /* Jarak dari kanan */
     top: 50% !important;           /* Posisi tengah vertikal */
     transform: translateY(-50%) !important; /* Koreksi tengah */
     
@@ -3314,17 +3572,24 @@ textarea.form-input-modal {
     width: 24px !important; 
     text-align: center !important;
     
-    color: #94a3b8;
+    color: #6c757d;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     z-index: 10;
+    transition: color 0.2s ease;
+    user-select: none;
+    padding: 0;
+    background: none;
+    border: none;
 }
 
 .password-toggle-icon:hover {
-    color: #334155;
+    color: #495057;
 }
 
-.form-section-title {
+.password-toggle-icon:active {
+    transform: translateY(-50%) scale(0.95);
+}.form-section-title {
     font-size: 1.25rem;
     font-weight: 700;
     color: #1e293b; /* Warna gelap modern */
@@ -4086,13 +4351,13 @@ textarea.form-input-modal {
 /* Card title dengan icon */
 .card-title-with-icon {
     display: flex;
-    align-items: center;
+    align-items: top;
     gap: 12px;
 }
 
 .custom-title-icon {
-    width: 24px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
 }
 
@@ -4137,6 +4402,7 @@ textarea.form-input-modal {
 #doughnutChart {
     max-width: 280px !important;
     max-height: 280px !important;
+    font-weight: bold !important;
 }
 
 /* Doughnut legend - positioning di sebelah kanan */
@@ -4148,6 +4414,7 @@ textarea.form-input-modal {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    justify-content: flex-start;
 }
 
 .doughnut-legend li {
@@ -4156,12 +4423,13 @@ textarea.form-input-modal {
     gap: 10px;
     font-size: 13px;
     color: var(--text-primary);
+    text-align: left;
 }
 
 .doughnut-legend .legend-color {
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: 12px;
     flex-shrink: 0;
 }
 
@@ -4201,7 +4469,6 @@ textarea.form-input-modal {
 /* Dropdown minimalis untuk grafik */
 .dropdown-minimalis-grafik {
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
     border-radius: 8px;
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -4212,7 +4479,6 @@ textarea.form-input-modal {
 }
 
 .dropdown-minimalis-grafik:hover {
-    border-color: var(--color-primary-blue);
     background: var(--bg-secondary);
 }
 
@@ -4222,13 +4488,14 @@ textarea.form-input-modal {
     justify-content: space-between;
     align-items: flex-start;
     padding: 20px 25px;
-    border-bottom: 1px solid #f0f0f0;
     gap: 20px;
 }
 
 .grafik-kas-header .filter-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 /* Legend Grafik Kas */
@@ -4236,6 +4503,7 @@ textarea.form-input-modal {
     display: flex;
     align-items: center;
     gap: 24px;
+    margin-top: 20px;
 }
 
 .legend-item {
@@ -4247,12 +4515,12 @@ textarea.form-input-modal {
 .legend-dot {
     width: 12px;
     height: 12px;
-    border-radius: 3px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
 .legend-text {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--text-primary);
 }
