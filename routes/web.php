@@ -145,3 +145,6 @@ Route::middleware(['auth'])->group(function () {
     // Route Update Profil Akun (BARU)
     Route::post('/pengaturan/update-akun', [ProfileController::class, 'updateAkun'])->name('pengaturan.update.akun');
 });
+
+// Load additional auth-related POST routes (register, login, verification, password actions)
+require __DIR__ . '/auth.php';

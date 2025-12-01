@@ -54,7 +54,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         }
         $request->user()->sendEmailVerificationNotification();
         return response()->json(['message' => 'Link verifikasi baru telah dikirim.'], 200);
-    })->middleware(['throttle:6,1'])->name('verification.send');
+    })->middleware(['throttle:6,1'])->name('verification.send.api');
 
 
     Route::post('/logout', [AuthController::class, 'logout']);
