@@ -60,14 +60,6 @@ Route::get('/lupa-password', function () {
     return view('auth.forgot-password');
 })->name('password.request');
 
-// 3. Halaman Reset Password (Link dari Email)
-Route::get('/reset-password/{token}', function (Illuminate\Http\Request $request, $token) {
-    return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
-})->name('password.reset');
-
-// 4. Proses Reset Password (POST)
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
-
 Route::get('/auth/google-success', function () {
     return view('auth.google-callback');
 });

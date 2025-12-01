@@ -20,9 +20,13 @@ Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
     ->middleware('guest')
     ->name('password.email');
 
+Route::get('/reset-password/{token}', function (Illuminate\Http\Request $request, $token) {
+    return view('auth.reset-password', ['token' => $token, 'email' => $request->query('email')]);
+})->middleware('guest')->name('password.reset');
+
 Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
-    ->name('password.store');
+    ->name('password.update');
 
 Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['signed', 'throttle:6,1'])
