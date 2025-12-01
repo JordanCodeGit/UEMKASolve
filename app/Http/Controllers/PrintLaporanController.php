@@ -13,6 +13,17 @@ class PrintLaporanController extends Controller
     public function generatePdf(Request $request)
     {
         try {
+            // Check if PHP GD extension is installed
+            if (!extension_loaded('gd')) {
+                \Log::warning('PHP GD extension not loaded');
+                // Return JSON response dengan instruksi untuk server
+                return response()->json([
+                    'error' => 'PDF generation requires PHP GD extension',
+                    'message' => 'Server tidak memiliki PHP GD extension yang diperlukan untuk generate PDF dengan grafik.',
+                    'solution' => 'Hubungi hosting provider untuk mengaktifkan PHP GD extension, atau coba gunakan server production yang sudah dikonfigurasi.'
+                ], 503);
+            }
+
             \Log::info('PrintLaporanController generatePdf called');
 
             $user = Auth::user();
@@ -201,10 +212,27 @@ class PrintLaporanController extends Controller
 
             $filename = 'Laporan_Keuangan_' . date('d-m-Y') . '.pdf';
             return $pdf->download($filename);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('PDF Generation Error: ' . $e->getMessage());
             \Log::error('Stack: ' . $e->getTraceAsString());
-            return response()->json(['error' => 'Failed to generate PDF: ' . $e->getMessage()], 500);
+
+            // Check if error is related to GD extension
+            if (
+                strpos($e->getMessage(), 'gd') !== false ||
+                strpos($e->getMessage(), 'GD') !== false ||
+                strpos($e->getMessage(), 'imagecreatetruecolor') !== false
+            ) {
+                return response()->json([
+                    'error' => 'PHP GD extension is required, but is not installed',
+                    'message' => 'Server tidak memiliki PHP GD extension. Hubungi hosting provider untuk mengaktifkannya.',
+                    'solution' => 'Minta tim hosting untuk enable php_gd extension atau gunakan server production yang sudah dikonfigurasi.'
+                ], 503);
+            }
+
+            return response()->json([
+                'error' => 'Failed to generate PDF',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 

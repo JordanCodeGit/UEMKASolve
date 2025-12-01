@@ -778,8 +778,19 @@
                         // Try to parse error message
                         try {
                             const errorData = await response.json();
-                            await showDialog('Gagal membuat PDF: ' + (errorData.error ||
-                                'Kesalahan tidak diketahui'), 'error');
+
+                            // Build detailed error message for GD extension
+                            let errorMsg = errorData.error || 'Kesalahan tidak diketahui';
+                            if (response.status === 503 && errorData.message) {
+                                errorMsg = errorData.message;
+                                if (errorData.solution) {
+                                    errorMsg += '\n\n' + errorData.solution;
+                                }
+                            } else if (errorData.message) {
+                                errorMsg += ': ' + errorData.message;
+                            }
+
+                            await showDialog('Gagal membuat PDF:\n\n' + errorMsg, 'error');
                         } catch (e) {
                             await showDialog('Gagal membuat PDF: HTTP ' + response.status, 'error');
                         }
@@ -839,7 +850,7 @@
                 const selectedValue = this.value; // Format: "2025-11"
                 if (selectedValue) {
                     document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove(
-                    'active'));
+                        'active'));
 
                     // Format text tombol (misal: "November 2025")
                     const dateObj = new Date(selectedValue + '-01');
@@ -1008,7 +1019,7 @@
 
             // 1. Handle Check All (Header)
             const checkAllBtn = document.getElementById(
-            'check-all-transactions'); // Pastikan ID ini ada di header tabel
+                'check-all-transactions'); // Pastikan ID ini ada di header tabel
             checkAllBtn.addEventListener('change', function() {
                 const checkboxes = document.querySelectorAll('.check-item');
                 checkboxes.forEach(cb => cb.checked = this.checked);
@@ -1170,7 +1181,8 @@
                     // Logika icon (gambar atau FontAwesome)
                     let iconHtml = '';
                     if (category.ikon && (category.ikon.includes('.png') || category.ikon.includes(
-                            '.jpg') || category.ikon.includes('.svg') || category.ikon.includes('.jpeg'))) {
+                                '.jpg') || category.ikon.includes('.svg') || category.ikon.includes(
+                            '.jpeg'))) {
                         // Render sebagai IMAGE
                         // Icon path bisa berupa "pengeluaran/Button.png" atau "Button.png"
                         let iconPath = category.ikon;
