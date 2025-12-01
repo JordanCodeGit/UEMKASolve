@@ -13,6 +13,7 @@ class CheckCompanySetup
     {
         if (Auth::check()) {
             $user = Auth::user(); // 1. Ambil User
+            assert($user !== null);
             $needsSetup = $user->id_perusahaan === null;
 
             // 2. Ambil data perusahaan JIKA SUDAH ADA
@@ -22,7 +23,7 @@ class CheckCompanySetup
 
             // 3. Bagikan status popup ke view
             View::share('needsCompanySetup', $needsSetup);
-            
+
             // 4. (BARU) Bagikan data user LENGKAP ke semua view
             // Kita beri nama 'globalUser' agar tidak bentrok
             View::share('globalUser', $user);

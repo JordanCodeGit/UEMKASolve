@@ -24,7 +24,7 @@ class VerifyEmailMail extends Mailable
     public function __construct(User $user)
     {
         $this->user = $user;
-        
+
         // Generate signed URL untuk verifikasi email
         $this->verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
@@ -52,7 +52,7 @@ class VerifyEmailMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.verify-email',
+            view: 'mail.verify-email-plain',
             with: [
                 'user' => $this->user,
                 'verificationUrl' => $this->verificationUrl,

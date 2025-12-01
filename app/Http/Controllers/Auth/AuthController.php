@@ -37,10 +37,16 @@ class AuthController extends Controller
 
             // 1. Buat User Baru
             // Kita set id_perusahaan NULL agar nanti Pop-up di dashboard muncul
+            /** @var string $name */
+            $name = $validatedData['name'];
+            /** @var string $email */
+            $email = $validatedData['email'];
+            /** @var string $password */
+            $password = $validatedData['password'];
             $user = User::create([
-                'name' => $validatedData['name'],
-                'email' => $validatedData['email'],
-                'password' => Hash::make($validatedData['password']),
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
                 'id_perusahaan' => null, // Biarkan kosong
             ]);
 
@@ -65,7 +71,6 @@ class AuthController extends Controller
                     'email' => $user->email,
                 ]
             ], 201);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Registration error: ' . $e->getMessage());
@@ -78,7 +83,7 @@ class AuthController extends Controller
 
     /**
      * Handle Login Request
-     * 
+     *
      * Remember Me Feature:
      * - Jika checkbox 'remember' di-check: session berlaku 12 jam (720 menit)
      * - Jika checkbox 'remember' tidak di-check: session berlaku selama browser terbuka
@@ -99,7 +104,10 @@ class AuthController extends Controller
         }
 
         // 2. Cek Password
-        if (!Hash::check($credentials['password'], $user->password)) {
+        /** @var string $credPassword */
+        $credPassword = $credentials['password'];
+        $userPassword = $user->password ?? '';
+        if (!Hash::check($credPassword, $userPassword)) {
             // Password salah
             return response()->json([
                 'message' => 'Password salah.'
@@ -115,14 +123,15 @@ class AuthController extends Controller
         }
 
         // --- JIKA LULUS ---
-        
+
         // Login Session Web dengan Remember Me
         Log::info('User login - Remember Me: ' . ($rememberMe ? 'YES (12 hours)' : 'NO (browser session)'));
         Auth::login($user, $rememberMe); // True = remember me selama 12 jam, False = session browser only
         $request->session()->regenerate();
 
         // Buat Token API
-        $deviceName = $request->input('device_name', $user->email);
+        $deviceNameInput = $request->input('device_name');
+        $deviceName = is_string($deviceNameInput) ? $deviceNameInput : $user->email;
         $token = $user->createToken($deviceName)->plainTextToken;
         $perusahaan = $user->perusahaan;
 
@@ -150,6 +159,7 @@ class AuthController extends Controller
     public function handleGoogleCallback()
     {
         try {
+            /** @phpstan-ignore-next-line */
             $googleUser = Socialite::driver('google')->stateless()->user();
             $user = User::where('email', $googleUser->getEmail())->first();
 
@@ -161,7 +171,7 @@ class AuthController extends Controller
                     'google_id'         => $googleUser->getId(),
                     'password'          => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                    'id_perusahaan'     => null 
+                    'id_perusahaan'     => null
                 ]);
             } else {
                 // --- USER LAMA ---
@@ -174,10 +184,10 @@ class AuthController extends Controller
             $token = $user->createToken('google-login')->plainTextToken;
 
             // [PERBAIKAN UTAMA DI SINI] ---------------------------
-            
+
             // 1. Login dengan "Remember Me" (true) agar session lebih kuat
-            Auth::login($user, true); 
-            
+            Auth::login($user, true);
+
             // 2. Regenerate Session ID (Wajib agar tidak dianggap session palsu)
             request()->session()->regenerate();
 
@@ -185,7 +195,6 @@ class AuthController extends Controller
 
             // Redirect ke Frontend
             return redirect('/auth/google-success?token=' . $token);
-
         } catch (\Exception $e) {
             return redirect('/login?error=google_failed');
         }
@@ -197,8 +206,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         // Hapus token API (jika ada)
-        if ($request->user()) {
-            $token = $request->user()->currentAccessToken();
+        $user = $request->user();
+        if ($user) {
+            /** @var \Laravel\Sanctum\PersonalAccessToken|null $token */
+            $token = $user->currentAccessToken();
             if ($token) {
                 $token->delete();
             }
@@ -249,11 +260,12 @@ class AuthController extends Controller
             return redirect()->route('login')->with('status', 'Password berhasil diubah! Silakan login.');
         }
 
-        return back()->withErrors(['email' => __($status)]);
+        return back()->withErrors(['email' => __(is_string($status) ? $status : '')]);
     }
 
     public function redirectToGoogle()
     {
+        /** @phpstan-ignore-next-line */
         return Socialite::driver('google')->stateless()->redirect();
     }
 }

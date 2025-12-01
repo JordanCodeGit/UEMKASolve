@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $tipe
+ * @property string $nama_kategori
+ */
 class Category extends Model
 {
     use HasFactory, SoftDeletes;
@@ -44,6 +48,4 @@ class Category extends Model
             $category->transactions()->delete();
         });
     }
-
-    
 }

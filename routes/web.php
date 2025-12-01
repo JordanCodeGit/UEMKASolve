@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\CompanySetupController;
-use App\Http\Controllers\ProfileController; 
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\DashboardController;
@@ -55,37 +55,10 @@ Route::get('/email-verified', function () {
     return view('auth.email-verified');
 })->name('email.verified');
 
-// Route untuk memverifikasi email (dari link di email)
-Route::get('/verify-email/{id}/{hash}', function (Request $request, $id, $hash) {
-    // Cari user berdasarkan ID
-    $user = User::findOrFail($id);
-    
-    // Validasi hash
-    if (sha1($user->getEmailForVerification()) !== $hash) {
-        return redirect('/login')->with('error', 'Link verifikasi tidak valid!');
-    }
-    
-    // Cek apakah sudah diverifikasi sebelumnya
-    if ($user->hasVerifiedEmail()) {
-        return redirect('/login')->with('success', 'Email sudah diverifikasi sebelumnya!');
-    }
-    
-    // Mark email sebagai verified
-    $user->markEmailAsVerified();
-    
-    Log::info('Email verified for user: ' . $user->email);
-    
-    return redirect('/email-verified');
-})->middleware(['signed'])->name('verification.verify');
-// ================================================
-
 // 1. Halaman Lupa Password
 Route::get('/lupa-password', function () {
     return view('auth.forgot-password');
 })->name('password.request');
-
-// 2. Proses Kirim Email (POST)
-Route::post('/lupa-password', [AuthController::class, 'forgotPassword'])->name('password.email');
 
 // 3. Halaman Reset Password (Link dari Email)
 Route::get('/reset-password/{token}', function (Illuminate\Http\Request $request, $token) {
@@ -130,15 +103,15 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 */
 
 // 2. PERBAIKAN: Semua rute aplikasi dipindahkan ke dalam grup 'auth'
-Route::middleware(['auth'])->group(function () { 
+Route::middleware(['auth'])->group(function () {
 
     // Rute Dashboard
     Route::get('/dashboard', function () {
         $user = Illuminate\Support\Facades\Auth::user();
-        
+
         // Cek apakah id_perusahaan kosong
         $needsCompanySetup = is_null($user->id_perusahaan);
-        
+
         return view('dashboard', compact('needsCompanySetup'));
     })->name('dashboard');
 
@@ -164,9 +137,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Rute untuk memproses form setup perusahaan (popup)
     Route::post('/company-setup', [CompanySetupController::class, 'store'])
-            ->name('company.setup.store');
+        ->name('company.setup.store');
 
-        // Route Update Profil Usaha (yang sudah ada)
+    // Route Update Profil Usaha (yang sudah ada)
     Route::post('/pengaturan/update-usaha', [ProfileController::class, 'updateUsaha'])->name('pengaturan.update.usaha');
 
     // Route Update Profil Akun (BARU)

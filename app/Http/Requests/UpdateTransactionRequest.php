@@ -15,7 +15,9 @@ class UpdateTransactionRequest extends FormRequest
 
     public function rules(): array
     {
-        $idPerusahaan = Auth::user()->id_perusahaan;
+        $user = Auth::user();
+        assert($user !== null);
+        $idPerusahaan = $user->id_perusahaan;
 
         return [
             // 'sometimes' berarti hanya validasi jika field itu dikirim
@@ -28,7 +30,7 @@ class UpdateTransactionRequest extends FormRequest
             ],
             'jumlah'            => ['required', 'numeric', 'min:0', 'max:999999999999999'],
             'catatan'           => ['nullable', 'string', 'max:255'],
-            'tanggal_transaksi' => ['required', 'date'], 
+            'tanggal_transaksi' => ['required', 'date'],
         ];
     }
 

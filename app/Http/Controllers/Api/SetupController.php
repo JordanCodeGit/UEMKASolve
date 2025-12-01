@@ -17,6 +17,7 @@ class SetupController extends Controller
         ]);
 
         $user = Auth::user();
+        assert($user !== null);
 
         // Cek double safety (kalau iseng nembak API padahal udah punya perusahaan)
         if ($user->id_perusahaan) {
@@ -35,7 +36,7 @@ class SetupController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Profil usaha berhasil dibuat!', 
+            'message' => 'Profil usaha berhasil dibuat!',
             'user' => $user
         ], 201);
     }

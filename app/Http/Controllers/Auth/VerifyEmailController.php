@@ -14,18 +14,28 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
+        $user = $request->user();
+
+        // Bagus: Assertion ini krusial untuk PHPStan Level 9 karena
+        // $request->user() secara default return type-nya nullable (User|null).
+        assert($user !== null);
+
+        // Use ternary operator to safely convert mixed config to string
+        $configUrl = config('app.frontend_url');
+        $frontendUrl = is_string($configUrl) ? $configUrl : (is_string(config('app.url')) ? config('app.url') : '');
+
+        if ($user->hasVerifiedEmail()) {
             return redirect()->intended(
-                config('app.frontend_url').'/dashboard?verified=1'
+                $frontendUrl . '/dashboard?verified=1'
             );
         }
 
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
         }
 
         return redirect()->intended(
-            config('app.frontend_url').'/dashboard?verified=1'
+            $frontendUrl . '/dashboard?verified=1'
         );
     }
 }

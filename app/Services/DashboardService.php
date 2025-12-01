@@ -30,16 +30,16 @@ class DashboardService
 
         // 3. [MODIFIKASI] Ambil Transaksi Terakhir (dengan filter search)
         $transaksiQuery = $business->transactions()
-                                 ->with('category:id,nama_kategori,tipe,ikon') 
-                                 ->latest('tanggal_transaksi');
-        
+            ->with('category:id,nama_kategori,tipe,ikon')
+            ->latest('tanggal_transaksi');
+
         // Terapkan filter search jika ada
         if ($searchQuery) {
             $transaksiQuery->where(function ($q) use ($searchQuery) {
                 $q->where('catatan', 'like', '%' . $searchQuery . '%')
-                  ->orWhereHas('category', function ($catQuery) use ($searchQuery) {
-                      $catQuery->where('nama_kategori', 'like', '%' . $searchQuery . '%');
-                  });
+                    ->orWhereHas('category', function ($catQuery) use ($searchQuery) {
+                        $catQuery->where('nama_kategori', 'like', '%' . $searchQuery . '%');
+                    });
             });
         }
 
@@ -47,7 +47,7 @@ class DashboardService
 
         // 4. Ambil Data Grafik Kas (Line Chart)
         $lineChartData = $this->getLineChartData($business, $dateRange);
-        
+
         // 5. Ambil Data Persentase Kas (Doughnut Chart)
         $totalForDoughnut = ($doughnutTipe === 'pemasukan') ? $periodPemasukan : $periodPengeluaran;
 
@@ -73,9 +73,9 @@ class DashboardService
     private function calculateSum(Business $business, string $tipe, array $dateRange = null): float
     {
         $query = $business->transactions()
-                         ->whereHas('category', function ($q) use ($tipe) {
-                             $q->where('tipe', $tipe);
-                         });
+            ->whereHas('category', function ($q) use ($tipe) {
+                $q->where('tipe', $tipe);
+            });
 
         if ($dateRange && isset($dateRange['startDate']) && isset($dateRange['endDate'])) {
             $query->whereBetween('tanggal_transaksi', [$dateRange['startDate'], $dateRange['endDate']]);
@@ -100,6 +100,7 @@ class DashboardService
 
         // Inisialisasi semua tanggal dengan nilai 0
         foreach ($period as $date) {
+            /** @var \Carbon\Carbon $date */
             $day = $date->format('d'); // Label (misal: '01', '02', ..., '31')
             $labels[$day] = $day;
             $pemasukanData[$day] = 0;

@@ -21,7 +21,9 @@ class ChangePasswordRequest extends FormRequest
                 'required',
                 // Cek apakah password lama cocok dengan yang di database
                 function ($attribute, $value, $fail) {
-                    if (!Hash::check($value, $this->user()->password)) {
+                    $user = $this->user();
+                    assert($user !== null);
+                    if (!Hash::check($value, (string)$user->password)) {
                         $fail('Password Anda saat ini salah.');
                     }
                 },

@@ -25,7 +25,9 @@ class StoreTransactionRequest extends FormRequest
     public function rules(): array
     {
         // Ambil business_id dari user yang sedang login
-        $idPerusahaan = Auth::user()->id_perusahaan;
+        $user = Auth::user();
+        assert($user !== null);
+        $idPerusahaan = $user->id_perusahaan;
 
         return [
             // Validasi Kritis: category_id harus ada DAN milik business_id user ini

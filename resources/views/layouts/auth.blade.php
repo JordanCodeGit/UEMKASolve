@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,11 +13,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @vite('resources/css/app.css')
 </head>
+
 <body>
     <div class="auth-container">
         <div class="auth-left">
             <div class="logo-container">
-                <img src="{{ url('img/logo.png') }}" alt="Logo" class="logo">
+                <img src="{{ asset('img/logo.png') }}" alt="Logo" class="logo">
             </div>
         </div>
 
@@ -26,4 +28,5 @@
     </div>
     @stack('scripts')
 </body>
+
 </html>

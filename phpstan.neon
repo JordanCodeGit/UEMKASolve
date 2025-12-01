@@ -1,0 +1,29 @@
+includes:
+- vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+
+    # Level 0 paling santai, 9 paling ketat
+    # Untuk pemula/proyek lama, mulai dari 0/1
+
+    # Ubah sesuai level, misal level 0 ketik "level: 0" jika 9 "level: 9"
+    level: 9
+
+    # Disable less critical type checks
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        # Allow missing return types on some methods
+        - '#Method .* has no return type specified#'
+        # Allow missing parameter types
+        - '#Method .* has parameter .* with no type specified#'
+        # Allow missing property types
+        - '#Property .* has no type specified#'
+        # Allow missing generic types
+        - '#Class .* uses generic trait .* but does not specify its types#'
+        - '#Method .* return type with generic class .* does not specify its types#'
+        # Allow missing iterable value types in array
+        - '#return type has no value type specified in iterable type array#'
+        - '#parameter .* with no value type specified in iterable type array#'

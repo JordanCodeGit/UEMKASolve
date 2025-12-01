@@ -26,21 +26,21 @@ class CompanySetupController extends Controller
         if ($request->hasFile('logo')) {
             // Simpan file di 'storage/app/public/logos'
             // Pastikan Anda sudah menjalankan "php artisan storage:link"
-            $logoPath = $request->file('logo')->store('public/logos');
+            /** @var string $tempPath */
+            $tempPath = $request->file('logo')->store('public/logos');
 
             // Ubah path agar bisa diakses dari web
-            $logoPath = Storage::url($logoPath); 
+            $logoPath = Storage::url($tempPath);
         }
-
         // 3. Buat Perusahaan Baru
         $perusahaan = Perusahaan::create([
             'nama_perusahaan' => $validated['nama_perusahaan'],
             'logo' => $logoPath, // Simpan path-nya
         ]);
-
         // 4. TAUTKAN Perusahaan ke User yang sedang login
         $user = Auth::user();
-        $user->id_perusahaan = $perusahaan->id;
+        assert($user !== null);
+        $user->id_perusahaan = (int)$perusahaan->id;
         $user->save();
 
         // 5. Kembalikan ke Dashboard

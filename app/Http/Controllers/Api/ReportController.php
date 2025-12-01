@@ -26,6 +26,7 @@ class ReportController extends Controller
         $endDate = $validated['end_date'];
 
         // 2. Ambil data bisnis (Otorisasi)
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $business = $user->business;
 
@@ -35,21 +36,21 @@ class ReportController extends Controller
 
         // 3. Ambil data transaksi sesuai rentang tanggal & business_id
         $transactionsQuery = $business->transactions()
-                                ->with('category')
-                                ->whereBetween('tanggal_transaksi', [$startDate, $endDate])
-                                ->orderBy('tanggal_transaksi', 'asc');
+            ->with('category')
+            ->whereBetween('tanggal_transaksi', [$startDate, $endDate])
+            ->orderBy('tanggal_transaksi', 'asc');
 
         $transactions = $transactionsQuery->get();
 
         // 4. Hitung Total (Gunakan logic yang sama dari DashboardService)
         // (Anda bisa refactor ini ke Service jika mau)
         $totalPemasukan = (float) $transactionsQuery->clone() // Clone query agar tidak terpengaruh
-                                    ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
-                                    ->sum('jumlah');
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
+            ->sum('jumlah');
 
         $totalPengeluaran = (float) $transactionsQuery->clone()
-                                    ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
-                                    ->sum('jumlah');
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
+            ->sum('jumlah');
 
         $laba = $totalPemasukan - $totalPengeluaran;
 

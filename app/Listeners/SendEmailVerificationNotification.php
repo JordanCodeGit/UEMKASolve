@@ -24,12 +24,17 @@ class SendEmailVerificationNotification
     {
         try {
             // Log untuk debugging
-            Log::info('SendEmailVerificationNotification: User registered - ' . $event->user->email);
-            
+            $emailAttr = $event->user->getAttribute('email');
+            $email = is_string($emailAttr) ? $emailAttr : '';
+            Log::info('SendEmailVerificationNotification: User registered - ' . $email);
+
             // Jika user belum verifikasi email, kirim email
             if (!$event->user->hasVerifiedEmail()) {
-                Mail::send(new VerifyEmailMail($event->user));
-                Log::info('Verification email sent to: ' . $event->user->email);
+                /** @var \App\Models\User $user */
+                $user = $event->user;
+                // Pastikan kita mengirim ke alamat user — gunakan Mail::to() agar header To ter-set
+                Mail::to($user->getEmailForVerification() ?? $email)->send(new VerifyEmailMail($user));
+                Log::info('Verification email sent to: ' . $email);
             }
         } catch (\Exception $e) {
             Log::error('Error sending verification email: ' . $e->getMessage());

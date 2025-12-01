@@ -40,7 +40,7 @@ class CategoryController extends Controller
 
         // [MAPPING] id_perusahaan (User) ---> business_id (Category)
         $query = Category::where('business_id', $companyId)
-                         ->orderBy('nama_kategori', 'asc');
+            ->orderBy('nama_kategori', 'asc');
 
         if ($request->has('tipe') && in_array($request->tipe, ['pemasukan', 'pengeluaran'])) {
             $query->where('tipe', $request->tipe);
@@ -59,7 +59,7 @@ class CategoryController extends Controller
         }
 
         $validatedData = $request->validated();
-        
+
         // [KUNCI] Masukkan ID Perusahaan user ke kolom business_id kategori
         $validatedData['business_id'] = $companyId;
 
@@ -70,7 +70,7 @@ class CategoryController extends Controller
         // (Ini yang akan error jika business_id tidak ada di $fillable Model)
         $category = Category::create($validatedData);
 
-        return response()->json($category, 201); 
+        return response()->json($category, 201);
     }
 
     public function show(Category $category): JsonResponse
@@ -89,11 +89,12 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }
 
-        $category->update($request->validated());
+        $validatedData = $request->validated();
+        $category->update($validatedData);
 
         // [PERBAIKAN] Bersihkan input saat update juga
-        if (isset($validatedData['nama_kategori'])) {
-            $validatedData['nama_kategori'] = $validatedData['nama_kategori'];
+        if (isset($validatedData['nama_kategori']) && is_string($validatedData['nama_kategori'])) {
+            $validatedData['nama_kategori'] = trim($validatedData['nama_kategori']);
         }
         return response()->json($category, 200);
     }
@@ -105,6 +106,6 @@ class CategoryController extends Controller
         }
 
         $category->delete();
-        return response()->noContent(); 
+        return response()->noContent();
     }
 }

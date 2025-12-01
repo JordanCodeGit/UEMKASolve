@@ -14,8 +14,9 @@ class PrintLaporanController extends Controller
     {
         try {
             \Log::info('PrintLaporanController generatePdf called');
-            
+
             $user = Auth::user();
+            assert($user !== null);
             $idPerusahaan = $user->id_perusahaan;
 
             if (!$idPerusahaan) {
@@ -25,9 +26,10 @@ class PrintLaporanController extends Controller
 
             $sections = $request->get('sections', []);
 
-            \Log::info('Sections:', $sections);
+            \Log::info('Sections:', (array)$sections);
 
             // Validate that at least one section is selected
+            $sections = (array)$sections;
             if (!($sections['ringkasan'] ?? false) && !($sections['grafik'] ?? false) && !($sections['rincian'] ?? false)) {
                 return response()->json(['error' => 'No sections selected'], 400);
             }
@@ -46,38 +48,48 @@ class PrintLaporanController extends Controller
                 ->latest('tanggal_transaksi')
                 ->get();
 
+            /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Transaction> $allTransactions */
+
             \Log::info('Total transactions found: ' . count($allTransactions));
 
             // Calculate summary by iterating through transactions
             $pemasukanPeriod = 0;
             $pengeluaranPeriod = 0;
-            
+
             foreach ($allTransactions as $tx) {
-                if ($tx->category && $tx->category->tipe === 'pemasukan') {
+                /** @var \App\Models\Category|null $category */
+                $category = $tx->category;
+                if ($category && $category->tipe === 'pemasukan') {
                     $pemasukanPeriod += (float)$tx->jumlah;
-                } elseif ($tx->category && $tx->category->tipe === 'pengeluaran') {
+                } elseif ($category && $category->tipe === 'pengeluaran') {
                     $pengeluaranPeriod += (float)$tx->jumlah;
                 }
             }
-            
+
             // Calculate total balance (all time, not just this month)
             $allTimePemasukan = Transaction::where('business_id', $idPerusahaan)
                 ->with('category')
                 ->get()
-                ->filter(function($tx) {
-                    return $tx->category && $tx->category->tipe === 'pemasukan';
+                ->filter(function ($tx) {
+                    /** @var \App\Models\Transaction $tx */
+                    $category = $tx->category;
+                    /** @phpstan-ignore-next-line */
+                    return $category && $category->tipe === 'pemasukan';
                 })
                 ->sum('jumlah');
 
             $allTimePengeluaran = Transaction::where('business_id', $idPerusahaan)
                 ->with('category')
                 ->get()
-                ->filter(function($tx) {
-                    return $tx->category && $tx->category->tipe === 'pengeluaran';
+                ->filter(function ($tx) {
+                    /** @var \App\Models\Transaction $tx */
+                    $category = $tx->category;
+                    /** @phpstan-ignore-next-line */
+                    return $category && $category->tipe === 'pengeluaran';
                 })
                 ->sum('jumlah');
 
-            $saldoTotal = $allTimePemasukan - $allTimePengeluaran;
+            $saldoTotal = (is_numeric($allTimePemasukan) ? $allTimePemasukan : 0) - (is_numeric($allTimePengeluaran) ? $allTimePengeluaran : 0);
 
             // Get recent transactions (limit to 10)
             $transactions = $allTransactions->take(10);
@@ -87,13 +99,15 @@ class PrintLaporanController extends Controller
             $categoryLabels = [];
             $categoryPemasukanData = [];
             $categoryPengeluaranData = [];
-            
+
             foreach ($allTransactions as $tx) {
-                if (!$tx->category) continue;
-                
-                $categoryName = $tx->category->nama_kategori;
-                $categoryType = $tx->category->tipe;
-                
+                /** @var \App\Models\Category|null $category */
+                $category = $tx->category;
+                if (!$category) continue;
+
+                $categoryName = $category->nama_kategori;
+                $categoryType = $category->tipe;
+
                 if (!isset($categoryBreakdown[$categoryName])) {
                     $categoryBreakdown[$categoryName] = [
                         'nama' => $categoryName,
@@ -102,7 +116,7 @@ class PrintLaporanController extends Controller
                         'count' => 0
                     ];
                 }
-                
+
                 $categoryBreakdown[$categoryName]['total'] += (float)$tx->jumlah;
                 $categoryBreakdown[$categoryName]['count'] += 1;
             }
@@ -110,16 +124,20 @@ class PrintLaporanController extends Controller
             // Prepare chart data (daily breakdown)
             $dailyData = [];
             foreach ($allTransactions as $tx) {
-                $date = $tx->tanggal_transaksi->format('d');
-                
+                /** @var \App\Models\Transaction $tx */
+                $tanggal = $tx->tanggal_transaksi;
+                $date = (new \DateTime((string)$tanggal))->format('d');
+
                 if (!isset($dailyData[$date])) {
                     $dailyData[$date] = [
                         'pemasukan' => 0,
                         'pengeluaran' => 0
                     ];
                 }
-                
-                if ($tx->category && $tx->category->tipe === 'pemasukan') {
+
+                /** @var \App\Models\Category|null $category */
+                $category = $tx->category;
+                if ($category && $category->tipe === 'pemasukan') {
                     $dailyData[$date]['pemasukan'] += (float)$tx->jumlah;
                 } else {
                     $dailyData[$date]['pengeluaran'] += (float)$tx->jumlah;
@@ -128,11 +146,11 @@ class PrintLaporanController extends Controller
 
             // Sort by date
             ksort($dailyData);
-            
+
             $chartLabels = array_keys($dailyData);
             $chartPemasukanValues = [];
             $chartPengeluaranValues = [];
-            
+
             foreach ($dailyData as $data) {
                 $chartPemasukanValues[] = $data['pemasukan'];
                 $chartPengeluaranValues[] = $data['pengeluaran'];
@@ -141,7 +159,7 @@ class PrintLaporanController extends Controller
             // Generate chart URLs using QuickChart API
             $lineChartUrl = $this->generateLineChartUrl($chartLabels, $chartPemasukanValues, $chartPengeluaranValues);
             $doughnutChartUrl = $this->generateDoughnutChartUrl($categoryBreakdown);
-            
+
             // Download dan convert chart images to base64
             $lineChartBase64 = $this->getChartAsBase64($lineChartUrl);
             $doughnutChartBase64 = $this->getChartAsBase64($doughnutChartUrl);
@@ -164,7 +182,7 @@ class PrintLaporanController extends Controller
                 'lineChartBase64' => $lineChartBase64,
                 'doughnutChartBase64' => $doughnutChartBase64,
                 'company' => [
-                    'name' => $user->perusahaan?->nama_perusahaan ?? 'Usaha Saya',
+                    'name' => $user->perusahaan->nama_perusahaan ?? 'Usaha Saya',
                 ]
             ];
 
@@ -183,7 +201,6 @@ class PrintLaporanController extends Controller
 
             $filename = 'Laporan_Keuangan_' . date('d-m-Y') . '.pdf';
             return $pdf->download($filename);
-
         } catch (\Exception $e) {
             \Log::error('PDF Generation Error: ' . $e->getMessage());
             \Log::error('Stack: ' . $e->getTraceAsString());
@@ -249,7 +266,8 @@ class PrintLaporanController extends Controller
             ]
         ];
 
-        $encodedConfig = urlencode(json_encode($chartConfig));
+        $chartJson = json_encode($chartConfig);
+        $encodedConfig = urlencode($chartJson !== false ? $chartJson : '');
         return "https://quickchart.io/chart?c={$encodedConfig}&w=800&h=400";
     }
 
@@ -296,7 +314,8 @@ class PrintLaporanController extends Controller
             ]
         ];
 
-        $encodedConfig = urlencode(json_encode($chartConfig));
+        $chartJson = json_encode($chartConfig);
+        $encodedConfig = urlencode($chartJson !== false ? $chartJson : '');
         return "https://quickchart.io/chart?c={$encodedConfig}&w=600&h=400";
     }
 
@@ -311,7 +330,7 @@ class PrintLaporanController extends Controller
                 \Log::warning('Failed to download chart from: ' . $chartUrl);
                 return null;
             }
-            
+
             return 'data:image/png;base64,' . base64_encode($imageContent);
         } catch (\Exception $e) {
             \Log::error('Error converting chart to base64: ' . $e->getMessage());
@@ -319,4 +338,3 @@ class PrintLaporanController extends Controller
         }
     }
 }
-

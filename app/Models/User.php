@@ -2,22 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail; // Pastikan ini di-use
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens; // Untuk Sanctum
-use Illuminate\Database\Eloquent\Relations\HasOne; // Import HasOne
-use App\Notifications\VerifyEmailNotification; // Import custom notification
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Notifications\VerifyEmailNotification;
 
-class User extends Authenticatable implements MustVerifyEmail // Implementasikan MustVerifyEmail
+/**
+ * @property-read Perusahaan|null $perusahaan
+ * @property-read Business|null $business
+ * @property string $email
+ * @property int|null $id_perusahaan
+ */
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasApiTokens; // Tambahkan HasApiTokens
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -30,7 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail // Implementasikan
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -53,10 +60,18 @@ class User extends Authenticatable implements MustVerifyEmail // Implementasikan
     /**
      * Get the business associated with the user (one-to-one).
      */
-    public function perusahaan()
+    public function perusahaan(): BelongsTo
     {
         // User ini 'milik' (belongsTo) satu Perusahaan
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+    }
+
+    /**
+     * Get the business associated with the user (alias).
+     */
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class, 'id_perusahaan');
     }
 
     /**

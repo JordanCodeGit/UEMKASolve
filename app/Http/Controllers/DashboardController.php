@@ -14,6 +14,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        assert($user !== null);
         $needsCompanySetup = is_null($user->id_perusahaan);
         return view('dashboard', compact('needsCompanySetup'));
     }
@@ -26,6 +27,7 @@ class DashboardController extends Controller
         ]);
 
         $user = Auth::user();
+        assert($user !== null);
         if ($user->id_perusahaan) return redirect()->back();
 
         $logoPath = null;
@@ -34,7 +36,7 @@ class DashboardController extends Controller
         }
 
         $perusahaan = Perusahaan::create([
-            'nama_perusahaan' => strip_tags($request->nama_perusahaan),
+            'nama_perusahaan' => strip_tags(is_string($request->nama_perusahaan) ? $request->nama_perusahaan : ''),
             'logo'            => $logoPath,
         ]);
 
@@ -45,6 +47,7 @@ class DashboardController extends Controller
     public function getSummary(Request $request)
     {
         $user = Auth::user();
+        assert($user !== null);
         $idPerusahaan = $user->id_perusahaan;
 
         if (!$idPerusahaan) {
@@ -73,32 +76,34 @@ class DashboardController extends Controller
         $queryFiltered = Transaction::where('business_id', $idPerusahaan);
 
         // A. Filter Search
-        if ($request->filled('search')) {
+        if ($request->filled('search') && is_string($request->search)) {
             $search = $request->search;
-            $queryFiltered->where(function($q) use ($search) {
+            $queryFiltered->where(function ($q) use ($search) {
                 $q->where('catatan', 'like', "%{$search}%")
-                  ->orWhereHas('category', function($cat) use ($search) {
-                      $cat->where('nama_kategori', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('category', function ($cat) use ($search) {
+                        $cat->where('nama_kategori', 'like', "%{$search}%");
+                    });
             });
         }
 
         // B. Filter Tanggal (Mempengaruhi Grafik, List, & Summary Cards)
         $isFilterActive = $request->filled('start_date') && $request->filled('end_date');
-        
+
         if ($isFilterActive) {
-            $startDate = $request->start_date . ' 00:00:00';
-            $endDate   = $request->end_date . ' 23:59:59';
-            
+            $startDateInput = $request->start_date;
+            $endDateInput = $request->end_date;
+            $startDate = (is_string($startDateInput) ? $startDateInput : '') . ' 00:00:00';
+            $endDate   = (is_string($endDateInput) ? $endDateInput : '') . ' 23:59:59';
+
             $queryFiltered->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
-            
+
             // Mode Harian
             $groupByFormat = "DATE(tanggal_transaksi)";
-            $dateFormatPHP = 'd M'; 
+            $dateFormatPHP = 'd M';
         } else {
             // Mode Bulanan (Semua)
             $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
-            $dateFormatPHP = 'M Y'; 
+            $dateFormatPHP = 'M Y';
         }
 
         // --- SUMMARY CARDS (Pemasukan, Pengeluaran, Laba) ---
@@ -114,8 +119,10 @@ class DashboardController extends Controller
 
         // Jika filter aktif (berdasarkan range tanggal), hitung perubahan vs periode sebelumnya
         if ($isFilterActive) {
-            $startDate_obj = Carbon::parse($request->start_date);
-            $endDate_obj = Carbon::parse($request->end_date);
+            $startDateStr = is_string($request->start_date) ? $request->start_date : '';
+            $endDateStr = is_string($request->end_date) ? $request->end_date : '';
+            $startDate_obj = Carbon::parse($startDateStr);
+            $endDate_obj = Carbon::parse($endDateStr);
             $periodLength = $startDate_obj->diffInDays($endDate_obj);
 
             $prevStartDate = $startDate_obj->clone()->subDays($periodLength + 1);
@@ -131,13 +138,13 @@ class DashboardController extends Controller
             // Hitung persentase - gunakan nilai absolute untuk handling nilai 0/negatif
             // Jika periode sebelumnya 0, tentukan tanda berdasarkan periode saat ini
             if ($pemasukanPrevious != 0) {
-                $pemasukanPercentChange = (($pemasukanPeriod - $pemasukanPrevious) / abs($pemasukanPrevious)) * 100;
+                $pemasukanPercentChange = (($pemasukanPeriod - $pemasukanPrevious) / (float)abs((int)$pemasukanPrevious)) * 100;
             } else {
                 $pemasukanPercentChange = ($pemasukanPeriod > 0 ? 100 : ($pemasukanPeriod < 0 ? -100 : 0));
             }
 
             if ($pengeluaranPrevious != 0) {
-                $pengeluaranPercentChange = (($pengeluaranPeriod - $pengeluaranPrevious) / abs($pengeluaranPrevious)) * 100;
+                $pengeluaranPercentChange = (($pengeluaranPeriod - $pengeluaranPrevious) / (float)abs((int)$pengeluaranPrevious)) * 100;
             } else {
                 $pengeluaranPercentChange = ($pengeluaranPeriod > 0 ? 100 : ($pengeluaranPeriod < 0 ? -100 : 0));
             }
@@ -170,19 +177,19 @@ class DashboardController extends Controller
             // Hitung persentase - gunakan nilai absolute untuk handling nilai 0/negatif
             // Jika periode sebelumnya 0, tentukan tanda berdasarkan periode saat ini
             if ($pemasukanPrevMonth != 0) {
-                $pemasukanPercentChange = (($pemasukanCurrent - $pemasukanPrevMonth) / abs($pemasukanPrevMonth)) * 100;
+                $pemasukanPercentChange = (($pemasukanCurrent - $pemasukanPrevMonth) / (float)abs((int)$pemasukanPrevMonth)) * 100;
             } else {
                 $pemasukanPercentChange = ($pemasukanCurrent > 0 ? 100 : ($pemasukanCurrent < 0 ? -100 : 0));
             }
 
             if ($pengeluaranPrevMonth != 0) {
-                $pengeluaranPercentChange = (($pengeluaranCurrent - $pengeluaranPrevMonth) / abs($pengeluaranPrevMonth)) * 100;
+                $pengeluaranPercentChange = (($pengeluaranCurrent - $pengeluaranPrevMonth) / (float)abs((int)$pengeluaranPrevMonth)) * 100;
             } else {
                 $pengeluaranPercentChange = ($pengeluaranCurrent > 0 ? 100 : ($pengeluaranCurrent < 0 ? -100 : 0));
             }
 
             if ($labaPrevMonth != 0) {
-                $labaPercentChange = (($labaCurrent - $labaPrevMonth) / abs($labaPrevMonth)) * 100;
+                $labaPercentChange = (($labaCurrent - $labaPrevMonth) / (float)abs((int)$labaPrevMonth)) * 100;
             } else {
                 $labaPercentChange = ($labaCurrent > 0 ? 100 : ($labaCurrent < 0 ? -100 : 0));
             }
@@ -200,7 +207,9 @@ class DashboardController extends Controller
             ->groupBy('date')->orderBy('date')->pluck('total', 'date');
 
         $allKeys = $incomeDataRaw->keys()->merge($expenseDataRaw->keys())->unique()->sort()->values();
-        $chartLabels = []; $chartIncome = []; $chartExpense = [];
+        $chartLabels = [];
+        $chartIncome = [];
+        $chartExpense = [];
 
         foreach ($allKeys as $key) {
             $chartLabels[] = Carbon::parse($key)->format($dateFormatPHP);
@@ -219,7 +228,10 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $doughnutLabels = $topCategories->map(fn($item) => optional($item->category)->nama_kategori ?? 'Tanpa Kategori');
+        $doughnutLabels = $topCategories->map(function ($item) {
+            $cat = optional($item->category);
+            return is_object($cat) && property_exists($cat, 'nama_kategori') ? $cat->nama_kategori : 'Tanpa Kategori';
+        });
         $doughnutData = $topCategories->pluck('total');
 
         // --- LIST TRANSAKSI (5 Terakhir) ---
@@ -265,6 +277,7 @@ class DashboardController extends Controller
     public function getData(Request $request)
     {
         $user = Auth::user();
+        assert($user !== null);
         $idPerusahaan = $user->id_perusahaan;
 
         if (!$idPerusahaan) {
@@ -283,15 +296,15 @@ class DashboardController extends Controller
         $pemasukanPeriod = $query->clone()->whereHas('category', function ($q) {
             $q->where('tipe', 'pemasukan');
         })->sum('jumlah');
-        
+
         $pengeluaranPeriod = $query->clone()->whereHas('category', function ($q) {
             $q->where('tipe', 'pengeluaran');
         })->sum('jumlah');
-        
+
         $saldoTotal = Transaction::where('business_id', $idPerusahaan)
             ->whereHas('category', function ($q) {
                 $q->where('tipe', 'pemasukan');
-            })->sum('jumlah') - 
+            })->sum('jumlah') -
             Transaction::where('business_id', $idPerusahaan)
             ->whereHas('category', function ($q) {
                 $q->where('tipe', 'pengeluaran');

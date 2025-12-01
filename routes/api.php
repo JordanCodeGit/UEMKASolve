@@ -23,25 +23,9 @@ Route::post('/register', [AuthController::class, 'register']);
 // [TAMBAHKAN INI] Route login (Publik)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1'); // Contoh: 5 percobaan login per menit
 
-// [TAMBAHKAN INI] Route Forgot & Reset Password (Publik)
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])
-        ->middleware('throttle:5,1') // Batasi request forgot password
-        ->name('password.email'); // Beri nama route (standar Laravel)
-
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])
-        ->middleware('throttle:5,1') // Batasi request reset password
-        ->name('password.update'); // Beri nama route (standar Laravel)
-
 // [TAMBAHKAN INI] Rute Google Auth
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
-
-// Route verifikasi email (Harus publik tapi butuh 'signed')
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-    // Redirect ke halaman sukses di front-end Anda
-    return redirect(env('FRONTEND_URL', 'http://localhost:3000').'/email-verified');
-})->middleware(['signed'])->name('verification.verify');
 
 // ========== ACTIVITY TRACKING ==========
 // Route untuk update last activity (mencegah auto logout)
@@ -94,7 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     // Route untuk simpan perusahaan baru dari pop-up
     Route::post('/setup-perusahaan', [SetupController::class, 'store']);
-    
+
     // Pastikan route ini ada untuk pengecekan user di dashboard
     Route::get('/user', function (Request $request) {
         return $request->user();

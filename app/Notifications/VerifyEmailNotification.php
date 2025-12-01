@@ -32,6 +32,7 @@ class VerifyEmailNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        /** @var \App\Models\User $notifiable */
         // Generate signed URL untuk verifikasi email
         // Gunakan full URL dengan APP_URL
         $verificationUrl = URL::temporarySignedRoute(
