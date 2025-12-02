@@ -16,14 +16,19 @@ use Illuminate\Database\Eloquent\Builder;
 class TransactionController extends Controller
 {
     /**
-     * [MODIFIKASI] Dapatkan ID Perusahaan langsung dari tabel users.
-     * Menggantikan: Auth::user()->business->id
+     * [PERBAIKAN] Dapatkan ID Bisnis dari relasi User -> Business.
      */
     private function getPerusahaanId()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-        assert($user !== null);
-        return $user->id_perusahaan;
+
+        // Cek relasi business (HasOne)
+        if ($user && $user->business) {
+            return $user->business->id;
+        }
+
+        return null;
     }
 
     /**
@@ -38,7 +43,7 @@ class TransactionController extends Controller
         }
 
         // =================================================================
-        // 1. QUERY UTAMA (UNTUK TABEL & STATISTIK FILTER)
+        // 1. QUERY UTAMA
         // =================================================================
         $queryFiltered = Transaction::where('business_id', $idPerusahaan)
             ->with('category:id,nama_kategori,tipe,ikon');
@@ -81,27 +86,20 @@ class TransactionController extends Controller
         // =================================================================
         // 2. HITUNG TOTAL SESUAI FILTER (FOOTER)
         // =================================================================
-        // Angka ini akan berubah-ubah mengikuti tanggal/search yang dipilih user
-
-        // Hitung Pemasukan (Filtered)
         $pemasukanFiltered = (clone $queryFiltered)->whereHas('category', function (Builder $q) {
             $q->where('tipe', 'pemasukan');
         })->sum('jumlah');
 
-        // Hitung Pengeluaran (Filtered)
         $pengeluaranFiltered = (clone $queryFiltered)->whereHas('category', function (Builder $q) {
             $q->where('tipe', 'pengeluaran');
         })->sum('jumlah');
 
-        // Hitung Laba (Filtered)
         $labaFiltered = $pemasukanFiltered - $pengeluaranFiltered;
 
 
         // =================================================================
-        // 3. HITUNG SALDO ASLI (ALL TIME - KEBAL FILTER)
+        // 3. HITUNG SALDO ASLI (ALL TIME)
         // =================================================================
-        // Ini menghitung uang real yang dimiliki user saat ini
-
         $queryAllTime = Transaction::where('business_id', $idPerusahaan);
 
         $totalMasukAll = (clone $queryAllTime)->whereHas('category', function (Builder $q) {
@@ -116,7 +114,7 @@ class TransactionController extends Controller
 
 
         // =================================================================
-        // 4. AMBIL DATA PAGINASI (UNTUK TABEL)
+        // 4. AMBIL DATA PAGINASI
         // =================================================================
         $perPageInput = $request->input('per_page') ?? 10;
         $perPage = is_numeric($perPageInput) ? (int)$perPageInput : 10;
@@ -127,12 +125,9 @@ class TransactionController extends Controller
         return response()->json([
             'pagination' => $transactions,
             'summary' => [
-                // Footer menggunakan data Terfilter
                 'total_pemasukan' => $pemasukanFiltered,
                 'total_pengeluaran' => $pengeluaranFiltered,
                 'laba' => $labaFiltered,
-
-                // Header Saldo menggunakan data All Time (Ditambahkan key baru)
                 'saldo_real' => $saldoReal
             ]
         ], 200);
@@ -143,33 +138,37 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'jumlah' => 'required|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'tanggal_transaksi' => 'required|date',
-            'catatan' => 'nullable|string|max:255',
-            // 'tipe' tidak perlu divalidasi masuk DB, karena ikut kategori
-        ]);
-
-        $user = Auth::user();
-        assert($user !== null);
-        $idPerusahaan = $user->id_perusahaan;
+        // 1. Ambil ID Bisnis dengan Benar
+        $idPerusahaan = $this->getPerusahaanId();
 
         if (!$idPerusahaan) {
             return response()->json(['message' => 'Anda belum memiliki profil usaha.'], 400);
         }
 
+        // 2. Validasi Manual (Selain StoreTransactionRequest)
+        // Kita perlu memastikan category_id yang dikirim BENAR MILIK bisnis ini
+        $request->validate([
+            'jumlah' => 'required|numeric|min:0',
+            'tanggal_transaksi' => 'required|date',
+            'catatan' => 'nullable|string|max:255',
+            'category_id' => [
+                'required',
+                // Rule ini memastikan kategori milik bisnis yang sedang login
+                Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
+                    return $query->where('business_id', $idPerusahaan);
+                }),
+            ],
+        ]);
+
         $validatedData = $request->validated();
 
-        // [PERBAIKAN] Mapping Sesuai Database (Gambar)
+        // 3. Simpan Transaksi
         $transaction = Transaction::create([
-            'business_id'       => $idPerusahaan,
-            'category_id'       => $validatedData['category_id'],
-
-            // KIRI (Kolom DB)   => KANAN (Input Form)
-            'jumlah'            => $validatedData['jumlah'],
-            'tanggal_transaksi' => $validatedData['tanggal_transaksi'],
-            'catatan'           => $validatedData['catatan'],
+            'business_id'       => $idPerusahaan, // [FIX] ID Bisnis Valid
+            'category_id'       => $request->category_id, // Ambil dari request langsung agar aman
+            'jumlah'            => $request->jumlah,
+            'tanggal_transaksi' => $request->tanggal_transaksi,
+            'catatan'           => $request->catatan,
         ]);
 
         $transaction->load('category');
@@ -182,8 +181,9 @@ class TransactionController extends Controller
      */
     public function show($id): JsonResponse
     {
-        /** @var \App\Models\Transaction|null $transaction */
         $transaction = Transaction::find($id);
+
+        // Cek kepemilikan
         if (!$transaction || $transaction->business_id !== $this->getPerusahaanId()) {
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }
@@ -195,44 +195,44 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
-        // 1. Cari Transaksi & Cek Kepemilikan
-        /** @var \App\Models\Transaction|null $transaction */
         $transaction = Transaction::find($id);
 
         if (!$transaction || $transaction->business_id !== $this->getPerusahaanId()) {
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }
 
-        // 2. Ambil Data Validasi
-        $validatedData = $request->validated();
-
-        // 3. [PERBAIKAN PENTING] Mapping Manual (Input Form -> Kolom DB)
-        // Karena kita tidak bisa langsung $transaction->update($validatedData)
-
-        $transaction->update([
-            'category_id'       => $validatedData['category_id'],
-            'jumlah'            => $validatedData['jumlah'],            // Mapping: jumlah -> amount
-            'tanggal_transaksi'              => $validatedData['tanggal_transaksi'], // Mapping: tanggal -> date
-            'catatan'       => strip_tags(isset($validatedData['catatan']) && is_string($validatedData['catatan']) ? $validatedData['catatan'] : ''), // Mapping & Bersihkan XSS
-            // 'type' tidak perlu diupdate karena ikut kategori, tapi jika mau disimpan:
-            // 'type'           => $validatedData['tipe'],
+        // Validasi kepemilikan kategori saat update juga penting
+        $idPerusahaan = $this->getPerusahaanId();
+        $request->validate([
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
+                    return $query->where('business_id', $idPerusahaan);
+                }),
+            ],
         ]);
 
-        // 4. Reload relasi untuk respon
+        $validatedData = $request->validated();
+
+        $transaction->update([
+            'category_id'       => $request->category_id,
+            'jumlah'            => $request->jumlah,
+            'tanggal_transaksi' => $request->tanggal_transaksi,
+            'catatan'           => strip_tags($request->catatan ?? ''),
+        ]);
+
         $transaction->load('category');
 
         return response()->json($transaction, 200);
     }
 
     /**
-     * Menghapus transaksi (Soft Delete).
+     * Menghapus transaksi.
      */
     public function destroy($id): JsonResponse
     {
-        /** @var \App\Models\Transaction|null $transaction */
         $transaction = Transaction::find($id);
 
-        // Cek kepemilikan via business_id (id_perusahaan)
         if (!$transaction || $transaction->business_id !== $this->getPerusahaanId()) {
             return response()->json(['message' => 'Tidak ditemukan.'], 404);
         }

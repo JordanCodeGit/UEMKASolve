@@ -7,48 +7,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne; // Pastikan ini ada
 use App\Notifications\VerifyEmailNotification;
 
 /**
- * @property-read Perusahaan|null $perusahaan
  * @property-read Business|null $business
  * @property string $email
- * @property int|null $id_perusahaan
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'google_id',
-        'id_perusahaan',
+        // 'id_perusahaan', <--- HAPUS INI. Kita tidak pakai kolom ini lagi di tabel users.
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -58,25 +40,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the business associated with the user (one-to-one).
+     * Get the business associated with the user.
+     * RELASI: User MEMILIKI satu Business.
      */
-    public function perusahaan(): BelongsTo
+    public function business(): HasOne
     {
-        // User ini 'milik' (belongsTo) satu Perusahaan
-        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
-    }
-
-    /**
-     * Get the business associated with the user (alias).
-     */
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class, 'id_perusahaan');
+        // Parameter kedua ('user_id') adalah Foreign Key yang ada di tabel businesses
+        return $this->hasOne(Business::class, 'user_id');
     }
 
     /**
      * Send the email verification notification.
-     * Override untuk menggunakan custom notification
      */
     public function sendEmailVerificationNotification()
     {

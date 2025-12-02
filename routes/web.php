@@ -99,12 +99,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Rute Dashboard
     Route::get('/dashboard', function () {
-        $user = Illuminate\Support\Facades\Auth::user();
-
-        // Cek apakah id_perusahaan kosong
-        $needsCompanySetup = is_null($user->id_perusahaan);
-
-        return view('dashboard', compact('needsCompanySetup'));
+        // HAPUS semua logika pengecekan di sini.
+        // Biarkan AppServiceProvider yang mengurus variabel $needsCompanySetup.
+        return view('dashboard');
     })->name('dashboard');
 
     // Rute Buku Kas

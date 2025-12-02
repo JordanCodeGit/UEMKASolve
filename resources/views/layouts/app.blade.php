@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,17 +9,18 @@
     <link rel="icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     @vite('resources/css/app.css')
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    
+
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-logo">
 
@@ -26,7 +28,7 @@
 
             <span>Uemkas</span>
         </a>
-        
+
         <nav class="sidebar-nav">
             <ul>
                 <li>
@@ -48,7 +50,7 @@
                         <span>KATEGORI</span>
                     </a>
                 </li>
-                
+
                 <li>
                     <a href="{{ route('pengaturan.show') }}" class="{{ Request::is('pengaturan') ? 'active' : '' }}">
                         <i class="fa-solid fa-gear"></i>
@@ -71,10 +73,10 @@
                 <h1 class="page-title">
                     @yield('title')
                 </h1>
-                
+
                 <div class="top-bar-right">
                     <div class="notification-wrapper" style="position: relative;">
-                        
+
                         <button class="notification-bell" id="notif-btn">
                             <i class="fa-regular fa-bell"></i>
                             <span class="notif-badge" id="notif-badge" style="display: none;"></span>
@@ -85,37 +87,46 @@
                                 <h3>Notifikasi</h3>
                                 <span class="mark-read" onclick="clearNotifications()">Tandai semua sudah dibaca</span>
                             </div>
-                            
+
                             <div class="notif-list" id="notif-list">
-                                </div>
+                            </div>
                         </div>
 
                     </div>
-                    
+
 
                     <div class="user-profile-dropdown" id="profileTriggerBtn">
-                        
-                        @if(optional($globalUser->perusahaan)->logo)
-                            <img src="{{ $globalUser->perusahaan->logo }}" alt="Logo" class="profile-avatar-pojok">
+
+                        {{-- LOGO / AVATAR --}}
+                        @if (optional($globalUser->business)->logo_path)
+                            {{-- Tampilkan Logo Bisnis (Dari Storage) --}}
+                            <img src="{{ asset('storage/' . $globalUser->business->logo_path) }}" alt="Logo"
+                                class="profile-avatar-pojok" style="object-fit: cover;">
                         @else
+                            {{-- Fallback: Tampilkan Inisial Nama Bisnis atau Nama User --}}
                             <div class="default-avatar-pojok">
-                                {{ substr($globalUser->name, 0, 1) }}
+                                @php
+                                    $displayName = optional($globalUser->business)->nama_usaha ?? $globalUser->name;
+                                @endphp
+                                {{ substr($displayName, 0, 1) }}
                             </div>
                         @endif
 
+                        {{-- NAMA --}}
                         <span class="profile-name">
-                            {{ Auth::user()->perusahaan ? Auth::user()->perusahaan->nama_perusahaan : Auth::user()->name }}
+                            {{-- Prioritas: Nama Bisnis > Nama User --}}
+                            {{ optional($globalUser->business)->nama_usaha ?? $globalUser->name }}
                         </span>
-                        <i class="fa-solid fa-chevron-down" style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
+
+                        <i class="fa-solid fa-chevron-down"
+                            style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
 
                         <div class="header-dropdown-menu" id="headerDropdownMenu">
-
                             <a href="#" class="header-menu-item text-red" id="headerLogoutBtn">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                                 <span>Keluar</span>
                             </a>
                         </div>
-
                     </div>
                 </div>
             </header>
@@ -124,14 +135,14 @@
         <main class="content-area">
             @yield('content')
         </main>
-        
+
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const themeToggle = document.getElementById('theme-toggle');
             if (!themeToggle) return; // Guard clause - exit jika element tidak ada
-            
+
             const body = document.body;
             const icon = themeToggle.querySelector('i');
 
@@ -148,7 +159,7 @@
             // 2. Event listener untuk tombol
             themeToggle.addEventListener('click', () => {
                 body.classList.toggle('dark-mode');
-                
+
                 if (body.classList.contains('dark-mode')) {
                     // Jika beralih ke Dark Mode
                     if (icon) {
@@ -180,7 +191,7 @@
             const notifMenu = document.getElementById('notif-menu');
             const notifList = document.getElementById('notif-list');
             const notifBadge = document.getElementById('notif-badge');
-            
+
             const notifications = [];
 
             // ===== UTILITY: DETECT BROWSER & OS =====
@@ -204,7 +215,10 @@
                 else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) browser = 'Opera';
                 else if (ua.indexOf('Trident') > -1) browser = 'Internet Explorer';
 
-                return { browser, os };
+                return {
+                    browser,
+                    os
+                };
             }
 
             // ===== FUNGSI: SIMPAN & LOAD RIWAYAT LOGIN =====
@@ -222,8 +236,11 @@
             // ===== 1. NOTIFIKASI LOGIN =====
             const now = new Date();
             const userName = '{{ Auth::user()->name }}' || 'User';
-            const { browser, os } = detectBrowserAndOS();
-            const loginTime = now.toLocaleString('id-ID', { 
+            const {
+                browser,
+                os
+            } = detectBrowserAndOS();
+            const loginTime = now.toLocaleString('id-ID', {
                 weekday: 'long',
                 day: '2-digit',
                 month: 'long',
@@ -231,7 +248,7 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            
+
             // Simpan ke riwayat login
             const currentLogin = {
                 user: userName,
@@ -241,7 +258,7 @@
                 timeDisplay: loginTime
             };
             saveLoginHistory(currentLogin);
-            
+
             // Generate HTML untuk riwayat login (scrollable)
             const loginHistory = getLoginHistory();
             let historyHTML = `
@@ -249,7 +266,7 @@
                     <p style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 8px; padding: 0 8px;">📋 Riwayat Login Terbaru:</p>
                     <div style="max-height: 200px; overflow-y: auto;">
             `;
-            
+
             loginHistory.forEach((login, idx) => {
                 const loginDate = new Date(login.time).toLocaleString('id-ID', {
                     day: '2-digit',
@@ -258,8 +275,10 @@
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                const isCurrentLogin = idx === 0 ? '<span style="background: #22c55e; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: bold;">Baru</span>' : '';
-                
+                const isCurrentLogin = idx === 0 ?
+                    '<span style="background: #22c55e; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: bold;">Baru</span>' :
+                    '';
+
                 historyHTML += `
                     <div style="padding: 8px; background: ${idx % 2 === 0 ? '#f8fafc' : 'white'}; border-left: 3px solid ${idx === 0 ? '#22c55e' : '#cbd5e1'}; margin-bottom: 6px; font-size: 0.8rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
@@ -273,22 +292,25 @@
                     </div>
                 `;
             });
-            
+
             historyHTML += `
                     </div>
                 </div>
             `;
-            
+
             // ===== CHECK MONTH-END STATUS =====
             const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
             const daysUntilMonthEnd = lastDayOfMonth - now.getDate();
-            
+
             // ===== 1. NOTIFIKASI H-3 SEBELUM AKHIR BULAN (PRIORITAS TINGGI - DI ATAS) =====
             if (daysUntilMonthEnd <= 3 && daysUntilMonthEnd >= 0) {
-                const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+                const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus",
+                    "September", "Oktober", "November", "Desember"
+                ];
                 const currentMonth = monthNames[now.getMonth()];
-                const daysLabel = daysUntilMonthEnd === 0 ? 'hari ini (hari terakhir bulan)' : `dalam ${daysUntilMonthEnd} hari`;
-                
+                const daysLabel = daysUntilMonthEnd === 0 ? 'hari ini (hari terakhir bulan)' :
+                    `dalam ${daysUntilMonthEnd} hari`;
+
                 notifications.push({
                     type: 'print',
                     title: 'Waktunya Cetak Buku Kas!',
@@ -305,7 +327,7 @@
                 desc: `Semua riwayat login Anda tersimpan di bawah.`,
                 descExtended: historyHTML,
                 time: 'Baru saja',
-                icon: '{{ asset("icons/notif_login.png") }}'
+                icon: '{{ asset('icons/notif_login.png') }}'
             });
 
             // ===== CHECK BADGE STATE FROM LOCALSTORAGE =====
@@ -321,32 +343,34 @@
             // --- RENDER NOTIFIKASI ---
             function renderNotifications() {
                 if (!notifList) return; // Guard clause
-                
+
                 notifList.innerHTML = '';
-                
+
                 if (notifications.length === 0) {
-                    notifList.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:0.9rem;">Tidak ada notifikasi baru</div>';
+                    notifList.innerHTML =
+                        '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:0.9rem;">Tidak ada notifikasi baru</div>';
                     return;
                 }
 
                 notifications.forEach(notif => {
                     const item = document.createElement('div');
                     item.className = 'notif-item';
-                    
+
                     // Tentukan warna icon berdasarkan tipe
                     const iconClass = notif.type === 'print' ? 'icon-blue-light' : 'icon-green-light';
-                    
+
                     // Render icon - jika string (image), pakai img tag; jika HTML, pakai innerHTML
                     let iconHTML = '';
                     if (notif.type === 'login') {
-                        iconHTML = `<img src="${notif.icon}" alt="Login Icon" style="width:24px; height:24px; object-fit:contain;">`;
+                        iconHTML =
+                            `<img src="${notif.icon}" alt="Login Icon" style="width:24px; height:24px; object-fit:contain;">`;
                     } else {
                         iconHTML = notif.icon;
                     }
-                    
+
                     // Jika ada riwayat login, tampilkan dengan scrollable area
                     const extendedContent = notif.descExtended ? `${notif.descExtended}` : '';
-                    
+
                     item.innerHTML = `
                         <div class="notif-icon ${iconClass}">
                             ${iconHTML}
@@ -363,13 +387,13 @@
             }
 
             // --- EVENT LISTENERS ---
-            
+
             // Toggle Menu & Mark as Viewed
             if (notifBtn && notifMenu) {
                 notifBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     notifMenu.style.display = notifMenu.style.display === 'block' ? 'none' : 'block';
-                    
+
                     // Mark as viewed - hide badge
                     if (notifMenu.style.display === 'block') {
                         sessionStorage.setItem('notif_viewed', 'true');
@@ -420,7 +444,8 @@
                     e.stopPropagation();
 
                     // UI Loading
-                    this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Keluar...</span>';
+                    this.innerHTML =
+                        '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Keluar...</span>';
                     this.style.pointerEvents = 'none'; // Cegah klik ganda
 
                     // BERSIH-BERSIH TOKEN LOKAL DULU
@@ -428,25 +453,25 @@
                     localStorage.removeItem('user_data');
                     localStorage.removeItem('login_history');
                     sessionStorage.clear();
-                    
+
                     // Buat form hidden untuk logout
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = '{{ url("/logout") }}';
+                    form.action = '{{ url('/logout') }}';
                     form.style.display = 'none';
-                    
+
                     // Tambah CSRF token
                     const csrfToken = document.createElement('input');
                     csrfToken.type = 'hidden';
                     csrfToken.name = '_token';
                     csrfToken.value = '{{ csrf_token() }}';
-                    
+
                     form.appendChild(csrfToken);
                     document.body.appendChild(form);
-                    
+
                     // Submit form (server akan invalidate session & cookies)
                     form.submit();
-                    
+
                     // Cleanup
                     setTimeout(() => {
                         document.body.removeChild(form);
@@ -454,7 +479,7 @@
                 });
             }
         });
-        </script>
+    </script>
     <script>
         (function() {
             const token = localStorage.getItem('auth_token');
@@ -464,42 +489,43 @@
 
             if (token && businessNameEl && avatarEl) {
                 // [PERBAIKAN] Panggil /api/profile untuk data lengkap
-                fetch('{{ url("/api/profile") }}', { 
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    }
-                })
-                .then(response => {
-                    if (response.status === 401) {
-                        localStorage.removeItem('auth_token');
-                        window.location.href = '{{ url("/login") }}';
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // [PERBAIKAN] Isi dengan data bisnis
-                    if (data.business && data.business.nama_usaha) {
-                        businessNameEl.textContent = data.business.nama_usaha;
-                    } else if (data.user && data.user.name) {
-                        businessNameEl.textContent = data.user.name; // Fallback ke nama user
-                    }
+                fetch('{{ url('/api/profile') }}', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            localStorage.removeItem('auth_token');
+                            window.location.href = '{{ url('/login') }}';
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // [PERBAIKAN] Isi dengan data bisnis
+                        if (data.business && data.business.nama_usaha) {
+                            businessNameEl.textContent = data.business.nama_usaha;
+                        } else if (data.user && data.user.name) {
+                            businessNameEl.textContent = data.user.name; // Fallback ke nama user
+                        }
 
-                    if (data.business && data.business.logo_url) {
-                        // Jika ada logo, tampilkan gambar
-                        avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo">`;
-                    } else if (data.user && data.user.name) {
-                        // Jika tidak, tampilkan inisial
-                        avatarEl.textContent = data.user.name.charAt(0).toUpperCase();
-                    }
-                })
-                .catch(err => {
-                    console.error('Gagal mengambil data header profil:', err);
-                    if(businessNameEl) businessNameEl.textContent = 'Error';
-                });
+                        if (data.business && data.business.logo_url) {
+                            // Jika ada logo, tampilkan gambar
+                            avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo">`;
+                        } else if (data.user && data.user.name) {
+                            // Jika tidak, tampilkan inisial
+                            avatarEl.textContent = data.user.name.charAt(0).toUpperCase();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Gagal mengambil data header profil:', err);
+                        if (businessNameEl) businessNameEl.textContent = 'Error';
+                    });
             }
         })();
     </script>
-            @stack('scripts')
-    </body>
+    @stack('scripts')
+</body>
+
 </html>
