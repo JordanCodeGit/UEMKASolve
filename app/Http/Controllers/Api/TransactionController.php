@@ -195,25 +195,33 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
-        $transaction = Transaction::find($id);
+        // [FIX] Gunakan withTrashed() agar bisa mengecek data yang sudah dihapus
+        $transaction = Transaction::withTrashed()->find($id);
 
+        // 1. Cek apakah data ada dan milik user yang benar
         if (!$transaction || $transaction->business_id !== $this->getPerusahaanId()) {
-            return response()->json(['message' => 'Tidak ditemukan.'], 404);
+            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
 
-        // Validasi kepemilikan kategori saat update juga penting
+        // 2. [LOGIKA BARU] Cek apakah data statusnya "Terhapus" (Soft Delete)
+        if ($transaction->trashed()) {
+            return response()->json([
+                'message' => 'Data ini sudah dihapus. Silakan refresh halaman.'
+            ], 410); // 410 Gone (Data sudah hilang)
+        }
+
+        // Validasi kepemilikan kategori
         $idPerusahaan = $this->getPerusahaanId();
         $request->validate([
             'category_id' => [
                 'required',
-                Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
+                \Illuminate\Validation\Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
                     return $query->where('business_id', $idPerusahaan);
                 }),
             ],
         ]);
 
-        $validatedData = $request->validated();
-
+        // Lakukan Update
         $transaction->update([
             'category_id'       => $request->category_id,
             'jumlah'            => $request->jumlah,

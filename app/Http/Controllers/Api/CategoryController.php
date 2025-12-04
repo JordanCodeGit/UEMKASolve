@@ -12,16 +12,29 @@ class CategoryController extends Controller
 {
     /**
      * Tampilkan semua kategori milik bisnis user
+     * [UPDATED] Mendukung filter ?tipe=pemasukan atau ?tipe=pengeluaran
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+
+        // Cek apakah user punya bisnis
         if (!$user->business) {
             return response()->json([], 200);
         }
 
-        $categories = Category::where('business_id', $user->business->id)
-            ->orderBy('tipe', 'desc') // Pemasukan dulu, baru pengeluaran
+        // 1. Mulai Query Dasar (Milik bisnis user)
+        $query = Category::where('business_id', $user->business->id);
+
+        // 2. [LOGIKA BARU] Cek apakah Frontend meminta tipe tertentu?
+        // Jika URL-nya: /api/categories?tipe=pengeluaran
+        // Maka kita tambahkan filter WHERE tipe = 'pengeluaran'
+        if ($request->has('tipe') && !empty($request->tipe)) {
+            $query->where('tipe', $request->tipe);
+        }
+
+        // 3. Urutkan dan Eksekusi
+        $categories = $query->orderBy('tipe', 'desc') // Pemasukan dulu, baru pengeluaran (jika tidak difilter)
             ->orderBy('created_at', 'desc')
             ->get();
 
