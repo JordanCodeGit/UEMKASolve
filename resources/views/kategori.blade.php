@@ -460,6 +460,7 @@
         }
 
         // --- 6. [CREATE/UPDATE] Fungsi Submit Form ---
+        // --- 6. [CREATE/UPDATE] Fungsi Submit Form (FIXED) ---
         async function handleFormSubmit(e) {
             e.preventDefault();
             modalMessage.textContent = 'Menyimpan...';
@@ -467,17 +468,20 @@
             const formData = new FormData(modalForm);
             const data = Object.fromEntries(formData.entries());
 
-            // Tambahkan prefix folder type ke ikon
-            if (data.ikon) {
+            // Tambahkan prefix folder type ke ikon jika perlu
+            if (data.ikon && !data.ikon.includes('/')) {
                 data.ikon = `${data.tipe}/${data.ikon}`;
             }
 
             let url = API_CATEGORIES;
+
+            // [FIX] Selalu gunakan POST agar aman di hosting
             let method = 'POST';
 
+            // Jika sedang Edit, tambahkan ID ke URL & sisipkan _method: PUT
             if (currentEditingId) {
                 url = `${API_CATEGORIES}/${currentEditingId}`;
-                method = 'PUT';
+                data._method = 'PUT'; // Trick Laravel agar membaca ini sebagai PUT
             }
 
             try {
@@ -491,9 +495,12 @@
 
                 if (response.ok) {
                     closeModal();
-                    fetchCategories();
+                    fetchCategories(); // Refresh list
+                    // Opsional: Tampilkan alert sukses
                 } else if (response.status === 422) {
-                    const firstError = Object.values(result.errors)[0][0];
+                    // Error Validasi Laravel
+                    const errors = result.errors;
+                    const firstError = Object.values(errors)[0][0];
                     modalMessage.textContent = 'Error: ' + firstError;
                 } else {
                     modalMessage.textContent = 'Error: ' + (result.message || 'Terjadi kesalahan server.');
