@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest; // Tambahkan ini jika belum ada
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\CategoryController;
@@ -17,37 +16,24 @@ use App\Http\Controllers\Api\SetupController;
 |--------------------------------------------------------------------------
 */
 
-// [BENAR] Route registrasi (Publik, tidak butuh auth)
+// --- Rute Publik (Tanpa Login) ---
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
-// [TAMBAHKAN INI] Route login (Publik)
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1'); // Contoh: 5 percobaan login per menit
-
-// [TAMBAHKAN INI] Rute Google Auth
+// --- Google Auth ---
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
-// ========== ACTIVITY TRACKING ==========
-// Route untuk update last activity (mencegah auto logout)
-Route::post('/update-activity', function (Request $request) {
-    if ($request->user()) {
-        // Middleware CheckUserActivity akan update cache otomatis
-        // Endpoint ini ada untuk explicit update dari frontend
-        return response()->json(['message' => 'Activity updated']);
-    }
-    return response()->json(['message' => 'Unauthorized'], 401);
-})->middleware(['auth:sanctum'])->name('activity.update');
-// =========================================
-
-// --- Rute lain yang butuh otentikasi masuk ke sini ---
+// --- Rute Terproteksi (Login Wajib) ---
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    // Contoh: Mengambil data user yang sedang login
+    // 1. User & Auth
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Contoh: Mengirim ulang email verifikasi
+    // 2. Email Verification
     Route::post('/email/verification-notification', function (Request $request) {
         if ($request->user()->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email sudah diverifikasi.'], 200);
@@ -56,34 +42,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return response()->json(['message' => 'Link verifikasi baru telah dikirim.'], 200);
     })->middleware(['throttle:6,1'])->name('verification.send.api');
 
+    // 3. Activity Tracking
+    Route::post('/update-activity', function (Request $request) {
+        return response()->json(['message' => 'Activity updated']);
+    })->name('activity.update');
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    // 4. Setup Bisnis
+    Route::post('/setup-perusahaan', [SetupController::class, 'store']);
+
+    // 5. Dashboard Data
     Route::get('/dashboard', [DashboardController::class, 'getSummary']);
-    Route::apiResource('transactions', TransactionController::class);
-    Route::apiResource('categories', CategoryController::class);
 
+    // 6. Transaksi (CRUD)
+    Route::apiResource('transactions', TransactionController::class);
+
+    // 7. Kategori (CRUD + Update Khusus)
+    Route::apiResource('categories', CategoryController::class);
+    // Tambahan Route PUT eksplisit (Safety net untuk update parsial)
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+
+    // 8. Profile
     Route::get('/profile', [ProfileController::class, 'getProfile']);
     Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+
+    // 9. Report
     Route::get('/report/download', [ReportController::class, 'downloadReport']);
-
-    Route::get('/transactions', [TransactionController::class, 'index']);
-    Route::post('/transactions', [TransactionController::class, 'store']);
-    Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
-
-    // --- Endpoint Dashboard, Buku Kas, Kategori, dll. akan ada di sini nanti ---
-
 });
-
-Route::middleware('auth:sanctum')->group(function () {
-    // Route untuk simpan perusahaan baru dari pop-up
-    Route::post('/setup-perusahaan', [SetupController::class, 'store']);
-
-    // Pastikan route ini ada untuk pengecekan user di dashboard
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'getSummary']);
-});
-
-// --- Rute Login & Forgot Password (Publik) akan ditambahkan di sini nanti ---
