@@ -53,13 +53,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // 5. Dashboard Data
     Route::get('/dashboard', [DashboardController::class, 'getSummary']);
 
-    // 6. Transaksi (CRUD)
-    Route::apiResource('transactions', TransactionController::class);
+    // 6. Transaksi (CRUD MANUAL - EKSPLISIT)
+    // Diubah dari apiResource agar Hosting mengenali DELETE/PUT dengan pasti (Anti 404)
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::post('/transactions', [TransactionController::class, 'store']);
+    Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
+    Route::put('/transactions/{transaction}', [TransactionController::class, 'update']);
+    Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy']);
 
-    // 7. Kategori (CRUD + Update Khusus)
-    Route::apiResource('categories', CategoryController::class);
-    // Tambahan Route PUT eksplisit (Safety net untuk update parsial)
+    // 7. Kategori (CRUD MANUAL - EKSPLISIT)
+    // Diubah dari apiResource untuk memperbaiki error drag-drop & delete (Anti 404)
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 
     // 8. Profile
     Route::get('/profile', [ProfileController::class, 'getProfile']);

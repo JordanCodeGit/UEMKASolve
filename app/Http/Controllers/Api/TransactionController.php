@@ -231,13 +231,29 @@ class TransactionController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $transaction = Transaction::find($id);
+        $idPerusahaan = $this->getPerusahaanId();
 
-        if (!$transaction || $transaction->business_id !== $this->getPerusahaanId()) {
-            return response()->json(['message' => 'Tidak ditemukan.'], 404);
+        // [KUNCI PERBAIKAN]
+        // Gunakan withTrashed() agar Controller bisa menemukan data yang sudah soft-deleted
+        $transaction = Transaction::withTrashed()
+            ->where('id', $id)
+            ->where('business_id', $idPerusahaan)
+            ->first();
+
+        // 1. Jika data BENAR-BENAR tidak ada (ID ngawur), baru return 404
+        if (!$transaction) {
+            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
 
+        // 2. [LOGIKA BARU] Jika data SUDAH terhapus (Soft Deleted),
+        // Jangan return error! Return Sukses (200) agar Frontend menghapus barisnya.
+        if ($transaction->trashed()) {
+            return response()->json(['message' => 'Data sudah terhapus.'], 200);
+        }
+
+        // 3. Jika belum terhapus, lakukan soft delete sekarang
         $transaction->delete();
+
         return response()->json(['message' => 'Berhasil dihapus'], 200);
     }
 }

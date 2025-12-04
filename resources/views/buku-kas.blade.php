@@ -207,10 +207,8 @@
         </div>
     </div>
 
-    <form id="transaksi-form">
+    <form id="transaksi-form-hidden">
         <input type="hidden" id="modal-tx-id" name="id">
-
-        <div class="modal-body">...</div>
     </form>
 
     <div class="modal-overlay" id="kategori-modal-overlay" style="display: none;">
@@ -247,8 +245,7 @@
                         <input type="hidden" name="ikon" id="modal-ikon" required>
 
                         <div class="icon-picker-container" id="icon-grid-container-kat">
-                            <!-- Icon grid akan di-render oleh JavaScript -->
-                        </div>
+                            </div>
 
                         <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon terlebih
                             dahulu.</small>
@@ -267,7 +264,6 @@
         </div>
     </div>
 
-    <!-- Modal Dialog Minimalis untuk Konfirmasi & Notifikasi -->
     <div class="dialog-overlay" id="dialog-overlay" style="display: none;">
         <div class="dialog-box">
             <div class="dialog-content">
@@ -282,7 +278,6 @@
         </div>
     </div>
 
-    <!-- Modal Print Laporan Keuangan -->
     <div class="modal-overlay" id="print-laporan-overlay" style="display: none;">
         <div class="modal-box" style="max-width: 550px; max-height: 90vh; overflow-y: auto;">
 
@@ -298,7 +293,6 @@
 
             <div class="modal-body">
 
-                <!-- Checkbox Options -->
                 <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
                     <div style="margin-bottom: 12px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -322,11 +316,9 @@
                     </div>
                 </div>
 
-                <!-- Preview Section -->
                 <div id="print-preview-container"
                     style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: white; min-height: 300px;">
-                    <!-- Preview akan di-render oleh JavaScript -->
-                </div>
+                    </div>
 
             </div>
 
@@ -442,54 +434,27 @@
 
             // --- UTILITY FUNCTION: Format Nominal dengan Comma & Dot ---
             function formatNominal(value) {
-                // Convert ke string
                 value = String(value);
-
-                // Jika ada titik di awal (dari decimal database like "10.00"), ganti dengan koma sebagai pemisah desimal
-                // Tapi hati-hati: format dari DB bisa "10.00", bukan "10,00"
-                // Solusi: anggap titik terakhir sebagai desimal jika ada 2 digit setelah titik
-
-                // Step 1: Normalisasi input
-                // Jika input dari database (format 10.00), ubah titik menjadi koma
-                // Jika input dari user (format 10.000,00), biarkan seperti itu
-
-                // Deteksi format: jika ada koma, format sudah benar (user input)
                 if (value.includes(',')) {
-                    // Format user: "10.000,00" - sudah benar
-                    value = value.replace(/[^0-9,]/g, ''); // Hapus hanya titik ribuan saja
+                    value = value.replace(/[^0-9,]/g, '');
                 } else {
-                    // Format database: "10.00" - ubah titik ke koma
-                    // Tapi hati-hati jika ada titik ribuan dari API yang berformat "1000.00"
                     let lastDot = value.lastIndexOf('.');
                     if (lastDot !== -1 && value.length - lastDot - 1 === 2) {
-                        // Ada titik dengan 2 digit di belakang = format desimal database
                         value = value.substring(0, lastDot) + ',' + value.substring(lastDot + 1);
                     }
-                    value = value.replace(/[^0-9,]/g, ''); // Hapus semua karakter kecuali angka dan koma
+                    value = value.replace(/[^0-9,]/g, '');
                 }
-
-                // Split berdasarkan koma (pemisah desimal)
                 let parts = value.split(',');
-
-                // Batasi integer part ke 15 digit
                 if (parts[0].length > 15) {
                     parts[0] = parts[0].slice(0, 15);
                 }
-
-                // Hanya boleh 1 koma, jika lebih gabung bagian desimal
                 if (parts.length > 2) {
                     parts = [parts[0], parts.slice(1).join('')];
                 }
-
-                // Batasi desimal ke 2 digit
                 if (parts[1]) {
                     parts[1] = parts[1].slice(0, 2);
                 }
-
-                // Format dengan titik setiap 3 digit (untuk ribuan Indonesia)
                 let formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-                // Return format: "1.000,00"
                 return parts.length > 1 && parts[1] ? formatted + ',' + parts[1] : formatted;
             }
 
@@ -528,7 +493,6 @@
 
                     // Handle clicks
                     const handleConfirm = () => {
-                        overlay.style.display = 'none';
                         cleanup();
                         resolve(true);
                     };
@@ -539,9 +503,13 @@
                         resolve(false);
                     };
 
+                    // Klik OK/Confirm tidak langsung tutup overlay jika ini adalah konfirmasi
+                    // Biarkan pemanggil (caller) yang menutup atau mengubah status dialog
                     const cleanup = () => {
                         btnConfirm.removeEventListener('click', handleConfirm);
                         btnCancel.removeEventListener('click', handleCancel);
+                        // Jika bukan confirm, tutup langsung
+                        if (!isConfirm) overlay.style.display = 'none';
                     };
 
                     btnConfirm.addEventListener('click', handleConfirm);
@@ -576,12 +544,11 @@
             }
 
             // --- UTILITY FUNCTION: Select Icon untuk Kategori Modal ---
-            function selectIconKat(element, iconValue) {
+            window.selectIconKat = function(element, iconValue) {
                 // Hapus class active dari semua
                 document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => {
                     const typeIcon = el.querySelector('.icon-type');
                     const neutralIcon = el.querySelector('.icon-neutral');
-                    // Tampilkan icon tipe, sembunyikan icon netral
                     if (typeIcon) typeIcon.style.display = 'block';
                     if (neutralIcon) neutralIcon.style.display = 'none';
                     el.classList.remove('active');
@@ -590,12 +557,11 @@
                 element.classList.add('active');
                 const typeIcon = element.querySelector('.icon-type');
                 const neutralIcon = element.querySelector('.icon-neutral');
-                // Sembunyikan icon tipe, tampilkan icon netral saat active
                 if (typeIcon) typeIcon.style.display = 'none';
                 if (neutralIcon) neutralIcon.style.display = 'block';
-                // Set value
                 document.getElementById('modal-ikon').value = iconValue;
             }
+
             const btnCetakLaporan = document.getElementById('btn-cetak-laporan');
             const printLaporanOverlay = document.getElementById('print-laporan-overlay');
             const checkboxRingkasan = document.getElementById('checkbox-ringkasan');
@@ -604,17 +570,14 @@
             const previewContainer = document.getElementById('print-preview-container');
             const btnDownloadPdf = document.getElementById('btn-download-pdf');
 
-            // Store current print data
             let currentPrintData = null;
 
-            // Open print modal and load data
             btnCetakLaporan.addEventListener('click', async function() {
                 printLaporanOverlay.style.display = 'flex';
                 await loadPrintData();
                 updatePrintPreview();
             });
 
-            // Fetch data for print preview
             async function loadPrintData() {
                 try {
                     const response = await fetch('/api/dashboard-data', {
@@ -628,32 +591,23 @@
                 }
             }
 
-            // Update preview based on checkbox selections
             function updatePrintPreview() {
                 previewContainer.innerHTML = '';
-
-                // Include Ringkasan Keuangan
                 if (checkboxRingkasan.checked && currentPrintData) {
                     previewContainer.innerHTML += renderRingkasanKeuangan();
                 }
-
-                // Include Grafik Kas
                 if (checkboxGrafik.checked && currentPrintData) {
                     previewContainer.innerHTML += renderGrafikKas();
                 }
-
-                // Include Rincian Transaksi
                 if (checkboxRincian.checked && currentPrintData) {
                     previewContainer.innerHTML += renderRincianTransaksi();
                 }
-
                 if (!checkboxRingkasan.checked && !checkboxGrafik.checked && !checkboxRincian.checked) {
                     previewContainer.innerHTML =
                         '<p style="color: #999; text-align: center; padding: 40px;">Pilih minimal satu opsi untuk ditampilkan</p>';
                 }
             }
 
-            // Render Ringkasan Keuangan Section
             function renderRingkasanKeuangan() {
                 const summary = currentPrintData.summary || {};
                 return `
@@ -681,7 +635,6 @@
             `;
             }
 
-            // Render Grafik Kas Section
             function renderGrafikKas() {
                 return `
                 <div style="margin-bottom: 20px;">
@@ -691,7 +644,6 @@
             `;
             }
 
-            // Render Rincian Transaksi Section (from recent transactions)
             function renderRincianTransaksi() {
                 const transactions = currentPrintData.recent_transactions || [];
                 if (transactions.length === 0) {
@@ -727,12 +679,10 @@
                 return html;
             }
 
-            // Checkbox change listeners
             checkboxRingkasan.addEventListener('change', updatePrintPreview);
             checkboxGrafik.addEventListener('change', updatePrintPreview);
             checkboxRincian.addEventListener('change', updatePrintPreview);
 
-            // Download PDF
             btnDownloadPdf.addEventListener('click', async function() {
                 const selectedSections = {
                     ringkasan: checkboxRingkasan.checked,
@@ -746,7 +696,6 @@
                     return;
                 }
 
-                // Disable button and show loading
                 btnDownloadPdf.disabled = true;
                 btnDownloadPdf.textContent = 'Membuat PDF...';
 
@@ -770,16 +719,11 @@
                         link.click();
                         link.remove();
                         window.URL.revokeObjectURL(url);
-
-                        // Close modal and show success
                         closeModal(printLaporanOverlay);
                         await showDialog('PDF berhasil diunduh', 'success');
                     } else {
-                        // Try to parse error message
                         try {
                             const errorData = await response.json();
-
-                            // Build detailed error message for GD extension
                             let errorMsg = errorData.error || 'Kesalahan tidak diketahui';
                             if (response.status === 503 && errorData.message) {
                                 errorMsg = errorData.message;
@@ -789,7 +733,6 @@
                             } else if (errorData.message) {
                                 errorMsg += ': ' + errorData.message;
                             }
-
                             await showDialog('Gagal membuat PDF:\n\n' + errorMsg, 'error');
                         } catch (e) {
                             await showDialog('Gagal membuat PDF: HTTP ' + response.status, 'error');
@@ -813,63 +756,48 @@
             const monthPicker = document.getElementById('custom-month-picker');
             const btnSpan = monthBtn.querySelector('span');
 
-            // 1. Toggle Menu (Buka/Tutup)
             monthBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 monthMenu.style.display = monthMenu.style.display === 'flex' ? 'none' : 'flex';
             });
 
-            // 2. Tutup menu jika klik di luar
             document.addEventListener('click', (e) => {
                 if (monthMenu && !monthMenu.contains(e.target) && !monthBtn.contains(e.target)) {
                     monthMenu.style.display = 'none';
                 }
             });
 
-            // 3. Klik Opsi Standar (Bulan Ini, Lalu, Semua)
             document.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    // Update UI Active
                     document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove(
                         'active'));
                     item.classList.add('active');
-                    monthPicker.value = ''; // Reset picker custom
+                    monthPicker.value = '';
 
-                    // Update Text Tombol
                     btnSpan.textContent = item.textContent;
-
-                    // Set Filter & Fetch
-                    currentMonthFilter = item.dataset.value; // 'bulan_ini', 'bulan_lalu', 'semua'
+                    currentMonthFilter = item.dataset.value;
                     monthMenu.style.display = 'none';
                     fetchTransactions();
                 });
             });
 
-            // 4. Pilih dari Month Picker (Custom)
             monthPicker.addEventListener('change', function() {
-                const selectedValue = this.value; // Format: "2025-11"
+                const selectedValue = this.value;
                 if (selectedValue) {
                     document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove(
                         'active'));
-
-                    // Format text tombol (misal: "November 2025")
                     const dateObj = new Date(selectedValue + '-01');
                     const monthName = dateObj.toLocaleDateString('id-ID', {
                         month: 'long',
                         year: 'numeric'
                     });
                     btnSpan.textContent = monthName;
-
-                    // Set Filter & Fetch
-                    currentMonthFilter = selectedValue; // Simpan "YYYY-MM"
+                    currentMonthFilter = selectedValue;
                     monthMenu.style.display = 'none';
                     fetchTransactions();
                 }
             });
 
-            // --- 1. [READ] Fungsi Mengambil & Merender Transaksi ---
-            // --- 1. FUNGSI FETCH DATA (PERBAIKAN) ---
-            // --- FUNGSI FETCH DATA (VERSI BERSIH TANPA CUSTOM DATE) ---
             async function fetchTransactions(url = null) {
                 let targetUrl;
                 if (url) {
@@ -878,38 +806,25 @@
                     targetUrl = new URL(API_TRANSACTIONS);
                 }
 
-                // 1. DEKLARASI VARIABEL
                 const searchInputEl = document.getElementById('search-input');
-
-                // Elemen Filter Modal (Hanya Tipe & Nominal)
                 const minNominalEl = document.getElementById('filter-min-nominal');
                 const maxNominalEl = document.getElementById('filter-max-nominal');
                 const tipeFilterEl = document.getElementById('filter-tipe');
 
-                // Ambil Nilai
                 const searchVal = searchInputEl ? searchInputEl.value : '';
                 const minNominal = minNominalEl ? minNominalEl.value : '';
                 const maxNominal = maxNominalEl ? maxNominalEl.value : '';
                 const tipeVal = tipeFilterEl ? tipeFilterEl.value : '';
 
-                // 2. SET PARAMETER URL
-
-                // A. Search
                 if (searchVal) targetUrl.searchParams.set('search', searchVal);
-
-                // B. Filter Tipe
                 if (tipeVal) targetUrl.searchParams.set('tipe', tipeVal);
-
-                // C. Filter Nominal
                 if (minNominal) targetUrl.searchParams.set('min_nominal', minNominal);
                 if (maxNominal) targetUrl.searchParams.set('max_nominal', maxNominal);
 
-                // D. Filter Tanggal (Hanya dari Dropdown / Variabel Global)
                 const now = new Date();
                 const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
                     String(d.getDate()).padStart(2, '0');
 
-                // Ambil dari variabel global dropdown
                 const filterMode = (typeof currentMonthFilter !== 'undefined') ? currentMonthFilter :
                     'bulan_ini';
 
@@ -926,7 +841,6 @@
                     targetUrl.searchParams.set('end_date', fmt(end));
 
                 } else if (filterMode.match(/^\d{4}-\d{2}$/)) {
-                    // Format YYYY-MM (Picker)
                     const [y, m] = filterMode.split('-');
                     const year = parseInt(y);
                     const monthIndex = parseInt(m) - 1;
@@ -935,9 +849,7 @@
                     targetUrl.searchParams.set('start_date', fmt(start));
                     targetUrl.searchParams.set('end_date', fmt(end));
                 }
-                // Jika 'semua', tidak kirim parameter tanggal
 
-                // 3. EKSEKUSI FETCH
                 if (transactionListContainer) {
                     transactionListContainer.innerHTML =
                         '<div class="transaction-row" style="justify-content: center; padding: 30px;">Sedang memuat data...</div>';
@@ -977,77 +889,64 @@
                 }
             }
 
-            const filterBtn = document.getElementById('filter-button'); // Tombol di toolbar
+            const filterBtn = document.getElementById('filter-button');
             const filterOverlay = document.getElementById('filter-modal-overlay');
             const filterForm = document.getElementById('filter-form');
             const resetFilterBtn = document.getElementById('btn-reset-filter');
 
-            // 1. Buka Modal
             if (filterBtn) {
                 filterBtn.addEventListener('click', () => {
                     filterOverlay.style.display = 'flex';
                 });
             }
 
-            // 2. Submit Filter (Terapkan)
             if (filterForm) {
                 filterForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     closeModal(filterOverlay);
-                    fetchTransactions(); // Refresh data dengan filter baru
-
-                    // Opsional: Ubah warna tombol filter jika aktif
+                    fetchTransactions();
                     filterBtn.style.color = '#2563eb';
                     filterBtn.style.borderColor = '#2563eb';
                 });
             }
 
-            // 3. Reset Filter
             if (resetFilterBtn) {
                 resetFilterBtn.addEventListener('click', () => {
-                    filterForm.reset(); // Kosongkan input
+                    filterForm.reset();
                     closeModal(filterOverlay);
-                    fetchTransactions(); // Refresh data (kembali ke default)
-
-                    // Reset warna tombol
+                    fetchTransactions();
                     filterBtn.style.color = '';
                     filterBtn.style.borderColor = '';
                 });
             }
 
-            // --- LOGIKA CHECKBOX & BULK DELETE ---
-
-            // 1. Handle Check All (Header)
-            const checkAllBtn = document.getElementById(
-                'check-all-transactions'); // Pastikan ID ini ada di header tabel
+            const checkAllBtn = document.getElementById('check-all-transactions');
             checkAllBtn.addEventListener('change', function() {
                 const checkboxes = document.querySelectorAll('.check-item');
                 checkboxes.forEach(cb => cb.checked = this.checked);
                 updateBulkDeleteButton();
             });
 
-            // 2. Handle Check Item (Event Delegation di Container List)
             transactionListContainer.addEventListener('change', function(e) {
                 if (e.target.classList.contains('check-item')) {
                     updateBulkDeleteButton();
                 }
             });
 
-            // 3. Fungsi Update Tombol Hapus
             function updateBulkDeleteButton() {
                 const selected = document.querySelectorAll('.check-item:checked');
                 const btn = document.getElementById('bulk-delete-btn');
                 const countSpan = document.getElementById('selected-count');
 
                 if (selected.length > 0) {
-                    btn.style.display = 'inline-flex'; // Munculkan tombol
+                    btn.style.display = 'inline-flex';
                     countSpan.textContent = selected.length;
                 } else {
-                    btn.style.display = 'none'; // Sembunyikan tombol
+                    btn.style.display = 'none';
                 }
             }
 
-            // 4. Aksi Klik Tombol Hapus Massal
+            // 4. Aksi Klik Tombol Hapus Massal (FIXED LOGIC)
             document.getElementById('bulk-delete-btn').addEventListener('click', async function() {
                 const selected = document.querySelectorAll('.check-item:checked');
                 if (selected.length === 0) return;
@@ -1060,87 +959,90 @@
 
                 if (!confirmed) return;
 
-                // Kumpulkan ID
+                // Tampilkan loading dialog
+                const dialogMessageEl = document.getElementById('dialog-message');
+                const dialogOverlay = document.getElementById('dialog-overlay');
+                if (dialogMessageEl) dialogMessageEl.textContent = 'Sedang menghapus...';
+                if (dialogOverlay) dialogOverlay.style.display = 'flex';
+                document.querySelector('.dialog-actions').style.display = 'none';
+
                 const ids = Array.from(selected).map(cb => cb.dataset.id);
 
-                // Kirim Request Hapus (Looping fetch atau Batch API jika ada)
-                // Cara sederhana: Loop fetch delete satu-satu
                 let successCount = 0;
+                let failCount = 0;
+
+                // Loop fetch delete satu-satu
                 for (const id of ids) {
                     try {
-                        await fetch(`${API_TRANSACTIONS}/${id}`, {
+                        const response = await fetch(`${API_TRANSACTIONS}/${id}`, {
                             method: 'DELETE',
                             headers: API_HEADERS
                         });
-                        successCount++;
+
+                        // [CRITICAL FIX] Cek apakah server merespons OK (Status 200-299)
+                        // Pastikan Backend (TransactionController) juga sudah diperbaiki
+                        // agar me-return 200 meskipun data sudah soft-deleted (withTrashed)
+                        if (response.ok) {
+                            successCount++;
+                            // Hapus baris dari tabel HTML secara langsung agar UI responsif
+                            const checkbox = document.querySelector(`.check-item[data-id="${id}"]`);
+                            if (checkbox) {
+                                const row = checkbox.closest('.transaction-row');
+                                if (row) row.remove();
+                            }
+                        } else {
+                            console.warn(`Gagal menghapus ID ${id}: Status ${response.status}`);
+                            failCount++;
+                        }
                     } catch (e) {
-                        console.error(e);
+                        console.error(`Network error pada ID ${id}:`, e);
+                        failCount++;
                     }
                 }
 
-                // Tampilkan notifikasi berhasil dengan icon ceklis
-                await showDialog(`Berhasil menghapus ${successCount} transaksi.`, 'success', false);
+                // Tutup loading dialog
+                if (dialogOverlay) dialogOverlay.style.display = 'none';
+                document.querySelector('.dialog-actions').style.display = 'flex';
 
-                fetchTransactions(); // Refresh Tabel
+                // Tampilkan notifikasi hasil
+                if (failCount > 0) {
+                    await showDialog(`Berhasil: ${successCount}. Gagal: ${failCount}.`, 'warning', false);
+                } else {
+                    await showDialog(`Berhasil menghapus ${successCount} transaksi.`, 'success', false);
+                }
+
+                fetchTransactions(); // Refresh Tabel Total
                 document.getElementById('bulk-delete-btn').style.display = 'none';
-                checkAllBtn.checked = false;
+                document.getElementById('check-all-transactions').checked = false;
             });
 
-            function escapeHtml(text) {
-                if (!text) return text;
-                return text
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
-
-            // --- FUNGSI BUKA MODAL EDIT (LOGIKA PENTING) ---
             window.openEditModal = function(tx) {
-                // 1. Reset & Ubah Judul Modal
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
                 document.getElementById('transaksi-modal-submit-btn').textContent = 'Simpan Perubahan';
-
-                // 2. Isi Input Hidden ID (Kunci agar sistem tahu ini EDIT, bukan BARU)
                 document.getElementById('modal-tx-id').value = tx.id;
-
-                // 3. Isi Input Biasa
                 document.getElementById('modal-tx-jumlah').value = formatNominal(tx.jumlah.toString());
                 document.getElementById('modal-tx-catatan').value = tx.catatan || '';
 
-                // 4. Isi Tanggal (Format Harus YYYY-MM-DDTHH:mm)
                 if (tx.tanggal_transaksi) {
-                    // Ubah "2025-11-24 14:30:00" menjadi "2025-11-24T14:30"
                     const dateVal = tx.tanggal_transaksi.replace(' ', 'T').substring(0, 16);
                     document.getElementById('modal-tx-tanggal').value = dateVal;
                 }
 
-                // 5. Handle Kategori & Tipe
                 const kategori = tx.category || {};
-                const tipe = kategori.tipe || 'pengeluaran'; // Default
+                const tipe = kategori.tipe || 'pengeluaran';
 
-                // A. Set Tab Aktif (Pemasukan/Pengeluaran)
                 setActiveTab(txModalTabs, txTipeHidden, tipe);
-
-                // B. Isi Dropdown & Pilih Kategori
-                // Kita panggil populateCategoryDropdown, lalu tunggu sebentar agar option ter-render
-                // Baru kita set valuenya.
                 populateCategoryDropdown(tipe, kategori.id);
-
-                // 6. Tampilkan Modal
                 txModalOverlay.style.display = 'flex';
             };
 
-            // Reset Judul saat tombol Tambah (Hijau) diklik agar kembali bersih
             openAddTxBtn.addEventListener('click', function() {
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Tambah Transaksi';
                 document.getElementById('transaksi-modal-submit-btn').textContent = 'Tambah Transaksi';
-                document.getElementById('modal-tx-id').value = ''; // KOSONGKAN ID (Penting!)
+                document.getElementById('modal-tx-id').value = '';
 
-                // Setup tanggal now
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('modal-tx-tanggal').value = now.toISOString().slice(0, 16);
@@ -1150,9 +1052,7 @@
                 txModalOverlay.style.display = 'flex';
             });
 
-            // --- 2. [READ] Fungsi Merender Baris HTML ---
             function renderTransactionRows(transactions) {
-                // Gunakan variabel global container agar konsisten
                 const container = document.getElementById('transaction-list-container');
                 container.innerHTML = '';
 
@@ -1165,26 +1065,18 @@
                 transactions.forEach(tx => {
                     const row = document.createElement('div');
                     row.className = 'transaction-row';
-
-                    // Simpan data untuk edit
                     row.dataset.json = JSON.stringify(tx);
 
-                    // --- Logika Data ---
                     const category = tx.category || {};
                     const isPemasukan = category.tipe === 'pemasukan';
                     const amountClass = isPemasukan ? 'text-green' : 'text-red';
                     const amountSign = isPemasukan ? '+' : '-';
-
-                    // Tentukan shape class berdasarkan tipe
                     const shapeClass = isPemasukan ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
 
-                    // Logika icon (gambar atau FontAwesome)
                     let iconHtml = '';
                     if (category.ikon && (category.ikon.includes('.png') || category.ikon.includes(
-                                '.jpg') || category.ikon.includes('.svg') || category.ikon.includes(
+                            '.jpg') || category.ikon.includes('.svg') || category.ikon.includes(
                             '.jpeg'))) {
-                        // Render sebagai IMAGE
-                        // Icon path bisa berupa "pengeluaran/Button.png" atau "Button.png"
                         let iconPath = category.ikon;
                         if (!iconPath.includes('/')) {
                             iconPath = `${category.tipe}/${iconPath}`;
@@ -1193,7 +1085,6 @@
                         iconHtml =
                             `<img src="${iconUrl}" alt="icon" style="width:24px; height:24px; object-fit:contain;">`;
                     } else {
-                        // Render sebagai FontAwesome (Default)
                         const iconClass = category.ikon || 'fa-solid fa-question';
                         iconHtml = `<i class="${iconClass}"></i>`;
                     }
@@ -1205,7 +1096,6 @@
 
                     const displayDate = formatDate(tx.tanggal_transaksi || tx.created_at);
 
-                    // --- HTML ---
                     row.innerHTML = `
                     <div class="cell-check" onclick="event.stopPropagation()">
                         <input type="checkbox" class="check-item" data-id="${tx.id}">
@@ -1217,23 +1107,18 @@
                     </div>
 
                     <div class="cell-tanggal">${displayDate}</div>
-
                     <div class="cell-deskripsi" style="color: #334155;">${safeCatatan}</div>
-
                     <div class="cell-nominal ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
                 `;
 
                     row.addEventListener('click', function() {
                         openEditModal(tx);
                     });
-
-                    // Tambahkan style cursor pointer agar user tahu bisa diklik
                     row.style.cursor = 'pointer';
                     container.appendChild(row);
                 });
             }
 
-            // --- 3. [READ] Fungsi Merender Paginasi ---
             function renderPaginationLinks(links) {
                 paginationLinksContainer.innerHTML = '';
                 links.forEach(link => {
@@ -1253,66 +1138,51 @@
                 });
             }
 
-            // --- 5. [READ] Fungsi Mengisi Dropdown Kategori (DIPERBAIKI) ---
             async function populateCategoryDropdown(selectedTipe = 'pengeluaran', selectId = null) {
                 const listContainer = document.getElementById('category-list-container');
                 const triggerText = document.getElementById('selected-category-text');
                 const hiddenInput = document.getElementById('modal-tx-kategori-select');
 
-                // Reset UI Loading
                 listContainer.innerHTML =
                     '<div class="dropdown-item placeholder" style="cursor:default;">Memuat...</div>';
                 triggerText.textContent = '-- Pilih Kategori --';
-                hiddenInput.value = ''; // Reset value input hidden
+                hiddenInput.value = '';
 
                 try {
                     const response = await fetch(`${API_CATEGORIES}?tipe=${selectedTipe}`, {
                         headers: API_HEADERS_GET
                     });
                     const categories = await response.json();
-
-                    // Bersihkan container
                     listContainer.innerHTML = '';
 
                     if (categories.length > 0) {
                         categories.forEach(cat => {
-                            // Buat elemen item
                             const item = document.createElement('div');
                             item.className = 'dropdown-item';
                             item.textContent = cat.nama_kategori;
-                            item.dataset.value = cat.id; // Simpan ID di dataset
+                            item.dataset.value = cat.id;
 
-                            // Cek jika item ini harus dipilih (default select)
                             if (selectId && String(cat.id) === String(selectId)) {
                                 item.classList.add('selected');
                                 triggerText.textContent = cat.nama_kategori;
                                 hiddenInput.value = cat.id;
                             }
 
-                            // Event Klik per Item
                             item.addEventListener('click', function() {
-                                // 1. Update Teks Trigger
                                 triggerText.textContent = cat.nama_kategori;
-                                // 2. Update Input Hidden (yang dikirim form)
                                 hiddenInput.value = cat.id;
-
-                                // 3. Update UI Selected
                                 document.querySelectorAll('.dropdown-item').forEach(el => el
                                     .classList.remove('selected'));
                                 this.classList.add('selected');
-
-                                // 4. Tutup Dropdown
                                 document.getElementById('category-dropdown').classList.remove(
                                     'active');
                             });
-
                             listContainer.appendChild(item);
                         });
                     } else {
                         listContainer.innerHTML =
                             '<div class="dropdown-item placeholder" style="cursor:default; color:#94a3b8;">Belum ada kategori</div>';
                     }
-
                 } catch (error) {
                     console.error('Error fetching categories:', error);
                     listContainer.innerHTML =
@@ -1320,101 +1190,75 @@
                 }
             }
 
-            // --- EVENT LISTENER UNTUK BUKA/TUTUP DROPDOWN ---
-            // Tambahkan kode ini di dalam DOMContentLoaded (di bawah populateCategoryDropdown)
             const catDropdown = document.getElementById('category-dropdown');
             const catTrigger = document.getElementById('category-dropdown-btn');
 
-            // 1. Toggle Buka/Tutup
             if (catTrigger) {
                 catTrigger.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Cegah event bubbling
+                    e.stopPropagation();
                     catDropdown.classList.toggle('active');
                 });
             }
 
-            // 2. Tutup jika klik di luar
             document.addEventListener('click', function(e) {
                 if (catDropdown && !catDropdown.contains(e.target)) {
                     catDropdown.classList.remove('active');
                 }
             });
 
-            // --- 6. [CREATE] Fungsi Buka Modal Transaksi ---
             openAddTxBtn.addEventListener('click', function() {
                 txForm.reset();
                 txMessage.textContent = '';
-
-                // [LOGIKA BARU: DETEKSI JAM LOKAL USER]
                 const now = new Date();
-
-                // Trik untuk mengubah waktu menjadi format input datetime-local (YYYY-MM-DDTHH:MM)
-                // tanpa terpengaruh konversi UTC browser.
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
-
                 const currentLocalTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-
                 document.getElementById('modal-tx-tanggal').value = currentLocalTime;
-
                 setActiveTab(txModalTabs, txTipeHidden, 'pengeluaran');
                 populateCategoryDropdown('pengeluaran');
                 txModalOverlay.style.display = 'flex';
             });
 
-            // --- 7. [CREATE] Fungsi Submit Transaksi ---
-            // --- Event Listener Form Transaksi (Tambah & Edit) ---
             txForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 txMessage.textContent = 'Menyimpan...';
 
                 const formData = new FormData(txForm);
                 const data = Object.fromEntries(formData.entries());
-
-                // Clean format nominal: hapus titik (ribuan) dan ganti koma dengan titik (desimal)
                 const cleanJumlah = data.jumlah.replace(/\./g, '').replace(',', '.');
                 const jumlah = parseFloat(cleanJumlah);
 
-                // Validasi jumlah (maksimal 15 digit = 999999999999999)
                 if (isNaN(jumlah) || jumlah < 0 || jumlah > 999999999999999) {
                     txMessage.textContent =
                         'Error: Nominal harus antara 0 hingga Rp 999.999.999.999.999';
                     return;
                 }
 
-                // Update data dengan nilai clean
                 data.jumlah = cleanJumlah;
-
-                // Cek apakah ada ID? Jika ada = Edit, Jika tidak = Baru
                 const id = document.getElementById('modal-tx-id').value;
-
                 let url = API_TRANSACTIONS;
                 let method = 'POST';
 
                 if (id) {
-                    url = `${API_TRANSACTIONS}/${id}`; // URL Update
-                    method = 'PUT'; // Method Update
+                    url = `${API_TRANSACTIONS}/${id}`;
+                    method = 'PUT';
                 }
 
                 try {
-                    // [PERBAIKAN TYPO 'cconst']
                     const response = await fetch(url, {
                         method: method,
                         headers: API_HEADERS,
                         body: JSON.stringify(data)
                     });
-
                     const result = await response.json();
 
-                    // [PERBAIKAN LOGIKA STATUS]
-                    // response.ok mencakup status 200-299 (Sukses)
                     if (response.ok) {
                         closeModal(txModalOverlay);
-                        fetchTransactions(); // Refresh tabel
-                        txMessage.textContent = ''; // Bersihkan pesan
+                        fetchTransactions();
+                        txMessage.textContent = '';
                     } else if (response.status === 422) {
                         txMessage.textContent = 'Error: ' + Object.values(result.errors)[0][0];
                     } else {
@@ -1426,40 +1270,26 @@
                 }
             });
 
-            // --- Event Listener untuk Input Nominal dengan Comma Formatting ---
             const nominalInput = document.getElementById('modal-tx-jumlah');
             nominalInput.addEventListener('input', function() {
                 this.value = formatNominal(this.value);
             });
 
-            // --- 8. [CREATE Kategori] Buka Modal Kategori ---
             openKategoriModalLink.addEventListener('click', function(e) {
                 e.preventDefault();
                 katForm.reset();
                 katMessage.textContent = '';
-
-                // [FIX] Ambil tipe yang sedang aktif di modal transaksi
-                // Agar user tidak bingung (cth: lagi buat transaksi Pemasukan -> Tambah Kategori -> Otomatis tab Pemasukan)
                 const currentTxTipe = txTipeHidden.value;
-
                 setActiveTab(katModalTabs, katTipeHidden, currentTxTipe);
-
-                // Render icon grid sesuai dengan tipe yang aktif
                 renderIconGrid(currentTxTipe);
-
                 katModalOverlay.style.display = 'flex';
             });
 
-            // --- 9. [CREATE Kategori] Submit Form Kategori ---
             katForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 katMessage.textContent = 'Menyimpan...';
-
                 const formData = new FormData(katForm);
                 const data = Object.fromEntries(formData.entries());
-
-                // Keep the full icon path (e.g., "pengeluaran/Button.png")
-                // This allows the display code to know which folder the icon is in
 
                 try {
                     const response = await fetch(API_CATEGORIES, {
@@ -1467,21 +1297,14 @@
                         headers: API_HEADERS,
                         body: JSON.stringify(data)
                     });
-                    const result = await response.json(); // result = kategori yg baru dibuat
+                    const result = await response.json();
 
                     if (response.status === 201) {
                         closeModal(katModalOverlay);
-
-                        // [FIX] Refresh dropdown di modal transaksi & pilih kategori baru
-                        // Kita harus pastikan tab di modal transaksi JUGA pindah ke tipe kategori baru
-                        // Misal: User di tab Pengeluaran -> Buat kategori Pemasukan -> Modal Transaksi harus pindah ke tab Pemasukan
-
                         if (txTipeHidden.value !== data.tipe) {
                             setActiveTab(txModalTabs, txTipeHidden, data.tipe);
                         }
-
                         populateCategoryDropdown(data.tipe, result.id);
-
                     } else if (response.status === 422) {
                         katMessage.textContent = 'Error: ' + Object.values(result.errors)[0][0];
                     } else {
@@ -1493,7 +1316,6 @@
                 }
             });
 
-            // --- 10. Helper Modal ---
             function closeModal(modal) {
                 if (modal) modal.style.display = 'none';
             }
@@ -1501,7 +1323,6 @@
             function setActiveTab(tabs, hiddenInput, tipe) {
                 hiddenInput.value = tipe;
                 tabs.forEach(tab => {
-                    // [FIX] Cek dataset yang benar (txTabType atau katTabType)
                     const tabTipe = tab.dataset.txTabType || tab.dataset.katTabType;
                     if (tabTipe === tipe) {
                         tab.classList.add('active');
@@ -1511,8 +1332,6 @@
                 });
             }
 
-
-            // --- Event Listeners Global ---
             document.querySelectorAll('.modal-close-btn, .btn-secondary-modal').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const modalId = e.currentTarget.getAttribute('data-close-modal');
@@ -1532,7 +1351,6 @@
                 tab.addEventListener('click', () => {
                     const tipe = tab.dataset.katTabType;
                     setActiveTab(katModalTabs, katTipeHidden, tipe);
-                    // Render icon grid saat tab diubah
                     renderIconGrid(tipe);
                 });
             });
@@ -1541,14 +1359,12 @@
             searchInput.addEventListener('input', function(e) {
                 clearTimeout(debounceTimerBukuKas);
                 debounceTimerBukuKas = setTimeout(() => {
-                    // [FIX] Panggil fetchTransactions dengan search query baru
                     const url = new URL(API_TRANSACTIONS);
                     url.searchParams.append('search', e.target.value);
                     fetchTransactions(url.toString());
                 }, 500);
             });
 
-            // --- Panggilan Awal ---
             const initialUrl = new URL(API_TRANSACTIONS);
             const urlParams = new URLSearchParams(window.location.search);
             const searchQuery = urlParams.get('search');
@@ -1561,15 +1377,12 @@
             fetchTransactions(initialUrl.toString());
         });
 
-        // --- FUNGSI UPDATE SALDO (SAFE MODE) ---
-        // --- Fungsi Update Angka Footer (Versi Aman) ---
         function updateFooterSummary(summary) {
             const elMasuk = document.getElementById('footer-total-pemasukan');
             const elKeluar = document.getElementById('footer-total-pengeluaran');
             const elLaba = document.getElementById('footer-laba-badge');
             const saldoDisplay = document.getElementById('saldo-display');
 
-            // Cek apakah elemen ada sebelum diisi (Mencegah Error Null)
             if (elMasuk) elMasuk.textContent = formatRupiah(summary.total_pemasukan);
             if (elKeluar) elKeluar.textContent = formatRupiah(summary.total_pengeluaran);
             if (saldoDisplay) saldoDisplay.textContent = formatRupiah(summary.saldo_real);
