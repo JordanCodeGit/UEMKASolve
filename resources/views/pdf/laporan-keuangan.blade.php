@@ -152,26 +152,26 @@
         <table class="summary-table">
             <tr>
                 <td class="card card-blue">
-                    <div class="card-title">💾 Saldo Akhir</div>
+                    <div class="card-title">Saldo Akhir</div>
                     <div class="card-value">Rp {{ number_format($summary['saldo_real'], 0, ',', '.') }}</div>
                 </td>
 
                 <td class="card">
-                    <div class="card-title">📥 Pemasukan</div>
+                    <div class="card-title">Pemasukan</div>
                     <div class="card-value text-green">
                         Rp {{ number_format($summary['total_pemasukan'], 0, ',', '.') }}
                     </div>
                 </td>
 
                 <td class="card">
-                    <div class="card-title">📤 Pengeluaran</div>
+                    <div class="card-title">Pengeluaran</div>
                     <div class="card-value text-red">
                         Rp {{ number_format($summary['total_pengeluaran'], 0, ',', '.') }}
                     </div>
                 </td>
 
                 <td class="card">
-                    <div class="card-title">📊 Laba Bersih</div>
+                    <div class="card-title">Laba Bersih</div>
                     <div class="card-value {{ $summary['laba'] >= 0 ? 'text-green' : 'text-red' }}">
                         Rp {{ number_format($summary['laba'], 0, ',', '.') }}
                     </div>
@@ -185,7 +185,7 @@
     <table class="charts-table">
         <tr>
             <td class="chart-cell" style="width: 58%; padding-right: 10px;">
-                <div class="chart-title">📈 Grafik Kas</div>
+                <div class="chart-title">Grafik Kas</div>
                 @if($lineChartBase64)
                     <img src="{{ $lineChartBase64 }}" class="chart-img">
                 @else
@@ -194,7 +194,7 @@
             </td>
 
             <td class="chart-cell" style="width: 38%; padding-left: 10px;">
-                <div class="chart-title">🍩 Persentase Kategori</div>
+                <div class="chart-title">Persentase Kategori</div>
                 @if($doughnutChartBase64)
                     <img src="{{ $doughnutChartBase64 }}" class="chart-img">
                 @else

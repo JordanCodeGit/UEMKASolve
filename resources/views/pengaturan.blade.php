@@ -55,6 +55,14 @@
             padding: 0 !important;
         }
     }
+
+    /* Helper Text Error */
+    .text-error {
+        color: #ef4444;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
 </style>
 
 <div class="content-card settings-card">
@@ -110,6 +118,7 @@
                 </div>
             @endif
 
+            {{-- Error Global (opsional, karena sudah ada error inline di bawah) --}}
             @if($errors->any())
                 <div class="alert-popup alert-error">
                     <div class="alert-icon">
@@ -117,11 +126,7 @@
                     </div>
                     <div class="alert-message">
                         <strong>Gagal!</strong>
-                        <ul>
-                            @foreach($errors->all() as $e)
-                                <li>{{ $e }}</li>
-                            @endforeach
-                        </ul>
+                        <span>Periksa kembali inputan Anda.</span>
                     </div>
                     <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
                 </div>
@@ -138,11 +143,12 @@
 
                 <div class="form-group-row">
                     <label for="nama_usaha">Nama Usaha</label>
-                    {{-- [FIX] Menggunakan nama_usaha (bukan nama_perusahaan) untuk name dan value --}}
+                    {{-- [FIX] Menggunakan nama_usaha (bukan nama_perusahaan) --}}
                     <input type="text" id="nama_usaha" name="nama_usaha" maxlength="32"
                         value="{{ $user->business->nama_usaha ?? '' }}"
                         placeholder="Contoh: Toko Kopi Saya">
                     <small>Nama usaha akan muncul di laporan PDF</small>
+                    @error('nama_usaha') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
 
                 <div class="form-group-row">
@@ -150,6 +156,7 @@
 
                     <input type="file" name="logo" accept="image/*">
                     <small>Format: PNG, JPG, max 2MB</small>
+                    @error('logo') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
 
                 <div class="form-footer">
@@ -172,6 +179,7 @@
                     <label for="nama_lengkap">Nama Lengkap</label>
                     <input type="text" id="nama_lengkap" name="name"
                         value="{{ $user->name }}" required>
+                    @error('name') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
                 <div class="form-col">
                     <label for="email">Email</label>
@@ -184,17 +192,25 @@
 
             <h3 class="form-section-title" style="margin-top: 30px;">Ubah Password</h3>
 
+            {{-- LOGIKA TAMPILAN: Cek User Biasa vs Google --}}
             @if(Auth::user()->password !== null)
+                {{-- CASE: USER BIASA (Wajib isi password lama) --}}
                 <div class="form-group-row">
-                    <label for="current_password">Password Saat Ini</label>
+                    <label for="current_password">Password Saat Ini <span style="color:red">*</span></label>
                     <div class="password-wrapper-settings">
                         <input type="password" id="current_password" name="current_password" placeholder="••••••••">
                         <i class="fa-solid fa-eye password-toggle-icon"></i>
                     </div>
+                    @error('current_password') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
             @else
-                <div class="alert-floating alert-success" style="margin-bottom: 15px; background-color: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
-                    <i class="fa-solid fa-info-circle"></i> Anda login via Google. Silakan buat password baru untuk login manual (opsional).
+                {{-- CASE: USER GOOGLE (Info saja) --}}
+                <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-brands fa-google" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <strong>Anda login menggunakan Google.</strong><br>
+                        Anda belum memiliki password. Silakan buat password baru di bawah ini agar bisa login secara manual.
+                    </div>
                 </div>
             @endif
 
@@ -204,6 +220,7 @@
                     <input type="password" id="password" name="password" placeholder="••••••••">
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>
+                @error('password') <small class="text-error">{{ $message }}</small> @enderror
             </div>
 
             <div class="form-group-row">
