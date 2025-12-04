@@ -13,62 +13,54 @@ class PrintLaporanController extends Controller
     public function generatePdf(Request $request)
     {
         try {
-            // Check if PHP GD extension is installed
+            // Check PHP GD extension
             if (!extension_loaded('gd')) {
                 \Log::warning('PHP GD extension not loaded');
-                // Return JSON response dengan instruksi untuk server
                 return response()->json([
                     'error' => 'PDF generation requires PHP GD extension',
-                    'message' => 'Server tidak memiliki PHP GD extension yang diperlukan untuk generate PDF dengan grafik.',
-                    'solution' => 'Hubungi hosting provider untuk mengaktifkan PHP GD extension, atau coba gunakan server production yang sudah dikonfigurasi.'
+                    'message' => 'Server tidak memiliki PHP GD extension.',
+                    'solution' => 'Hubungi hosting provider untuk mengaktifkan PHP GD extension.'
                 ], 503);
             }
 
-            \Log::info('PrintLaporanController generatePdf called');
-
             $user = Auth::user();
-            assert($user !== null);
-            $idPerusahaan = $user->id_perusahaan;
 
-            if (!$idPerusahaan) {
-                \Log::error('No company ID for user');
-                return response()->json(['error' => 'Company not set'], 400);
+            // [FIX] Ambil ID Bisnis dari relasi business (bukan id_perusahaan)
+            // Pastikan user->business tidak null
+            if (!$user || !$user->business) {
+                \Log::error('No business found for user: ' . ($user->id ?? 'unknown'));
+                return response()->json([
+                    'error' => 'Business not found',
+                    'message' => 'Anda belum memiliki profil bisnis. Silakan buat profil bisnis terlebih dahulu.'
+                ], 400);
             }
+
+            $idPerusahaan = $user->business->id;
 
             $sections = $request->get('sections', []);
-
-            \Log::info('Sections:', (array)$sections);
-
-            // Validate that at least one section is selected
             $sections = (array)$sections;
+
             if (!($sections['ringkasan'] ?? false) && !($sections['grafik'] ?? false) && !($sections['rincian'] ?? false)) {
-                return response()->json(['error' => 'No sections selected'], 400);
+                return response()->json(['error' => 'Pilih minimal satu bagian laporan.'], 400);
             }
 
-            // Fetch fresh data from database
+            // Fetch fresh data
             $now = Carbon::now();
             $startDate = $now->clone()->startOfMonth();
             $endDate = $now->clone()->endOfMonth();
 
-            \Log::info('Date range: ' . $startDate . ' to ' . $endDate);
-
-            // Get all transactions for this business in the current month
+            // [FIX] Query menggunakan business_id yang benar
             $allTransactions = Transaction::where('business_id', $idPerusahaan)
                 ->whereBetween('tanggal_transaksi', [$startDate, $endDate])
                 ->with('category')
                 ->latest('tanggal_transaksi')
                 ->get();
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Transaction> $allTransactions */
-
-            \Log::info('Total transactions found: ' . count($allTransactions));
-
-            // Calculate summary by iterating through transactions
+            // Calculate Period Summary
             $pemasukanPeriod = 0;
             $pengeluaranPeriod = 0;
 
             foreach ($allTransactions as $tx) {
-                /** @var \App\Models\Category|null $category */
                 $category = $tx->category;
                 if ($category && $category->tipe === 'pemasukan') {
                     $pemasukanPeriod += (float)$tx->jumlah;
@@ -77,103 +69,61 @@ class PrintLaporanController extends Controller
                 }
             }
 
-            // Calculate total balance (all time, not just this month)
+            // Calculate All Time Balance
+            // [FIX] Query all time juga pakai business_id yang benar
             $allTimePemasukan = Transaction::where('business_id', $idPerusahaan)
-                ->with('category')
-                ->get()
-                ->filter(function ($tx) {
-                    /** @var \App\Models\Transaction $tx */
-                    $category = $tx->category;
-                    /** @phpstan-ignore-next-line */
-                    return $category && $category->tipe === 'pemasukan';
-                })
+                ->whereHas('category', function($q) { $q->where('tipe', 'pemasukan'); })
                 ->sum('jumlah');
 
             $allTimePengeluaran = Transaction::where('business_id', $idPerusahaan)
-                ->with('category')
-                ->get()
-                ->filter(function ($tx) {
-                    /** @var \App\Models\Transaction $tx */
-                    $category = $tx->category;
-                    /** @phpstan-ignore-next-line */
-                    return $category && $category->tipe === 'pengeluaran';
-                })
+                ->whereHas('category', function($q) { $q->where('tipe', 'pengeluaran'); })
                 ->sum('jumlah');
 
-            $saldoTotal = (is_numeric($allTimePemasukan) ? $allTimePemasukan : 0) - (is_numeric($allTimePengeluaran) ? $allTimePengeluaran : 0);
+            $saldoTotal = $allTimePemasukan - $allTimePengeluaran;
 
-            // Get recent transactions (limit to 10)
+            // Recent Transactions (Limit 10)
             $transactions = $allTransactions->take(10);
 
-            // Calculate breakdown by category for Grafik Kas
+            // Category Breakdown
             $categoryBreakdown = [];
-            $categoryLabels = [];
-            $categoryPemasukanData = [];
-            $categoryPengeluaranData = [];
-
             foreach ($allTransactions as $tx) {
-                /** @var \App\Models\Category|null $category */
                 $category = $tx->category;
                 if (!$category) continue;
 
-                $categoryName = $category->nama_kategori;
-                $categoryType = $category->tipe;
-
-                if (!isset($categoryBreakdown[$categoryName])) {
-                    $categoryBreakdown[$categoryName] = [
-                        'nama' => $categoryName,
-                        'tipe' => $categoryType,
-                        'total' => 0,
-                        'count' => 0
-                    ];
+                $name = $category->nama_kategori;
+                if (!isset($categoryBreakdown[$name])) {
+                    $categoryBreakdown[$name] = ['nama' => $name, 'tipe' => $category->tipe, 'total' => 0, 'count' => 0];
                 }
-
-                $categoryBreakdown[$categoryName]['total'] += (float)$tx->jumlah;
-                $categoryBreakdown[$categoryName]['count'] += 1;
+                $categoryBreakdown[$name]['total'] += (float)$tx->jumlah;
+                $categoryBreakdown[$name]['count'] += 1;
             }
 
-            // Prepare chart data (daily breakdown)
+            // Chart Data Preparation (Daily)
             $dailyData = [];
             foreach ($allTransactions as $tx) {
-                /** @var \App\Models\Transaction $tx */
-                $tanggal = $tx->tanggal_transaksi;
-                $date = (new \DateTime((string)$tanggal))->format('d');
+                $date = $tx->tanggal_transaksi->format('d');
+                if (!isset($dailyData[$date])) $dailyData[$date] = ['pemasukan' => 0, 'pengeluaran' => 0];
 
-                if (!isset($dailyData[$date])) {
-                    $dailyData[$date] = [
-                        'pemasukan' => 0,
-                        'pengeluaran' => 0
-                    ];
-                }
-
-                /** @var \App\Models\Category|null $category */
-                $category = $tx->category;
-                if ($category && $category->tipe === 'pemasukan') {
-                    $dailyData[$date]['pemasukan'] += (float)$tx->jumlah;
-                } else {
-                    $dailyData[$date]['pengeluaran'] += (float)$tx->jumlah;
-                }
+                if ($tx->category->tipe === 'pemasukan') $dailyData[$date]['pemasukan'] += (float)$tx->jumlah;
+                else $dailyData[$date]['pengeluaran'] += (float)$tx->jumlah;
             }
-
-            // Sort by date
             ksort($dailyData);
 
             $chartLabels = array_keys($dailyData);
-            $chartPemasukanValues = [];
-            $chartPengeluaranValues = [];
+            $chartPemasukan = array_column($dailyData, 'pemasukan');
+            $chartPengeluaran = array_column($dailyData, 'pengeluaran');
 
-            foreach ($dailyData as $data) {
-                $chartPemasukanValues[] = $data['pemasukan'];
-                $chartPengeluaranValues[] = $data['pengeluaran'];
+            // Generate Charts
+            $lineChartBase64 = null;
+            $doughnutChartBase64 = null;
+
+            if ($sections['grafik'] ?? false) {
+                $lineUrl = $this->generateLineChartUrl($chartLabels, $chartPemasukan, $chartPengeluaran);
+                $doughUrl = $this->generateDoughnutChartUrl($categoryBreakdown);
+
+                $lineChartBase64 = $this->getChartAsBase64($lineUrl);
+                $doughnutChartBase64 = $this->getChartAsBase64($doughUrl);
             }
-
-            // Generate chart URLs using QuickChart API
-            $lineChartUrl = $this->generateLineChartUrl($chartLabels, $chartPemasukanValues, $chartPengeluaranValues);
-            $doughnutChartUrl = $this->generateDoughnutChartUrl($categoryBreakdown);
-
-            // Download dan convert chart images to base64
-            $lineChartBase64 = $this->getChartAsBase64($lineChartUrl);
-            $doughnutChartBase64 = $this->getChartAsBase64($doughnutChartUrl);
 
             $summary = [
                 'saldo_real' => $saldoTotal,
@@ -182,7 +132,6 @@ class PrintLaporanController extends Controller
                 'laba' => $pemasukanPeriod - $pengeluaranPeriod
             ];
 
-            // Prepare data for PDF
             $pdfData = [
                 'title' => 'Laporan Keuangan',
                 'date' => date('d-m-Y H:i'),
@@ -193,176 +142,63 @@ class PrintLaporanController extends Controller
                 'lineChartBase64' => $lineChartBase64,
                 'doughnutChartBase64' => $doughnutChartBase64,
                 'company' => [
-                    'name' => $user->perusahaan->nama_perusahaan ?? 'Usaha Saya',
+                    // [FIX] Ambil nama usaha dari relasi business->nama_usaha
+                    'name' => $user->business->nama_usaha ?? 'Usaha Saya',
                 ]
             ];
 
-            \Log::info('PDF Data prepared, transactions count: ' . count($pdfData['transactions']));
-
-            // Generate PDF
             $pdf = Pdf::loadView('pdf.laporan-keuangan', $pdfData)
                 ->setPaper('a4')
-                ->setOption('margin-top', 10)
-                ->setOption('margin-bottom', 10)
-                ->setOption('margin-left', 10)
-                ->setOption('margin-right', 10)
-                ->setOption('enable-local-file-access', true);
+                ->setOption(['isRemoteEnabled' => true]); // Penting untuk gambar
 
-            \Log::info('PDF loaded and configured');
+            return $pdf->download('Laporan_Keuangan_' . date('d-m-Y') . '.pdf');
 
-            $filename = 'Laporan_Keuangan_' . date('d-m-Y') . '.pdf';
-            return $pdf->download($filename);
         } catch (\Throwable $e) {
-            \Log::error('PDF Generation Error: ' . $e->getMessage());
-            \Log::error('Stack: ' . $e->getTraceAsString());
-
-            // Check if error is related to GD extension
-            if (
-                strpos($e->getMessage(), 'gd') !== false ||
-                strpos($e->getMessage(), 'GD') !== false ||
-                strpos($e->getMessage(), 'imagecreatetruecolor') !== false
-            ) {
-                return response()->json([
-                    'error' => 'PHP GD extension is required, but is not installed',
-                    'message' => 'Server tidak memiliki PHP GD extension. Hubungi hosting provider untuk mengaktifkannya.',
-                    'solution' => 'Minta tim hosting untuk enable php_gd extension atau gunakan server production yang sudah dikonfigurasi.'
-                ], 503);
-            }
-
-            return response()->json([
-                'error' => 'Failed to generate PDF',
-                'message' => $e->getMessage()
-            ], 500);
+            \Log::error('PDF Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal membuat PDF: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Generate Line Chart URL using QuickChart API
-     */
-    private function generateLineChartUrl($labels, $pemasukanData, $pengeluaranData)
+    private function generateLineChartUrl($labels, $pemasukan, $pengeluaran)
     {
-        // Validate and convert to arrays
-        if (!is_array($labels)) {
-            $labels = [];
-        }
-        if (!is_array($pemasukanData)) {
-            $pemasukanData = [];
-        }
-        if (!is_array($pengeluaranData)) {
-            $pengeluaranData = [];
-        }
-
-        // Build QuickChart Chart.js config
-        $chartConfig = [
-            'type' => 'line',
+        $config = [
+            'type' => 'bar', // Ubah ke Bar agar konsisten dengan dashboard
             'data' => [
                 'labels' => $labels,
                 'datasets' => [
-                    [
-                        'label' => 'Pemasukan',
-                        'data' => $pemasukanData,
-                        'borderColor' => '#4caf50',
-                        'backgroundColor' => 'rgba(76, 175, 80, 0.1)',
-                        'borderWidth' => 2,
-                        'tension' => 0.4,
-                        'fill' => true
-                    ],
-                    [
-                        'label' => 'Pengeluaran',
-                        'data' => $pengeluaranData,
-                        'borderColor' => '#f44336',
-                        'backgroundColor' => 'rgba(244, 67, 54, 0.1)',
-                        'borderWidth' => 2,
-                        'tension' => 0.4,
-                        'fill' => true
-                    ]
-                ]
-            ],
-            'options' => [
-                'responsive' => true,
-                'maintainAspectRatio' => true,
-                'plugins' => [
-                    'legend' => [
-                        'position' => 'top'
-                    ]
-                ],
-                'scales' => [
-                    'y' => [
-                        'beginAtZero' => true
-                    ]
+                    ['label' => 'Masuk', 'data' => $pemasukan, 'backgroundColor' => 'rgba(76, 175, 80, 0.7)'],
+                    ['label' => 'Keluar', 'data' => $pengeluaran, 'backgroundColor' => 'rgba(244, 67, 54, 0.7)']
                 ]
             ]
         ];
-
-        $chartJson = json_encode($chartConfig);
-        $encodedConfig = urlencode($chartJson !== false ? $chartJson : '');
-        return "https://quickchart.io/chart?c={$encodedConfig}&w=800&h=400";
+        return "https://quickchart.io/chart?c=" . urlencode(json_encode($config)) . "&w=600&h=300";
     }
 
-    /**
-     * Generate Doughnut Chart URL using QuickChart API
-     */
-    private function generateDoughnutChartUrl($categoryBreakdown)
+    private function generateDoughnutChartUrl($breakdown)
     {
         $labels = [];
         $data = [];
-        $colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
-        $backgroundColors = [];
-
-        $colorIndex = 0;
-        foreach ($categoryBreakdown as $category) {
-            $labels[] = $category['nama'];
-            $data[] = $category['total'];
-            $backgroundColors[] = $colors[$colorIndex % count($colors)];
-            $colorIndex++;
+        foreach ($breakdown as $cat) {
+            $labels[] = $cat['nama'];
+            $data[] = $cat['total'];
         }
-
-        // Build QuickChart Chart.js config
-        $chartConfig = [
+        $config = [
             'type' => 'doughnut',
             'data' => [
                 'labels' => $labels,
-                'datasets' => [
-                    [
-                        'data' => $data,
-                        'backgroundColor' => $backgroundColors,
-                        'borderColor' => '#fff',
-                        'borderWidth' => 2
-                    ]
-                ]
+                'datasets' => [['data' => $data]]
             ],
-            'options' => [
-                'responsive' => true,
-                'maintainAspectRatio' => true,
-                'plugins' => [
-                    'legend' => [
-                        'position' => 'bottom'
-                    ]
-                ]
-            ]
+            'options' => ['plugins' => ['legend' => ['position' => 'right']]]
         ];
-
-        $chartJson = json_encode($chartConfig);
-        $encodedConfig = urlencode($chartJson !== false ? $chartJson : '');
-        return "https://quickchart.io/chart?c={$encodedConfig}&w=600&h=400";
+        return "https://quickchart.io/chart?c=" . urlencode(json_encode($config)) . "&w=500&h=300";
     }
 
-    /**
-     * Download chart image dari URL dan convert ke base64
-     */
-    private function getChartAsBase64($chartUrl)
+    private function getChartAsBase64($url)
     {
         try {
-            $imageContent = @file_get_contents($chartUrl);
-            if ($imageContent === false) {
-                \Log::warning('Failed to download chart from: ' . $chartUrl);
-                return null;
-            }
-
-            return 'data:image/png;base64,' . base64_encode($imageContent);
-        } catch (\Exception $e) {
-            \Log::error('Error converting chart to base64: ' . $e->getMessage());
-            return null;
-        }
+            $img = @file_get_contents($url);
+            if ($img) return 'data:image/png;base64,' . base64_encode($img);
+        } catch (\Exception $e) {}
+        return null;
     }
 }

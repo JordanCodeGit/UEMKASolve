@@ -15,17 +15,18 @@ class UpdateTransactionRequest extends FormRequest
 
     public function rules(): array
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-        assert($user !== null);
-        $idPerusahaan = $user->id_perusahaan;
+
+        // [FIX] Ambil ID dari relasi business
+        $idPerusahaan = $user->business ? $user->business->id : null;
 
         return [
-            // 'sometimes' berarti hanya validasi jika field itu dikirim
             'category_id' => [
                 'required',
                 'integer',
                 Rule::exists('categories', 'id')->where(function ($query) use ($idPerusahaan) {
-                    $query->where('business_id', $idPerusahaan);
+                    return $query->where('business_id', $idPerusahaan);
                 }),
             ],
             'jumlah'            => ['required', 'numeric', 'min:0', 'max:999999999999999'],
@@ -36,16 +37,10 @@ class UpdateTransactionRequest extends FormRequest
 
     public function messages(): array
     {
-        // Pesan error sama dengan StoreTransactionRequest
         return [
-            'category_id.required' => 'Kategori wajib dipilih.',
-            'category_id.exists' => 'Kategori yang dipilih tidak valid atau bukan milik Anda.',
-            'jumlah.required' => 'Nominal wajib diisi.',
-            'jumlah.numeric' => 'Nominal harus berupa angka.',
-            'jumlah.min' => 'Nominal tidak boleh kurang dari 0.',
-            'jumlah.max' => 'Nominal transaksi tidak boleh lebih dari 15 digit.',
-            'tanggal_transaksi.required' => 'Tanggal transaksi wajib diisi.',
-            'tanggal_transaksi.date_format' => 'Format tanggal harus YYYY-MM-DD.',
+            'category_id.exists'   => 'Error: Kategori yang dipilih tidak valid atau bukan milik Anda.',
+            'jumlah.required'      => 'Nominal wajib diisi.',
+            'category_id.required' => 'Silakan pilih kategori.',
         ];
     }
 }

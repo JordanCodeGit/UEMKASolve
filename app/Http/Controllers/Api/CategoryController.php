@@ -4,108 +4,140 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Http\Requests\StoreCategoryRequest;
-use App\Http\Requests\UpdateCategoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
     /**
-     * Helper: Ambil ID Perusahaan langsung dari kolom 'id_perusahaan' di tabel users.
+     * Tampilkan semua kategori milik bisnis user
+     * [UPDATED] Mendukung filter ?tipe=pemasukan atau ?tipe=pengeluaran
      */
-    private function getCurrentCompanyId()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        // [UPDATE] Mengambil value langsung dari kolom 'id_perusahaan' milik user
-        if ($user && $user->id_perusahaan) {
-            return $user->id_perusahaan;
-        }
-
-        return null;
-    }
-
-    public function index(Request $request): JsonResponse
-    {
-        $companyId = $this->getCurrentCompanyId();
-
-        // Jika user tidak punya id_perusahaan (belum diset), return kosong
-        if (!$companyId) {
+        // Cek apakah user punya bisnis
+        if (!$user->business) {
             return response()->json([], 200);
         }
 
-        // [MAPPING] id_perusahaan (User) ---> business_id (Category)
-        $query = Category::where('business_id', $companyId)
-            ->orderBy('nama_kategori', 'asc');
+        // 1. Mulai Query Dasar (Milik bisnis user)
+        $query = Category::where('business_id', $user->business->id);
 
-        if ($request->has('tipe') && in_array($request->tipe, ['pemasukan', 'pengeluaran'])) {
+        // 2. [LOGIKA BARU] Cek apakah Frontend meminta tipe tertentu?
+        // Jika URL-nya: /api/categories?tipe=pengeluaran
+        // Maka kita tambahkan filter WHERE tipe = 'pengeluaran'
+        if ($request->has('tipe') && !empty($request->tipe)) {
             $query->where('tipe', $request->tipe);
         }
 
-        return response()->json($query->get(), 200);
+        // 3. Urutkan dan Eksekusi
+        $categories = $query->orderBy('tipe', 'desc') // Pemasukan dulu, baru pengeluaran (jika tidak difilter)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($categories);
     }
 
-    public function store(StoreCategoryRequest $request): JsonResponse
+    /**
+     * Simpan kategori baru
+     */
+    public function store(Request $request)
     {
-        $companyId = $this->getCurrentCompanyId();
-
-        // Cek jika user belum punya perusahaan
-        if (!$companyId) {
-            return response()->json(['message' => 'Akun Anda belum terhubung dengan perusahaan manapun.'], 400);
+        $user = Auth::user();
+        if (!$user->business) {
+            return response()->json(['message' => 'Bisnis tidak ditemukan'], 400);
         }
 
-        $validatedData = $request->validated();
+        $request->validate([
+            'nama_kategori' => 'required|string|max:255',
+            'tipe' => 'required|in:pemasukan,pengeluaran',
+            'ikon' => 'required|string',
+        ]);
 
-        // [KUNCI] Masukkan ID Perusahaan user ke kolom business_id kategori
-        $validatedData['business_id'] = $companyId;
-
-        // [PERBAIKAN] Bersihkan input nama dari tag HTML (strip_tags)
-        $validatedData['nama_kategori'] = $validatedData['nama_kategori'];
-
-        // Simpan ke Database
-        // (Ini yang akan error jika business_id tidak ada di $fillable Model)
-        $category = Category::create($validatedData);
+        $category = Category::create([
+            'business_id' => $user->business->id,
+            'nama_kategori' => strip_tags($request->nama_kategori),
+            'tipe' => $request->tipe,
+            'ikon' => $request->ikon
+        ]);
 
         return response()->json($category, 201);
     }
 
-    public function show(Category $category): JsonResponse
+    /**
+     * Update Kategori (Bisa Drag-Drop atau Edit Form)
+     */
+    public function update(Request $request, $id)
     {
-        // Validasi kepemilikan
-        if ($category->business_id !== $this->getCurrentCompanyId()) {
-            return response()->json(['message' => 'Tidak ditemukan.'], 404);
+        $user = Auth::user();
+
+        // 1. Cari kategori & Pastikan milik bisnis user ini
+        $category = Category::where('id', $id)
+            ->where('business_id', $user->business->id)
+            ->first();
+
+        if (!$category) {
+            return response()->json(['message' => 'Kategori tidak ditemukan atau akses ditolak'], 404);
         }
 
-        return response()->json($category, 200);
+        // --- SKENARIO 1: DRAG & DROP (Hanya update tipe) ---
+        // Ciri: Request punya 'tipe' tapi TIDAK punya 'nama_kategori'
+        if ($request->has('tipe') && !$request->has('nama_kategori')) {
+            $request->validate(['tipe' => 'required|in:pemasukan,pengeluaran']);
+
+            // Update tipe
+            $category->tipe = $request->tipe;
+
+            // (Opsional) Update folder ikon agar warna ikut berubah
+            // Misal: 'pemasukan/Button.png' -> 'pengeluaran/Button.png'
+            if ($category->ikon && str_contains($category->ikon, '/')) {
+                $filename = basename($category->ikon);
+                $category->ikon = $request->tipe . '/' . $filename;
+            }
+
+            $category->save();
+            return response()->json($category);
+        }
+
+        // --- SKENARIO 2: EDIT FORM (Nama & Ikon) ---
+        $validated = $request->validate([
+            'nama_kategori' => 'required|string|max:255',
+            'tipe' => 'required|in:pemasukan,pengeluaran',
+            'ikon' => 'nullable|string',
+        ]);
+
+        $category->update([
+            'nama_kategori' => strip_tags($validated['nama_kategori']),
+            'tipe' => $validated['tipe'],
+            'ikon' => $validated['ikon'] ?? $category->ikon // Pakai ikon lama jika kosong
+        ]);
+
+        return response()->json($category);
     }
 
-    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
+    /**
+     * Hapus Kategori (Soft Delete)
+     */
+    public function destroy($id)
     {
-        if ($category->business_id !== $this->getCurrentCompanyId()) {
-            return response()->json(['message' => 'Tidak ditemukan.'], 404);
+        $user = Auth::user();
+
+        $category = Category::where('id', $id)
+            ->where('business_id', $user->business->id)
+            ->first();
+
+        if (!$category) {
+            return response()->json(['message' => 'Kategori tidak ditemukan'], 404);
         }
 
-        $validatedData = $request->validated();
-        $category->update($validatedData);
-
-        // [PERBAIKAN] Bersihkan input saat update juga
-        if (isset($validatedData['nama_kategori']) && is_string($validatedData['nama_kategori'])) {
-            $validatedData['nama_kategori'] = trim($validatedData['nama_kategori']);
-        }
-        return response()->json($category, 200);
-    }
-
-    public function destroy(Category $category): Response
-    {
-        if ($category->business_id !== $this->getCurrentCompanyId()) {
-            return response(['message' => 'Tidak ditemukan.'], 404);
-        }
-
+        // Hapus kategori (Soft Delete)
+        // Note: Transaksi terkait tetap aman di database, tapi mungkin perlu logic tambahan
+        // di laporan untuk menangani transaksi yang kategorinya null/terhapus.
         $category->delete();
-        return response()->noContent();
+
+        return response()->json(['message' => 'Kategori berhasil dihapus'], 200);
     }
 }

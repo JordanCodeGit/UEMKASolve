@@ -99,12 +99,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Rute Dashboard
     Route::get('/dashboard', function () {
-        $user = Illuminate\Support\Facades\Auth::user();
-
-        // Cek apakah id_perusahaan kosong
-        $needsCompanySetup = is_null($user->id_perusahaan);
-
-        return view('dashboard', compact('needsCompanySetup'));
+        // HAPUS semua logika pengecekan di sini.
+        // Biarkan AppServiceProvider yang mengurus variabel $needsCompanySetup.
+        return view('dashboard');
     })->name('dashboard');
 
     // Rute Buku Kas
@@ -140,3 +137,11 @@ Route::middleware(['auth'])->group(function () {
 
 // Load additional auth-related POST routes (register, login, verification, password actions)
 require __DIR__ . '/auth.php';
+
+// Route::get('/cek-php', function () {
+//     return [
+//         'GD_Aktif' => extension_loaded('gd'), // True/False
+//         'Versi_PHP' => phpversion(),
+//         'File_Config_Yang_Dipakai' => php_ini_loaded_file(), // Lokasi file php.ini
+//     ];
+// });

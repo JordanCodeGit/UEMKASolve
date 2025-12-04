@@ -2,21 +2,32 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model; // Gunakan Model bawaan Laravel
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Business model (alias for Perusahaan)
- *
- * @property-read Collection<int, Transaction> $transactions
- */
-class Business extends Perusahaan
+class Business extends Model // Jangan extends Perusahaan lagi
 {
-    /**
-     * Get all transactions for this business.
-     */
+    use HasFactory;
+
+    // Pastikan dia menunjuk ke tabel yang benar
+    protected $table = 'businesses';
+
+    // Properti yang tadi kita bahas (Wajib ada)
+    protected $fillable = [
+        'user_id',
+        'nama_usaha', 
+        'logo_path',
+    ];
+
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class, 'business_id');
+    }
+
+    // Relasi ke kategori (Tambahkan ini agar lengkap)
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class, 'business_id');
     }
 }

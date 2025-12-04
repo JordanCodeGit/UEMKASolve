@@ -14,7 +14,7 @@
 </div>
 
 <div class="main-category-container">
-    
+
     <div class="category-section">
         <div class="section-header-green">
             <span class="dot-indicator"></span>
@@ -41,17 +41,17 @@
 
 <div class="modal-overlay" id="category-modal-overlay" style="display: none;">
     <div class="modal-box">
-        
+
         <div class="modal-header">
-            <h2 id="modal-title">Tambah Kategori Baru</h2> 
+            <h2 id="modal-title">Tambah Kategori Baru</h2>
             <button class="modal-close-btn" id="modal-close-btn">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
-        
+
         <form id="category-form">
             <div class="modal-body">
-                
+
                 <div id="modal-form-message";></div>
 
                 <div class="modal-tabs" id="modal-tab-container">
@@ -59,12 +59,12 @@
                     <button type="button" class="modal-tab-item" data-tab-type="pemasukan">Pemasukan</button>
                     <input type="hidden" id="modal-tipe" name="tipe" value="pengeluaran">
                 </div>
-                
+
                 <div class="form-group-modal">
                     <label for="modal-nama-kategori">Nama Kategori</label>
                     <input type="text" id="modal-nama-kategori" name="nama_kategori" class="form-input-modal" placeholder="Masukkan nama kategori..." required>
                 </div>
-                
+
                 <div class="form-group-modal icon-modal">
                     <label>Pilih Ikon</label>
 
@@ -72,30 +72,30 @@
 
                     <div id="dynamic-icon-grid" class="icon-picker-container grid-pengeluaran">
                     </div>
-                    
+
                     <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon.</small>
                 </div>
-                
+
             </div>
-            
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary-modal" id="modal-cancel-btn">Batal</button>
                 <button type="submit" class="btn btn-primary-modal" id="modal-submit-btn">Tambah Kategori</button>
             </div>
         </form>
-        
+
     </div>
 </div>
 
 <div class="modal-overlay" id="delete-modal-overlay" style="display: none;">
     <div class="modal-box delete-modal-box">
-        
+
         <div class="delete-icon-wrapper">
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
 
         <h2 class="delete-title">Hapus Kategori?</h2>
-        
+
         <p class="delete-message">
             Anda akan menghapus kategori <strong id="delete-target-name">...</strong>.<br>
             <span class="text-danger-warning">
@@ -119,7 +119,7 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        
+
         const token = localStorage.getItem('auth_token');
         if (!token) {
             window.location.href = '{{ url("/login") }}';
@@ -155,13 +155,13 @@
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
         const modalTabs = document.querySelectorAll('.modal-tab-item');
         const tabContainer = document.getElementById('modal-tab-container');
-        
+
         // Input Form
         const inputTipe = document.getElementById('modal-tipe');
         const inputNama = document.getElementById('modal-nama-kategori');
         const inputIkon = document.getElementById('modal-kat-ikon');
-        
-        let currentEditingId = null; 
+
+        let currentEditingId = null;
 
         function escapeHtml(text) {
             if (!text) return text;
@@ -202,9 +202,9 @@
                 if (!response.ok) {
                     throw new Error(`Server Error: ${response.status} ${response.statusText}`);
                 }
-                
+
                 const categories = await response.json();
-                
+
                 // [DEBUG] Lihat data asli di Console (Tekan F12)
                 console.log("Data Kategori dari Server:", categories);
 
@@ -246,14 +246,14 @@
             categories.forEach(cat => {
                 const item = document.createElement('div');
                 item.className = 'category-item-large';
-                item.dataset.id = cat.id; 
+                item.dataset.id = cat.id;
 
                 // 1. LOGIKA ICON (GAMBAR VS FONTAWESOME)
                 let iconHtml = '';
-                
+
                 // Cek apakah data ikon ada DAN berakhiran ekstensi gambar
                 if (cat.ikon && (cat.ikon.includes('.png') || cat.ikon.includes('.jpg') || cat.ikon.includes('.svg') || cat.ikon.includes('.jpeg'))) {
-                    
+
                     // Render sebagai IMAGE
                     // Icon path bisa berupa "pengeluaran/Button.png" atau "Button.png"
                     // Jika tidak ada folder prefix, gunakan tipe kategori
@@ -262,11 +262,11 @@
                         iconPath = `${cat.tipe}/${iconPath}`;
                     }
                     const iconUrl = `{{ asset('icons') }}/${iconPath}`;
-                    
+
                     iconHtml = `<img src="${iconUrl}" alt="icon" class="w-6 h-6 object-contain">`;
-                    
+
                 } else {
-                    
+
                     // Render sebagai FontAwesome (Data Lama / Default)
                     const iconClass = cat.ikon ? escapeHtml(cat.ikon) : 'fa-solid fa-tag';
                     iconHtml = `<i class="${iconClass}"></i>`;
@@ -274,34 +274,34 @@
 
                 // 2. LOGIKA WARNA BACKGROUND
                 const bgClass = cat.tipe === 'pemasukan' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600';
-                
+
                 // Tambahkan class shape berdasarkan tipe
                 const shapeClass = cat.tipe === 'pemasukan' ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
-                
+
                 // 3. KEAMANAN XSS
                 const safeNama = escapeHtml(cat.nama_kategori);
                 // Jika ikon FontAwesome, aman karena sudah di-escape di atas. Jika Image, aman karena path server.
                 // Kita simpan value asli ikon untuk data-ikon tombol edit (hati-hati di sini)
-                const safeDataIkon = cat.ikon ? escapeHtml(cat.ikon) : ''; 
+                const safeDataIkon = cat.ikon ? escapeHtml(cat.ikon) : '';
 
                 // 4. SUSUN HTML KE DALAM ITEM
                 item.innerHTML = `
                     <span class="icon-wrapper ${shapeClass} flex items-center justify-center mr-3">
                         ${iconHtml}
                     </span>
-                    
+
                     <span class="category-name flex-1 font-medium text-gray-700">${safeNama}</span>
-                    
+
                     <div class="category-actions flex gap-2">
-                        <button class="btn-icon btn-edit text-blue-500 hover:bg-blue-50 p-2 rounded" 
-                                data-id="${cat.id}" 
-                                data-nama="${safeNama}" 
-                                data-tipe="${cat.tipe}" 
+                        <button class="btn-icon btn-edit text-blue-500 hover:bg-blue-50 p-2 rounded"
+                                data-id="${cat.id}"
+                                data-nama="${safeNama}"
+                                data-tipe="${cat.tipe}"
                                 data-ikon="${safeDataIkon}">
                             <i class="fa-solid fa-pencil"></i>
                         </button>
-                        <button class="btn-icon btn-delete text-red-500 hover:bg-red-50 p-2 rounded" 
-                                data-id="${cat.id}" 
+                        <button class="btn-icon btn-delete text-red-500 hover:bg-red-50 p-2 rounded"
+                                data-id="${cat.id}"
                                 data-nama="${safeNama}">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -338,22 +338,22 @@
 
             // [UBAH] Judul Default
             modalTitle.textContent = 'Tambah Kategori Baru';
-            
+
             // [UBAH] Tampilkan Tab Pilihan Tipe
-            if(tabContainer) tabContainer.style.display = 'flex'; 
-            
+            if(tabContainer) tabContainer.style.display = 'flex';
+
             modalSubmitBtn.textContent = 'Tambah Kategori';
             modalMessage.textContent = '';
             setActiveTab('pengeluaran'); // Default tab
             renderIconGrid('pengeluaran'); // Render icon grid
             modalOverlay.style.display = 'flex';
         }
-        
+
         // --- 4. [UPDATE] Fungsi Modal "Edit Kategori" ---
         function handleEditClick(e) {
             // Ambil data dari tombol
             const btn = e.currentTarget; // Gunakan currentTarget agar aman jika klik icon
-            currentEditingId = btn.dataset.id; 
+            currentEditingId = btn.dataset.id;
             const tipe = btn.dataset.tipe; // 'pemasukan' atau 'pengeluaran'
 
             modalForm.reset();
@@ -370,20 +370,20 @@
 
             modalSubmitBtn.textContent = 'Simpan Perubahan';
             modalMessage.textContent = '';
-            
+
             // Isi Form dengan data lama
             inputNama.value = btn.dataset.nama;
             inputTipe.value = tipe; // Set tipe di hidden input
-            
+
             // Render grid dan set active icon
             renderIconGrid(tipe);
-            
+
             // Auto-select Icon di Grid
             if (btn.dataset.ikon) {
                 selectIconLogic(btn.dataset.ikon, tipe);
                 document.getElementById('modal-kat-ikon').value = btn.dataset.ikon;
             }
-            
+
             modalOverlay.style.display = 'flex';
         }
 
@@ -443,7 +443,7 @@
         });
 
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-    
+
         if (cancelDeleteBtn) {
             cancelDeleteBtn.addEventListener('click', function() {
                 closeDeleteModal();
@@ -460,24 +460,28 @@
         }
 
         // --- 6. [CREATE/UPDATE] Fungsi Submit Form ---
+        // --- 6. [CREATE/UPDATE] Fungsi Submit Form (FIXED) ---
         async function handleFormSubmit(e) {
             e.preventDefault();
             modalMessage.textContent = 'Menyimpan...';
-            
+
             const formData = new FormData(modalForm);
             const data = Object.fromEntries(formData.entries());
 
-            // Tambahkan prefix folder type ke ikon
-            if (data.ikon) {
+            // Tambahkan prefix folder type ke ikon jika perlu
+            if (data.ikon && !data.ikon.includes('/')) {
                 data.ikon = `${data.tipe}/${data.ikon}`;
             }
 
             let url = API_CATEGORIES;
+
+            // [FIX] Selalu gunakan POST agar aman di hosting
             let method = 'POST';
 
+            // Jika sedang Edit, tambahkan ID ke URL & sisipkan _method: PUT
             if (currentEditingId) {
                 url = `${API_CATEGORIES}/${currentEditingId}`;
-                method = 'PUT';
+                data._method = 'PUT'; // Trick Laravel agar membaca ini sebagai PUT
             }
 
             try {
@@ -491,9 +495,12 @@
 
                 if (response.ok) {
                     closeModal();
-                    fetchCategories(); 
+                    fetchCategories(); // Refresh list
+                    // Opsional: Tampilkan alert sukses
                 } else if (response.status === 422) {
-                    const firstError = Object.values(result.errors)[0][0];
+                    // Error Validasi Laravel
+                    const errors = result.errors;
+                    const firstError = Object.values(errors)[0][0];
                     modalMessage.textContent = 'Error: ' + firstError;
                 } else {
                     modalMessage.textContent = 'Error: ' + (result.message || 'Terjadi kesalahan server.');
@@ -503,7 +510,7 @@
                 modalMessage.textContent = 'Gagal terhubung ke server.';
             }
         }
-        
+
         // --- 7. Helper Modal (Tutup & Ganti Tab) ---
         function closeModal() {
             modalOverlay.style.display = 'none';
@@ -519,69 +526,73 @@
                 }
             });
         }
-        // --- 8. [DRAG & DROP] Update Tipe Kategori & UI ---
+        // --- 8. [DRAG & DROP] Update Tipe Kategori (FIXED) ---
         async function handleCategoryDrop(event) {
             const categoryId = event.item.dataset.id;
-            
-            // Tentukan tipe baru berdasarkan list tujuan
+
+            // Validasi ID
+            if (!categoryId) {
+                console.error("ID Kategori tidak ditemukan pada elemen");
+                return;
+            }
+
+            // Tentukan tipe baru berdasarkan container tujuan
             const newTipe = event.to.id === 'category-list-pemasukan' ? 'pemasukan' : 'pengeluaran';
-            
-            // Simpan tipe lama untuk rollback jika gagal
             const oldTipe = newTipe === 'pemasukan' ? 'pengeluaran' : 'pemasukan';
 
             try {
+                // [FIX] Gunakan POST dengan _method: 'PUT' agar aman di semua hosting
                 const response = await fetch(`${API_CATEGORIES}/${categoryId}`, {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: API_HEADERS,
-                    body: JSON.stringify({ tipe: newTipe })
+                    body: JSON.stringify({
+                        _method: 'PUT', // Memberitahu Laravel ini sebenarnya PUT
+                        tipe: newTipe
+                    })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Gagal update');
-                }
-                
-                // --- UPDATE DATA ATRIBUT TOMBOL EDIT ---
-                const btnEdit = event.item.querySelector('.btn-edit');
-                if (btnEdit) {
-                    btnEdit.dataset.tipe = newTipe; // Ubah data-tipe untuk modal
+                    throw new Error('Gagal update di server');
                 }
 
-                // --- UPDATE WARNA BACKGROUND ICON SHAPE ---
+                // --- UPDATE UI LANGSUNG (Tanpa Refresh) ---
+
+                // 1. Update data-tipe pada tombol edit
+                const btnEdit = event.item.querySelector('.btn-edit');
+                if (btnEdit) btnEdit.dataset.tipe = newTipe;
+
+                // 2. Update Warna & Shape Icon
                 const iconWrapper = event.item.querySelector('.icon-wrapper');
                 if (iconWrapper) {
-                    // Hapus class shape lama
-                    iconWrapper.classList.remove('icon-shape-pemasukan', 'icon-shape-pengeluaran');
-                    
-                    // Tambahkan class shape baru sesuai tipe
+                    // Reset class lama
+                    iconWrapper.classList.remove('icon-shape-pemasukan', 'icon-shape-pengeluaran', 'bg-green-100', 'bg-red-100', 'text-green-600', 'text-red-600');
+
+                    // Tambah class baru
                     if (newTipe === 'pemasukan') {
-                        iconWrapper.classList.add('icon-shape-pemasukan');
+                        iconWrapper.classList.add('icon-shape-pemasukan', 'bg-green-100', 'text-green-600');
                     } else {
-                        iconWrapper.classList.add('icon-shape-pengeluaran');
+                        iconWrapper.classList.add('icon-shape-pengeluaran', 'bg-red-100', 'text-red-600');
                     }
-                    
-                    // --- UPDATE ICON PNG SRC ---
-                    // Ambil nama file icon dari src yang sekarang
+
+                    // 3. Update Source Gambar Icon (Agar pindah folder warna)
                     const iconImg = iconWrapper.querySelector('img');
                     if (iconImg) {
-                        // Extract nama file dari src
-                        // Contoh: /icons/pengeluaran/Button.png → Button.png
                         const currentSrc = iconImg.src;
-                        const filename = currentSrc.split('/').pop();
-                        
-                        // Set src baru dengan folder tipe yang baru
+                        // Ambil nama file saja (misal: Button.png)
+                        const filename = currentSrc.substring(currentSrc.lastIndexOf('/') + 1);
+                        // Set path baru
                         iconImg.src = `{{ asset('icons') }}/${newTipe}/${filename}`;
                     }
                 }
 
+                console.log(`Berhasil memindahkan kategori ${categoryId} ke ${newTipe}`);
+
             } catch (error) {
                 console.error('Error dropping category:', error);
-                event.from.appendChild(event.item); // Kembalikan item jika error
-                
-                // Kembalikan data-tipe jika error (opsional tapi bagus)
-                const btnEdit = event.item.querySelector('.btn-edit');
-                if (btnEdit) btnEdit.dataset.tipe = oldTipe;
 
-                alert('Gagal memindahkan kategori. Periksa koneksi internet.');
+                // [ROLLBACK] Kembalikan item ke tempat asal jika error
+                event.from.appendChild(event.item);
+                alert('Gagal memindahkan kategori. Silakan coba lagi.');
             }
         }
 
@@ -590,7 +601,7 @@
         modalCloseBtn.addEventListener('click', closeModal);
         modalCancelBtn.addEventListener('click', closeModal);
         modalForm.addEventListener('submit', handleFormSubmit);
-        
+
         modalTabs.forEach(tab => {
             tab.addEventListener('click', () => setActiveTab(tab.dataset.tabType));
         });
@@ -615,26 +626,26 @@
         function renderIconGrid(type) { // type = 'pemasukan' atau 'pengeluaran'
             const container = document.getElementById('dynamic-icon-grid');
             if (!container) return;
-            
+
             container.innerHTML = ''; // Bersihkan isi lama
-            
+
             // Ganti Class Container untuk CSS Warna
             container.className = `icon-picker-container grid-${type}`;
 
             // Tentukan folder asal (pemasukan/pengeluaran)
-            const folder = type; 
+            const folder = type;
 
             iconFiles.forEach(filename => {
                 const div = document.createElement('div');
                 div.className = 'icon-option';
-                
+
                 // Buat Gambar
                 const img = document.createElement('img');
                 // Path default (Warna Hijau/Biru)
                 img.src = `{{ asset('icons') }}/${folder}/${filename}`;
                 img.dataset.filename = filename; // Simpan nama file asli
                 img.alt = 'icon';
-                
+
                 // Event Klik (Logic Swap Gambar)
                 div.onclick = function() {
                     selectIconLogic(filename, type);
@@ -643,19 +654,19 @@
                 div.appendChild(img);
                 container.appendChild(div);
             });
-            
+
             // Reset input hidden
             document.getElementById('modal-kat-ikon').value = '';
-            
+
             // --- Setup scroll event untuk menampilkan/menyembunyikan scrollbar ---
             let scrollTimeout;
             container.addEventListener('scroll', function() {
                 // Tambah class 'scrolling' saat user scroll
                 container.classList.add('scrolling');
-                
+
                 // Clear timeout sebelumnya
                 clearTimeout(scrollTimeout);
-                
+
                 // Hapus class 'scrolling' 1 detik setelah scroll berhenti
                 scrollTimeout = setTimeout(() => {
                     container.classList.remove('scrolling');
@@ -666,7 +677,7 @@
         // --- Fungsi Pilih Icon ---
         function selectIconLogic(filename, type) {
             const container = document.getElementById('dynamic-icon-grid');
-            
+
             // 1. Reset semua icon lain
             container.querySelectorAll('.icon-option').forEach(el => {
                 el.classList.remove('active');

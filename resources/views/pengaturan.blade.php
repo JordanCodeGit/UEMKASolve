@@ -10,18 +10,18 @@
         .profile-header-container {
             padding: 30px 20px;
         }
-        
+
         .profile-header-content {
             gap: 15px;
             padding: 0 15px;
         }
-        
+
         .profile-avatar-placeholder {
             width: 150px;
             height: 150px;
         }
     }
-    
+
     /* Responsive untuk Pengaturan - Tablet */
     @media (max-width: 768px) {
         .content-card.settings-card {
@@ -31,18 +31,18 @@
             box-shadow: none;
             background-color: #f5f7fa;
         }
-        
+
         .settings-content-card {
             padding: 0 !important;
             border-radius: 0;
         }
-        
+
         .profile-header-content {
             top: -30px;
             right: 0;
         }
     }
-    
+
     /* Responsive untuk Pengaturan - Mobile */
     @media (max-width: 480px) {
         .content-card.settings-card {
@@ -50,10 +50,18 @@
             border-radius: 0;
             padding: 0;
         }
-        
+
         .settings-content-card {
             padding: 0 !important;
         }
+    }
+
+    /* Helper Text Error */
+    .text-error {
+        color: #ef4444;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        display: block;
     }
 </style>
 
@@ -62,17 +70,18 @@
     <div class="profile-header-container">
         <div class="profile-header-banner">
         </div>
-        
+
         <div class="profile-header-content">
             <div class="profile-avatar-placeholder" id="profile-avatar">
-                @if($user->perusahaan && $user->perusahaan->logo)
-                    <img src="{{ asset($user->perusahaan->logo) }}" alt="Logo Usaha" 
+                {{-- [FIX] Menggunakan business->logo_path dan asset('storage/...') --}}
+                @if($user->business && $user->business->logo_path)
+                    <img src="{{ asset('storage/' . $user->business->logo_path) }}" alt="Logo Usaha"
                          style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
                 @else
                     <i class="fa-solid fa-shop" style="font-size: 2.5rem; color: #94a3b8;"></i>
                 @endif
             </div>
-            
+
             <div class="profile-info">
                 <h2 id="profile-name">{{ $user->name }}</h2>
                 <span id="profile-email">{{ $user->email }}</span>
@@ -85,7 +94,7 @@
             <a href="#" class="tab-item active" id="tab-usaha" onclick="switchTab(event, 'usaha')">
                 <i class="fa-solid fa-shop"></i> Profil Usaha
             </a>
-            
+
             <a href="#" class="tab-item" id="tab-akun" onclick="switchTab(event, 'akun')">
                 <i class="fa-solid fa-user-gear"></i> Profil Akun
             </a>
@@ -93,9 +102,9 @@
     </div>
 
     <div class="settings-content-card">
-        
+
         <div class="alert-container">
-    
+
             @if(session('success'))
                 <div class="alert-popup alert-success" id="auto-close-alert">
                     <div class="alert-icon">
@@ -109,6 +118,7 @@
                 </div>
             @endif
 
+            {{-- Error Global (opsional, karena sudah ada error inline di bawah) --}}
             @if($errors->any())
                 <div class="alert-popup alert-error">
                     <div class="alert-icon">
@@ -116,11 +126,7 @@
                     </div>
                     <div class="alert-message">
                         <strong>Gagal!</strong>
-                        <ul>
-                            @foreach($errors->all() as $e)
-                                <li>{{ $e }}</li>
-                            @endforeach
-                        </ul>
+                        <span>Periksa kembali inputan Anda.</span>
                     </div>
                     <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
                 </div>
@@ -129,27 +135,30 @@
         </div>
 
         <div class="tab-pane active" id="pane-usaha">
-            
+
             <form id="form-profil-usaha" action="{{ route('pengaturan.update.usaha') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                
+
                 <h3 class="form-section-title">Ubah Profil Usaha</h3>
-                
+
                 <div class="form-group-row">
                     <label for="nama_usaha">Nama Usaha</label>
-                    <input type="text" id="nama_usaha" name="nama_perusahaan" maxlength="32"
-                        value="{{ $user->perusahaan->nama_perusahaan ?? '' }}" 
+                    {{-- [FIX] Menggunakan nama_usaha (bukan nama_perusahaan) --}}
+                    <input type="text" id="nama_usaha" name="nama_usaha" maxlength="32"
+                        value="{{ $user->business->nama_usaha ?? '' }}"
                         placeholder="Contoh: Toko Kopi Saya">
                     <small>Nama usaha akan muncul di laporan PDF</small>
+                    @error('nama_usaha') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
-                
+
                 <div class="form-group-row">
                     <label>Logo Usaha</label>
-                    
+
                     <input type="file" name="logo" accept="image/*">
                     <small>Format: PNG, JPG, max 2MB</small>
+                    @error('logo') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
-                
+
                 <div class="form-footer">
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                 </div>
@@ -159,49 +168,59 @@
     </div>
 
    <div class="tab-pane" id="pane-akun" style="display: none;">
-    
+
         <form id="form-profil-akun" action="{{ route('pengaturan.update.akun') }}" method="POST">
             @csrf
-            
+
             <h3 class="form-section-title">Ubah Akun</h3>
-            
+
             <div class="form-row-split">
                 <div class="form-col">
                     <label for="nama_lengkap">Nama Lengkap</label>
-                    <input type="text" id="nama_lengkap" name="name" 
+                    <input type="text" id="nama_lengkap" name="name"
                         value="{{ $user->name }}" required>
+                    @error('name') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
                 <div class="form-col">
                     <label for="email">Email</label>
-                    <input type="email" id="email" value="{{ $user->email }}" disabled 
+                    <input type="email" id="email" value="{{ $user->email }}" disabled
                            style="background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed;">
-                    
+
                     <input type="hidden" name="email" value="{{ $user->email }}">
                 </div>
             </div>
 
             <h3 class="form-section-title" style="margin-top: 30px;">Ubah Password</h3>
-            
+
+            {{-- LOGIKA TAMPILAN: Cek User Biasa vs Google --}}
             @if(Auth::user()->password !== null)
+                {{-- CASE: USER BIASA (Wajib isi password lama) --}}
                 <div class="form-group-row">
-                    <label for="current_password">Password Saat Ini</label>
-                    <div class="password-wrapper-settings"> 
+                    <label for="current_password">Password Saat Ini <span style="color:red">*</span></label>
+                    <div class="password-wrapper-settings">
                         <input type="password" id="current_password" name="current_password" placeholder="••••••••">
                         <i class="fa-solid fa-eye password-toggle-icon"></i>
                     </div>
+                    @error('current_password') <small class="text-error">{{ $message }}</small> @enderror
                 </div>
             @else
-                <div class="alert-floating alert-success" style="margin-bottom: 15px; background-color: #e0f2fe; color: #0284c7; border-color: #bae6fd;">
-                    <i class="fa-solid fa-info-circle"></i> Anda login via Google. Silakan buat password baru untuk login manual (opsional).
+                {{-- CASE: USER GOOGLE (Info saja) --}}
+                <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-brands fa-google" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <strong>Anda login menggunakan Google.</strong><br>
+                        Anda belum memiliki password. Silakan buat password baru di bawah ini agar bisa login secara manual.
+                    </div>
                 </div>
             @endif
-            
+
             <div class="form-group-row">
                 <label for="password">Password Baru</label>
                 <div class="password-wrapper-settings">
                     <input type="password" id="password" name="password" placeholder="••••••••">
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>
+                @error('password') <small class="text-error">{{ $message }}</small> @enderror
             </div>
 
             <div class="form-group-row">
@@ -211,12 +230,12 @@
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>
             </div>
-            
+
             <div class="form-footer">
                 <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
             </div>
         </form>
-        
+
     </div>
 
 </div>
@@ -226,27 +245,22 @@
 <script>
 
     function switchTab(event, tabName) {
-        // 1. Mencegah link melompat ke atas (default href="#")
         if(event) event.preventDefault();
 
-        // 2. Sembunyikan semua konten tab (class .tab-pane dari kode HTML sebelumnya)
         document.querySelectorAll('.tab-pane').forEach(el => {
             el.style.display = 'none';
-            el.classList.remove('active'); // Hapus class active dari konten
+            el.classList.remove('active');
         });
 
-        // 3. Matikan status active di semua tombol navigasi (class .tab-item punya Anda)
         document.querySelectorAll('.tab-item').forEach(btn => {
             btn.classList.remove('active');
         });
 
-        // 4. Tampilkan konten yang dipilih (Target ID: pane-usaha / pane-akun)
         const selectedPane = document.getElementById('pane-' + tabName);
         if (selectedPane) {
             selectedPane.style.display = 'block';
         }
 
-        // 5. Aktifkan tombol navigasi yang diklik (Target ID: tab-usaha / tab-akun)
         const selectedBtn = document.getElementById('tab-' + tabName);
         if (selectedBtn) {
             selectedBtn.classList.add('active');
@@ -254,37 +268,27 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        
-        // --- 1. LOGIKA ALERT / FLASH MESSAGE (Otomatis Hilang) ---
+
         const successAlert = document.getElementById('auto-close-alert');
-        
+
         if (successAlert) {
-            // Tunggu 4 detik
             setTimeout(() => {
-                // Tambahkan class animasi keluar
                 successAlert.classList.add('fade-out');
-                
-                // Hapus dari HTML setelah animasi selesai (0.5 detik)
                 setTimeout(() => {
                     successAlert.remove();
                 }, 500);
-            }, 4000); // 4000 ms = 4 detik
+            }, 4000);
         }
 
-        // --- 3. LOGIKA MATA PASSWORD (Toggle Eye Icon) ---
         document.querySelectorAll('.password-toggle-icon').forEach(icon => {
             icon.addEventListener('click', function() {
                 const input = this.previousElementSibling;
-                
-                // Pastikan elemen yang ditemukan benar-benar INPUT
                 if (input && input.tagName === 'INPUT') {
                     if (input.type === 'password') {
-                        // Password → Text (Buka mata)
                         input.type = 'text';
                         this.classList.remove('fa-eye');
                         this.classList.add('fa-eye-slash');
                     } else {
-                        // Text → Password (Tutup mata)
                         input.type = 'password';
                         this.classList.remove('fa-eye-slash');
                         this.classList.add('fa-eye');

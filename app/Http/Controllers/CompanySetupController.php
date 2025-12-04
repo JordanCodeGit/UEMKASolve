@@ -2,49 +2,57 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Perusahaan; // <-- Import
+use App\Models\Business; // [FIX] Gunakan Model Business, BUKAN Perusahaan
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // <-- Import
-use Illuminate\Support\Facades\Storage; // <-- Import
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class CompanySetupController extends Controller
 {
     /**
-     * Simpan informasi perusahaan baru dan tautkan ke user.
+     * Simpan informasi bisnis baru.
      */
     public function store(Request $request)
     {
         // 1. Validasi Input
+        // (Kita biarkan nama inputnya 'nama_perusahaan' jika view Anda masih pakai nama itu)
         $validated = $request->validate([
-            'nama_perusahaan' => 'required|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
+            'nama_perusahaan' => 'required|string|max:255', // Input dari Form
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Cek double entry (jaga-jaga)
+        if ($user->business) {
+             return redirect()->route('dashboard');
+        }
 
         $logoPath = null;
 
-        // 2. Handle Upload Logo (jika ada)
+        // 2. Handle Upload Logo
         if ($request->hasFile('logo')) {
-            // Simpan file di 'storage/app/public/logos'
-            // Pastikan Anda sudah menjalankan "php artisan storage:link"
-            /** @var string $tempPath */
-            $tempPath = $request->file('logo')->store('public/logos');
+            // Simpan ke storage/app/public/logos
+            $path = $request->file('logo')->store('logos', 'public');
 
-            // Ubah path agar bisa diakses dari web
-            $logoPath = Storage::url($tempPath);
+            // Simpan path relatifnya saja (misal: logos/abc.jpg)
+            // Nanti di view dipanggil pakai asset('storage/' . $business->logo_path)
+            $logoPath = $path;
         }
-        // 3. Buat Perusahaan Baru
-        $perusahaan = Perusahaan::create([
-            'nama_perusahaan' => $validated['nama_perusahaan'],
-            'logo' => $logoPath, // Simpan path-nya
-        ]);
-        // 4. TAUTKAN Perusahaan ke User yang sedang login
-        $user = Auth::user();
-        assert($user !== null);
-        $user->id_perusahaan = (int)$perusahaan->id;
-        $user->save();
 
-        // 5. Kembalikan ke Dashboard
-        // Halaman akan refresh, dan popup akan hilang
-        return redirect('/dashboard');
+        // 3. Buat Bisnis Baru (Target ke Tabel 'businesses')
+        Business::create([
+            'user_id' => $user->id, // [PENTING] Relasi HasOne
+            'nama_usaha' => $validated['nama_perusahaan'], // Mapping: Input Form -> Kolom DB
+            'logo_path' => $logoPath,
+            'saldo' => 0 // Set saldo awal 0
+        ]);
+
+        // [CATATAN]: Kita TIDAK PERLU update $user->id_perusahaan lagi.
+        // Relasi sudah otomatis terbentuk via user_id di tabel businesses.
+
+        // 4. Kembalikan ke Dashboard
+        return redirect()->route('dashboard')->with('success', 'Profil usaha berhasil dibuat!');
     }
 }

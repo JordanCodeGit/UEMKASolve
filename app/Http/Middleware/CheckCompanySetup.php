@@ -5,27 +5,24 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View; // <-- Tambahkan ini
+use Illuminate\Support\Facades\View;
 
 class CheckCompanySetup
 {
     public function handle(Request $request, Closure $next)
     {
         if (Auth::check()) {
-            $user = Auth::user(); // 1. Ambil User
-            assert($user !== null);
-            $needsSetup = $user->id_perusahaan === null;
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
 
-            // 2. Ambil data perusahaan JIKA SUDAH ADA
-            if (!$needsSetup) {
-                $user->load('perusahaan');
-            }
+            // [FIX] Gunakan 'business', bukan 'perusahaan'
+            // Karena di User.php sekarang namanya function business()
+            $user->load('business');
 
-            // 3. Bagikan status popup ke view
+            // Cek apakah relasi business ada isinya
+            $needsSetup = $user->business === null;
+
             View::share('needsCompanySetup', $needsSetup);
-
-            // 4. (BARU) Bagikan data user LENGKAP ke semua view
-            // Kita beri nama 'globalUser' agar tidak bentrok
             View::share('globalUser', $user);
         }
 
