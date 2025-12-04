@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Transaction;
 use App\Models\Business; // [FIX] Gunakan Model Business
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class DashboardController extends Controller
 {
@@ -65,7 +66,7 @@ class DashboardController extends Controller
 
     public function getSummary(Request $request)
     {
-        // [FIX] Ambil ID dari Helper Baru
+        // 1. Ambil ID Bisnis
         $idPerusahaan = $this->getBusinessId();
 
         if (!$idPerusahaan) {
@@ -78,20 +79,11 @@ class DashboardController extends Controller
         }
 
         // =========================================================
-        // 1. QUERY SUMMARY (ALL TIME - TIDAK BERUBAH)
-        // =========================================================
-        $querySaldo = Transaction::where('business_id', $idPerusahaan);
-        $pemasukanSaldo = (clone $querySaldo)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $pengeluaranSaldo = (clone $querySaldo)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
-        $saldoTotal = $pemasukanSaldo - $pengeluaranSaldo;
-
-
-        // =========================================================
-        // 2. QUERY CHART & LIST & SUMMARY CARDS (KENA FILTER)
+        // A. FILTERING QUERY
         // =========================================================
         $queryFiltered = Transaction::where('business_id', $idPerusahaan);
 
-        // A. Filter Search
+        // Filter Search
         if ($request->filled('search') && is_string($request->search)) {
             $search = $request->search;
             $queryFiltered->where(function ($q) use ($search) {
@@ -102,8 +94,9 @@ class DashboardController extends Controller
             });
         }
 
-        // B. Filter Tanggal
+        // Filter Tanggal
         $isFilterActive = $request->filled('start_date') && $request->filled('end_date');
+        $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')"; // Default: Bulanan
 
         if ($isFilterActive) {
             $startDateInput = $request->start_date;
@@ -112,56 +105,74 @@ class DashboardController extends Controller
             $endDate   = (is_string($endDateInput) ? $endDateInput : '') . ' 23:59:59';
 
             $queryFiltered->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
-
-            $groupByFormat = "DATE(tanggal_transaksi)";
-            $dateFormatPHP = 'd M';
-        } else {
-            $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
-            $dateFormatPHP = 'M Y';
+            $groupByFormat = "DATE(tanggal_transaksi)"; // Jika filter aktif: Harian
         }
 
-        // --- SUMMARY CARDS ---
+        // =========================================================
+        // B. HITUNG SUMMARY CARDS
+        // =========================================================
         $pemasukanPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
         $pengeluaranPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
         $labaPeriod = $pemasukanPeriod - $pengeluaranPeriod;
 
-        // Hitung persentase perubahan (Code logic persentase tetap sama, disingkat disini)
-        $pemasukanPercentChange = 0;
-        $pengeluaranPercentChange = 0;
-        $labaPercentChange = 0;
-        // ... (Biarkan logic persentase Anda yg lama disini, tidak perlu diubah) ...
+        // Hitung Saldo Real (All Time)
+        $queryAllTime = Transaction::where('business_id', $idPerusahaan);
+        $totalMasuk = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $totalKeluar = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $saldoTotal = $totalMasuk - $totalKeluar;
 
-
-        // --- LINE CHART ---
-        $incomeDataRaw = (clone $queryFiltered)
-            ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
-            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
-            ->groupBy('date')->orderBy('date')->pluck('total', 'date');
-
-        $expenseDataRaw = (clone $queryFiltered)
-            ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
-            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
-            ->groupBy('date')->orderBy('date')->pluck('total', 'date');
-
-        $allKeys = $incomeDataRaw->keys()->merge($expenseDataRaw->keys())->unique()->sort()->values();
+        // =========================================================
+        // C. LINE CHART (LOGIKA BARU - FULL DATE RANGE)
+        // =========================================================
         $chartLabels = [];
         $chartIncome = [];
         $chartExpense = [];
 
-        foreach ($allKeys as $key) {
-            $chartLabels[] = Carbon::parse($key)->format($dateFormatPHP);
-            $chartIncome[] = $incomeDataRaw[$key] ?? 0;
-            $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+        // Ambil Data Mentah dari DB (Group by Date)
+        $incomeDataRaw = (clone $queryFiltered)
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
+            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
+            ->groupBy('date')->pluck('total', 'date');
+
+        $expenseDataRaw = (clone $queryFiltered)
+            ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
+            ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
+            ->groupBy('date')->pluck('total', 'date');
+
+        if ($isFilterActive) {
+            // --- LOGIKA 1: Jika Filter Tanggal Aktif (Harian) ---
+            // Gunakan CarbonPeriod untuk membuat rentang tanggal lengkap (misal 1 Nov s.d 30 Nov)
+            // Agar grafik tidak bolong-bolong jika tidak ada transaksi
+            $period = CarbonPeriod::create($request->start_date, $request->end_date);
+
+            foreach ($period as $date) {
+                // Key format harus sama dengan output MySQL DATE() yaitu Y-m-d
+                $key = $date->format('Y-m-d');
+
+                $chartLabels[] = $date->format('d M'); // Label: 01 Nov
+                $chartIncome[] = $incomeDataRaw[$key] ?? 0; // Isi 0 jika tidak ada data
+                $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+            }
+        } else {
+            // --- LOGIKA 2: Default / Semua (Bulanan) ---
+            // Ambil semua key yang ada di DB, urutkan, lalu loop
+            $allKeys = $incomeDataRaw->keys()->merge($expenseDataRaw->keys())->unique()->sort()->values();
+
+            foreach ($allKeys as $key) {
+                $chartLabels[] = Carbon::parse($key)->format('M Y'); // Label: Nov 2025
+                $chartIncome[] = $incomeDataRaw[$key] ?? 0;
+                $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+            }
         }
 
-        // --- DOUGHNUT CHART (BAGIAN YG DIPERBAIKI) ---
+        // =========================================================
+        // D. DOUGHNUT CHART
+        // =========================================================
         $doughnutMode = $request->input('doughnut_mode', 'pengeluaran');
 
         $topCategories = (clone $queryFiltered)
-            // Filter berdasarkan tipe (pemasukan/pengeluaran)
             ->whereHas('category', fn($q) => $q->where('tipe', $doughnutMode))
-            // [FIX 1] Gunakan withTrashed() agar kategori yang terhapus (soft delete) tetap muncul namanya di laporan
-            ->with(['category' => fn($q) => $q->withTrashed()])
+            ->with(['category' => fn($q) => $q->withTrashed()]) // Support Soft Delete
             ->selectRaw('category_id, SUM(jumlah) as total')
             ->groupBy('category_id')
             ->orderByDesc('total')
@@ -169,24 +180,19 @@ class DashboardController extends Controller
             ->get();
 
         $doughnutLabels = $topCategories->map(function ($item) {
-            // [FIX 2] Logic pengecekan nama kategori yang benar
-            // Jangan gunakan property_exists pada Eloquent Model
-            if ($item->category) {
-                return $item->category->nama_kategori;
-            }
-            return 'Tanpa Kategori';
+            return $item->category ? $item->category->nama_kategori : 'Tanpa Kategori';
         });
 
         $doughnutData = $topCategories->pluck('total');
 
-        // --- LIST TRANSAKSI ---
+        // =========================================================
+        // E. RECENT TRANSACTIONS
+        // =========================================================
         $recentTransactions = (clone $queryFiltered)
-            // [FIX 3] Tambahkan withTrashed di list transaksi juga biar aman
             ->with(['category' => fn($q) => $q->withTrashed()])
             ->latest('tanggal_transaksi')
             ->take(5)
             ->get();
-
 
         // RESPONSE
         return response()->json([
@@ -195,7 +201,7 @@ class DashboardController extends Controller
                 'pemasukan'   => $pemasukanPeriod,
                 'pengeluaran' => $pengeluaranPeriod,
                 'laba'        => $labaPeriod,
-                'pemasukan_percent_change' => 0, // Placeholder jika logic persentase diatas dihapus/disembunyikan
+                'pemasukan_percent_change' => 0,
                 'pengeluaran_percent_change' => 0,
                 'laba_percent_change' => 0
             ],
