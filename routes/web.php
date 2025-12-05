@@ -138,10 +138,32 @@ Route::middleware(['auth'])->group(function () {
 // Load additional auth-related POST routes (register, login, verification, password actions)
 require __DIR__ . '/auth.php';
 
-// Route::get('/cek-php', function () {
-//     return [
-//         'GD_Aktif' => extension_loaded('gd'), // True/False
-//         'Versi_PHP' => phpversion(),
-//         'File_Config_Yang_Dipakai' => php_ini_loaded_file(), // Lokasi file php.ini
-//     ];
-// });
+// --- ROUTE DARURAT UNTUK CLEAR CACHE DI HOSTING ---
+Route::get('/fix-config', function () {
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    return 'Cache Cleared! Config, Route, View, Optimize cleared.';
+});
+
+// --- ROUTE DIAGNOSA (HANYA UNTUK TESTING) ---
+Route::get('/cek-kodingan', function () {
+    $files = [
+        'routes/api.php' => base_path('routes/api.php'),
+        'TransactionController.php' => app_path('Http/Controllers/Api/TransactionController.php'),
+    ];
+
+    echo "<h1>Hasil Intip File Server</h1>";
+
+    foreach ($files as $name => $path) {
+        echo "<h3>File: $name</h3>";
+        if (file_exists($path)) {
+            $content = file_get_contents($path);
+            echo "<textarea style='width:100%; height:300px; font-family:monospace;'>" . htmlspecialchars($content) . "</textarea>";
+        } else {
+            echo "<p style='color:red'>File tidak ditemukan di path: $path</p>";
+        }
+        echo "<hr>";
+    }
+});

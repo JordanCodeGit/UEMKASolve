@@ -58,8 +58,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
-    Route::put('/transactions/{transaction}', [TransactionController::class, 'update']);
-    Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy']);
+    Route::put('/transactions/{id}', [TransactionController::class, 'update']);
+    Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 
     // 7. Kategori (CRUD MANUAL - EKSPLISIT)
     // Diubah dari apiResource untuk memperbaiki error drag-drop & delete (Anti 404)
