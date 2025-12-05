@@ -5,9 +5,9 @@
 @section('content')
 <div class="auth-form">
     <h2>Daftar</h2>
-    
+
     <form id="register-form">
-        
+
         <div id="form-message" style="margin-bottom: 15px; font-size: 14px; text-align: center;"></div>
 
         <div class="form-group">
@@ -19,12 +19,12 @@
         <div class="form-group">
             <input type="password" name="password" id="password" placeholder="Password" required>
         </div>
-        
+
         <div class="form-buttons">
-            <button type="submit" class="btn btn-primary">Daftar</button>
+            <button type="button" onclick="submitRegister()" class="btn btn-primary">Daftar</button>
             <a href="{{ url('/login') }}" class="btn btn-secondary">Masuk</a>
         </div>
-        
+
         </form>
 </div>
 
@@ -54,72 +54,71 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        
+    // Definisikan fungsi di luar agar bisa dipanggil onclick
+    function submitRegister() {
         const registerForm = document.getElementById('register-form');
         const messageDiv = document.getElementById('form-message');
         const verificationModal = document.getElementById('verification-modal');
         const emailDisplay = document.getElementById('email-display');
 
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault(); 
-            
-            messageDiv.textContent = 'Mendaftarkan...';
-            messageDiv.style.color = 'gray';
+        // Ambil tombol berdasarkan class btn-primary karena ID tidak ada
+        const submitButton = document.querySelector('.btn-primary');
 
-            const formData = new FormData(registerForm);
-            const email = formData.get('email');
-            
-            // Buat 'nama_usaha' dari 'name'
-            const name = formData.get('name');
-            formData.append('nama_usaha', 'Bisnis ' + name); 
-            
-            const data = Object.fromEntries(formData.entries());
+        // 1. Matikan tombol LANGSUNG
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Memproses...'; // Ubah teks
 
-            // Kirim data ke API Back-End
-            fetch('{{ url("/api/register") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => {
-                return response.json().then(result => ({ status: response.status, body: result }));
-            })
-            .then(result => {
-                
-                if (result.status === 201) {
-                    // --- SUKSES ---
-                    messageDiv.textContent = '';
-                    
-                    // Tampilkan modal verifikasi email
-                    emailDisplay.textContent = email;
-                    verificationModal.style.display = 'flex';
-                    
-                    // Reset form
-                    registerForm.reset();
-                
-                } else if (result.status === 422) {
-                    // --- GAGAL VALIDASI (Input salah) ---
-                    const errors = result.body.errors;
-                    const firstError = Object.values(errors)[0][0];
-                    messageDiv.textContent = 'Error: ' + firstError;
-                    messageDiv.style.color = 'red';
-                
-                } else {
-                    // --- GAGAL LAINNYA (Server error) ---
-                    messageDiv.textContent = 'Error: ' + (result.body.message || 'Terjadi kesalahan server.');
-                    messageDiv.style.color = 'red';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                messageDiv.textContent = 'Tidak dapat terhubung ke server.';
+        messageDiv.textContent = 'Mendaftarkan...';
+        messageDiv.style.color = 'gray';
+
+        const formData = new FormData(registerForm);
+        const name = formData.get('name');
+        formData.append('nama_usaha', 'Bisnis ' + name);
+
+        const data = Object.fromEntries(formData.entries());
+
+        fetch('{{ url("/api/register") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json().then(result => ({ status: response.status, body: result })))
+        .then(result => {
+            if (result.status === 201) {
+                // SUKSES
+                messageDiv.textContent = '';
+                document.getElementById('email-display').textContent = data.email;
+                document.getElementById('verification-modal').style.display = 'flex';
+                registerForm.reset();
+                // Tombol biarkan mati agar tidak klik lagi
+            } else if (result.status === 422) {
+                // ERROR VALIDASI
+                const errors = result.body.errors;
+                const firstError = Object.values(errors)[0][0];
+                messageDiv.textContent = 'Error: ' + firstError;
                 messageDiv.style.color = 'red';
-            });
+
+                // Hidupkan tombol lagi
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Daftar';
+            } else {
+                // ERROR SERVER
+                messageDiv.textContent = 'Error: ' + (result.body.message || 'Terjadi kesalahan server.');
+                messageDiv.style.color = 'red';
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Daftar';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageDiv.textContent = 'Gagal terhubung ke server.';
+            messageDiv.style.color = 'red';
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Daftar';
         });
-    });
+    }
 </script>
 @endpush

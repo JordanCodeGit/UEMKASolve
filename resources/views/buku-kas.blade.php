@@ -245,7 +245,7 @@
                         <input type="hidden" name="ikon" id="modal-ikon" required>
 
                         <div class="icon-picker-container" id="icon-grid-container-kat">
-                            </div>
+                        </div>
 
                         <small id="icon-error" class="text-red-500 text-xs hidden mt-1">Silakan pilih ikon terlebih
                             dahulu.</small>
@@ -318,7 +318,7 @@
 
                 <div id="print-preview-container"
                     style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: white; min-height: 300px;">
-                    </div>
+                </div>
 
             </div>
 
@@ -1006,7 +1006,8 @@
 
                 // Tampilkan notifikasi hasil
                 if (failCount > 0) {
-                    await showDialog(`Berhasil: ${successCount}. Gagal: ${failCount}.`, 'warning', false);
+                    await showDialog(`Berhasil: ${successCount}. Gagal: ${failCount}.`, 'warning',
+                        false);
                 } else {
                     await showDialog(`Berhasil menghapus ${successCount} transaksi.`, 'success', false);
                 }
@@ -1240,18 +1241,21 @@
                 data.jumlah = cleanJumlah;
                 const id = document.getElementById('modal-tx-id').value;
                 let url = API_TRANSACTIONS;
-                let method = 'POST';
+                let method = 'POST'; // Default untuk Tambah Baru
 
                 if (id) {
                     url = `${API_TRANSACTIONS}/${id}`;
-                    method = 'PUT';
+                    method = 'POST'; // [UBAH] Edit pun tetap pakai POST biar aman di hosting
+                    data._method =
+                    'PUT'; // [TAMBAH] Kita "titip pesan" ke Laravel kalau ini sebenarnya PUT
                 }
 
                 try {
                     const response = await fetch(url, {
-                        method: method,
+                        method: method, // Browser akan mengirim POST (Hosting Senang)
                         headers: API_HEADERS,
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(
+                            data) // Laravel akan membaca _method: 'PUT' di dalam sini
                     });
                     const result = await response.json();
 

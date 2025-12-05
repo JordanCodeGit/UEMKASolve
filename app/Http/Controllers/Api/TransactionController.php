@@ -203,6 +203,10 @@ class TransactionController extends Controller
             return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
 
+        // if (!$transaction) {
+        //     return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+        // }
+
         // 2. [LOGIKA BARU] Cek apakah data statusnya "Terhapus" (Soft Delete)
         if ($transaction->trashed()) {
             return response()->json([
