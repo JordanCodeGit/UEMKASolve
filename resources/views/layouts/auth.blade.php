@@ -46,7 +46,7 @@
     <div class="auth-container">
         <div class="auth-left">
             <div class="logo-container">
-                <img src="{{ asset('img/logo.png') }}" alt="logo" class="logo">
+                <img src="{{ asset('img/Logo.png') }}" alt="logo" class="logo">
             </div>
         </div>
 
