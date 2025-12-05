@@ -213,7 +213,36 @@
 @endsection
 
 @push('scripts')
+    {{-- Tambahkan SweetAlert CDN jika belum ada di layout --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // --- LOGIKA NOTIFIKASI LOGIN (FIXED: Session Storage) ---
+        // Cek apakah ada bendera 'show_welcome_message' di penyimpanan browser
+        if (sessionStorage.getItem('show_welcome_message')) {
+
+            // 1. Tampilkan Notifikasi
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: 'success',
+                title: 'Login Berhasil! Selamat Datang.'
+            });
+
+            // 2. [PENTING] Hapus bendera segera!
+            // Agar saat refresh (F5) atau balik ke halaman ini, notifikasi TIDAK muncul lagi.
+            sessionStorage.removeItem('show_welcome_message');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // --- 1. CONFIG & VARIABLES ---
             let lineChartInstance;
@@ -573,7 +602,7 @@
                 if (dashboardCurrentFilter === 'bulan_ini') {
                     url.searchParams.append('start_date', fmt(new Date(now.getFullYear(), now.getMonth(), 1)));
                     url.searchParams.append('end_date', fmt(new Date(now.getFullYear(), now.getMonth() + 1,
-                    0)));
+                        0)));
                 } else if (dashboardCurrentFilter === 'bulan_lalu') {
                     url.searchParams.append('start_date', fmt(new Date(now.getFullYear(), now.getMonth() - 1,
                         1)));
