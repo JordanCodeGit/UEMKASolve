@@ -554,7 +554,10 @@
                         datasets: [{
                             data: topData,
                             backgroundColor: topColors,
-                            borderWidth: 0
+                            // [FIX: DESAIN PERSENTASE KAS]
+                            borderWidth: 4,          // Tebal garis pemisah
+                            borderColor: '#ffffff',  // Warna putih
+                            hoverBorderColor: '#ffffff' // Tetap putih saat di-hover
                         }]
                     },
                     options: {
