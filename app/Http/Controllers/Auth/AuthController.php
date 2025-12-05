@@ -57,7 +57,8 @@ class AuthController extends Controller
 
             // Trigger Registered event untuk mengirim email verifikasi
             Log::info('Triggering Registered event for: ' . $user->email);
-            event(new Registered($user));
+            // event(new Registered($user));
+            $user->sendEmailVerificationNotification();
 
             DB::commit();
 
