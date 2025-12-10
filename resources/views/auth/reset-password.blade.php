@@ -30,7 +30,7 @@
                     <i class="fa-solid fa-eye password-toggle-icon"></i>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <div class="password-wrapper">
                     <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Konfirmasi Password Baru" required>
@@ -57,7 +57,7 @@
             icon.addEventListener('click', function(e) {
                 e.preventDefault();
                 const input = this.previousElementSibling;
-                
+
                 // Pastikan elemen yang ditemukan benar-benar INPUT
                 if (input && input.tagName === 'INPUT') {
                     if (input.type === 'password') {

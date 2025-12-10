@@ -1026,7 +1026,26 @@
                 document.getElementById('modal-tx-catatan').value = tx.catatan || '';
 
                 if (tx.tanggal_transaksi) {
-                    const dateVal = tx.tanggal_transaksi.replace(' ', 'T').substring(0, 16);
+                    // [FIX] Pastikan format YYYY-MM-DD HH:mm:ss diubah ke YYYY-MM-DDTHH:mm
+                    // Kita ambil 16 karakter pertama: "2025-12-09 05:57" -> "2025-12-09T05:57"
+                    let rawDate = tx.tanggal_transaksi;
+
+                    // Cek apakah formatnya ISO string (ada huruf T dan Z)?
+                    // Kalau iya, kita harus convert ke waktu lokal manual
+                    if (rawDate.includes('T') && rawDate.endsWith('Z')) {
+                        const dateObj = new Date(rawDate);
+                        // Ambil waktu lokal browser (WIB)
+                        const year = dateObj.getFullYear();
+                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const day = String(dateObj.getDate()).padStart(2, '0');
+                        const hours = String(dateObj.getHours()).padStart(2, '0');
+                        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+
+                        rawDate = `${year}-${month}-${day} ${hours}:${minutes}`;
+                    }
+
+                    // Format akhir untuk input datetime-local: "YYYY-MM-DDTHH:mm"
+                    const dateVal = rawDate.replace(' ', 'T').substring(0, 16);
                     document.getElementById('modal-tx-tanggal').value = dateVal;
                 }
 
@@ -1247,7 +1266,7 @@
                     url = `${API_TRANSACTIONS}/${id}`;
                     method = 'POST'; // [UBAH] Edit pun tetap pakai POST biar aman di hosting
                     data._method =
-                    'PUT'; // [TAMBAH] Kita "titip pesan" ke Laravel kalau ini sebenarnya PUT
+                        'PUT'; // [TAMBAH] Kita "titip pesan" ke Laravel kalau ini sebenarnya PUT
                 }
 
                 try {

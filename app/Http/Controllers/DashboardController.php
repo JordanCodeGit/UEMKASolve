@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Transaction;
-use App\Models\Business; // [FIX] Gunakan Model Business
+use App\Models\Business;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 
 class DashboardController extends Controller
 {
     /**
-     * [BARU] Helper untuk mengambil ID Bisnis dengan aman
+     * Helper untuk mengambil ID Bisnis dengan aman
      */
     private function getBusinessId()
     {
@@ -21,52 +21,35 @@ class DashboardController extends Controller
         if ($user && $user->business) {
             return $user->business->id;
         }
+        // Cek relasi 'perusahaan' jika 'business' null (backup)
+        if ($user && $user->perusahaan) {
+            return $user->perusahaan->id;
+        }
         return null;
     }
 
     public function index()
     {
-        // [FIX] Bersihkan logic index.
-        // Variable $needsCompanySetup sudah otomatis dikirim oleh AppServiceProvider.
-        // Jadi controller ini cukup return view saja.
         return view('dashboard');
     }
 
     /**
-     * [OPSIONAL] Fungsi ini mungkin sudah digantikan oleh CompanySetupController.
-     * Tapi saya update juga biar tidak error jika masih ada route yang kesini.
+     * Helper: Hitung Persentase Perubahan
      */
-    public function storeCompanySetup(Request $request)
+    private function calculatePercentageChange($current, $previous)
     {
-        $request->validate([
-            'nama_perusahaan' => 'required|string|max:32',
-            'logo'            => 'nullable|image|max:2048',
-        ]);
-
-        $user = Auth::user();
-
-        // Cek via relasi business
-        if ($user->business) return redirect()->back();
-
-        $logoPath = null;
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('logos', 'public');
+        if ($previous == 0) {
+            // Jika sebelumnya 0 dan sekarang > 0, anggap naik 100%
+            // Jika sama-sama 0, berarti 0%
+            return $current > 0 ? 100 : 0;
         }
 
-        // [FIX] Simpan ke tabel businesses
-        Business::create([
-            'user_id'    => $user->id,
-            'nama_usaha' => strip_tags($request->nama_perusahaan), // Mapping ke nama_usaha
-            'logo_path'  => $logoPath,
-            'saldo'      => 0
-        ]);
-
-        return redirect()->route('dashboard')->with('success', 'Profil usaha berhasil dibuat!');
+        // Rumus: ((Sekarang - Lalu) / Lalu) * 100
+        return round((($current - $previous) / $previous) * 100, 2);
     }
 
     public function getSummary(Request $request)
     {
-        // 1. Ambil ID Bisnis
         $idPerusahaan = $this->getBusinessId();
 
         if (!$idPerusahaan) {
@@ -79,100 +62,131 @@ class DashboardController extends Controller
         }
 
         // =========================================================
-        // A. FILTERING QUERY
+        // 1. TENTUKAN RENTANG WAKTU (CURRENT vs PREVIOUS)
         // =========================================================
-        $queryFiltered = Transaction::where('business_id', $idPerusahaan);
 
-        // Filter Search
-        if ($request->filled('search') && is_string($request->search)) {
+        // Default: Bulan Ini
+        $currStart = Carbon::now()->startOfMonth();
+        $currEnd   = Carbon::now()->endOfMonth();
+        $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
+
+        // Jika Filter Aktif
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $currStart = Carbon::parse($request->start_date)->startOfDay();
+            $currEnd   = Carbon::parse($request->end_date)->endOfDay();
+            $groupByFormat = "DATE(tanggal_transaksi)"; // Harian
+        }
+
+        // Hitung Periode Sebelumnya (Durasi yang sama mundur ke belakang)
+        // Contoh: Jika filter 1-30 Nov (30 hari), Previous adalah 1-31 Okt (Mundur 1 bulan/durasi sama)
+        $diffInDays = $currStart->diffInDays($currEnd) + 1;
+        $prevEnd    = $currStart->copy()->subSecond(); // Detik sebelum start
+        $prevStart  = $prevEnd->copy()->subDays($diffInDays)->addSecond(); // Mundur sebanyak durasi
+
+        // =========================================================
+        // 2. QUERY DATA SAAT INI (CURRENT)
+        // =========================================================
+        $queryCurrent = Transaction::where('business_id', $idPerusahaan)
+            ->whereBetween('tanggal_transaksi', [$currStart, $currEnd]);
+
+        // Filter Search (Opsional, hanya mempengaruhi data current)
+        if ($request->filled('search')) {
             $search = $request->search;
-            $queryFiltered->where(function ($q) use ($search) {
+            $queryCurrent->where(function ($q) use ($search) {
                 $q->where('catatan', 'like', "%{$search}%")
-                    ->orWhereHas('category', function ($cat) use ($search) {
-                        $cat->where('nama_kategori', 'like', "%{$search}%");
-                    });
+                  ->orWhereHas('category', function ($cat) use ($search) {
+                      $cat->where('nama_kategori', 'like', "%{$search}%");
+                  });
             });
         }
 
-        // Filter Tanggal
-        $isFilterActive = $request->filled('start_date') && $request->filled('end_date');
-        $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')"; // Default: Bulanan
-
-        if ($isFilterActive) {
-            $startDateInput = $request->start_date;
-            $endDateInput = $request->end_date;
-            $startDate = (is_string($startDateInput) ? $startDateInput : '') . ' 00:00:00';
-            $endDate   = (is_string($endDateInput) ? $endDateInput : '') . ' 23:59:59';
-
-            $queryFiltered->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
-            $groupByFormat = "DATE(tanggal_transaksi)"; // Jika filter aktif: Harian
-        }
+        $pemasukanCurrent   = (clone $queryCurrent)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranCurrent = (clone $queryCurrent)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $labaCurrent        = $pemasukanCurrent - $pengeluaranCurrent;
 
         // =========================================================
-        // B. HITUNG SUMMARY CARDS
+        // 3. QUERY DATA SEBELUMNYA (PREVIOUS) - UNTUK PERSENTASE
         // =========================================================
-        $pemasukanPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $pengeluaranPeriod = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
-        $labaPeriod = $pemasukanPeriod - $pengeluaranPeriod;
+        $queryPrevious = Transaction::where('business_id', $idPerusahaan)
+            ->whereBetween('tanggal_transaksi', [$prevStart, $prevEnd]);
 
-        // Hitung Saldo Real (All Time)
+        $pemasukanPrev   = (clone $queryPrevious)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranPrev = (clone $queryPrevious)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $labaPrev        = $pemasukanPrev - $pengeluaranPrev;
+
+        // Hitung Persentase
+        $pctPemasukan   = $this->calculatePercentageChange($pemasukanCurrent, $pemasukanPrev);
+        $pctPengeluaran = $this->calculatePercentageChange($pengeluaranCurrent, $pengeluaranPrev);
+        $pctLaba        = $this->calculatePercentageChange($labaCurrent, $labaPrev);
+
+        // =========================================================
+        // 4. SALDO TOTAL (REAL / ALL TIME)
+        // =========================================================
         $queryAllTime = Transaction::where('business_id', $idPerusahaan);
-        $totalMasuk = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $totalKeluar = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
-        $saldoTotal = $totalMasuk - $totalKeluar;
+        $totalMasuk   = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $totalKeluar  = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $saldoTotal   = $totalMasuk - $totalKeluar;
 
         // =========================================================
-        // C. LINE CHART (LOGIKA BARU - FULL DATE RANGE)
+        // 5. LINE CHART DATA
         // =========================================================
         $chartLabels = [];
         $chartIncome = [];
         $chartExpense = [];
 
-        // Ambil Data Mentah dari DB (Group by Date)
-        $incomeDataRaw = (clone $queryFiltered)
+        $incomeDataRaw = (clone $queryCurrent)
             ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
             ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
             ->groupBy('date')->pluck('total', 'date');
 
-        $expenseDataRaw = (clone $queryFiltered)
+        $expenseDataRaw = (clone $queryCurrent)
             ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
             ->selectRaw("$groupByFormat as date, SUM(jumlah) as total")
             ->groupBy('date')->pluck('total', 'date');
 
-        if ($isFilterActive) {
-            // --- LOGIKA 1: Jika Filter Tanggal Aktif (Harian) ---
-            // Gunakan CarbonPeriod untuk membuat rentang tanggal lengkap (misal 1 Nov s.d 30 Nov)
-            // Agar grafik tidak bolong-bolong jika tidak ada transaksi
-            $period = CarbonPeriod::create($request->start_date, $request->end_date);
-
+        // Generate Label yang Rapi
+        if ($request->filled('start_date')) {
+            // Loop Harian (Agar grafik tidak bolong)
+            $period = CarbonPeriod::create($currStart, $currEnd);
             foreach ($period as $date) {
-                // Key format harus sama dengan output MySQL DATE() yaitu Y-m-d
                 $key = $date->format('Y-m-d');
-
-                $chartLabels[] = $date->format('d M'); // Label: 01 Nov
-                $chartIncome[] = $incomeDataRaw[$key] ?? 0; // Isi 0 jika tidak ada data
+                $chartLabels[] = $date->format('d M');
+                $chartIncome[] = $incomeDataRaw[$key] ?? 0;
                 $chartExpense[] = $expenseDataRaw[$key] ?? 0;
             }
         } else {
-            // --- LOGIKA 2: Default / Semua (Bulanan) ---
-            // Ambil semua key yang ada di DB, urutkan, lalu loop
-            $allKeys = $incomeDataRaw->keys()->merge($expenseDataRaw->keys())->unique()->sort()->values();
+            // Default (Bulanan) - ambil semua tanggal yg ada transaksi di bulan ini
+            // Atau bisa di-force daily 1-30
+            $period = CarbonPeriod::create($currStart, $currEnd);
+            foreach ($period as $date) {
+                $key = $date->format('Y-m-d'); // Default query kita pakai format Y-m-d kalau default
 
-            foreach ($allKeys as $key) {
-                $chartLabels[] = Carbon::parse($key)->format('M Y'); // Label: Nov 2025
-                $chartIncome[] = $incomeDataRaw[$key] ?? 0;
-                $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+                // Cek format key dari database (kadang YYYY-MM jika grouping bulanan)
+                // Disini kita paksa loop harian bulan ini agar grafik smooth
+                $todayIncome = Transaction::where('business_id', $idPerusahaan)
+                                ->whereDate('tanggal_transaksi', $key)
+                                ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
+                                ->sum('jumlah');
+
+                $todayExpense = Transaction::where('business_id', $idPerusahaan)
+                                ->whereDate('tanggal_transaksi', $key)
+                                ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
+                                ->sum('jumlah');
+
+                $chartLabels[] = $date->format('d'); // Tgl 1, 2, 3...
+                $chartIncome[] = $todayIncome;
+                $chartExpense[] = $todayExpense;
             }
         }
 
         // =========================================================
-        // D. DOUGHNUT CHART
+        // 6. DOUGHNUT CHART
         // =========================================================
         $doughnutMode = $request->input('doughnut_mode', 'pengeluaran');
 
-        $topCategories = (clone $queryFiltered)
+        $topCategories = (clone $queryCurrent) // Pakai queryCurrent agar ikut filter tanggal
             ->whereHas('category', fn($q) => $q->where('tipe', $doughnutMode))
-            ->with(['category' => fn($q) => $q->withTrashed()]) // Support Soft Delete
+            ->with(['category' => fn($q) => $q->withTrashed()])
             ->selectRaw('category_id, SUM(jumlah) as total')
             ->groupBy('category_id')
             ->orderByDesc('total')
@@ -182,28 +196,27 @@ class DashboardController extends Controller
         $doughnutLabels = $topCategories->map(function ($item) {
             return $item->category ? $item->category->nama_kategori : 'Tanpa Kategori';
         });
-
         $doughnutData = $topCategories->pluck('total');
 
         // =========================================================
-        // E. RECENT TRANSACTIONS
+        // 7. RECENT TRANSACTIONS
         // =========================================================
-        $recentTransactions = (clone $queryFiltered)
+        $recentTransactions = (clone $queryCurrent)
             ->with(['category' => fn($q) => $q->withTrashed()])
             ->latest('tanggal_transaksi')
             ->take(5)
             ->get();
 
-        // RESPONSE
         return response()->json([
             'summary' => [
                 'saldo'       => $saldoTotal,
-                'pemasukan'   => $pemasukanPeriod,
-                'pengeluaran' => $pengeluaranPeriod,
-                'laba'        => $labaPeriod,
-                'pemasukan_percent_change' => 0,
-                'pengeluaran_percent_change' => 0,
-                'laba_percent_change' => 0
+                'pemasukan'   => $pemasukanCurrent,
+                'pengeluaran' => $pengeluaranCurrent,
+                'laba'        => $labaCurrent,
+                // Data Persentase (Sudah Dihitung)
+                'pemasukan_percent_change'   => $pctPemasukan,
+                'pengeluaran_percent_change' => $pctPengeluaran,
+                'laba_percent_change'        => $pctLaba
             ],
             'recent_transactions' => $recentTransactions,
             'line_chart' => [
@@ -220,14 +233,37 @@ class DashboardController extends Controller
         ]);
     }
 
+    // Fungsi storeCompanySetup tetap, Fungsi getData (API print) tetap
+    public function storeCompanySetup(Request $request)
+    {
+        $request->validate([
+            'nama_perusahaan' => 'required|string|max:32',
+            'logo'            => 'nullable|image|max:2048',
+        ]);
+
+        $user = Auth::user();
+        if ($user->business) return redirect()->back();
+
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
+        }
+
+        Business::create([
+            'user_id'    => $user->id,
+            'nama_usaha' => strip_tags($request->nama_perusahaan),
+            'logo_path'  => $logoPath,
+            'saldo'      => 0
+        ]);
+
+        return redirect()->route('dashboard')->with('success', 'Profil usaha berhasil dibuat!');
+    }
+
     public function getData(Request $request)
     {
-        // [FIX] Gunakan ID Bisnis yang benar
+        // Fungsi ini opsional/legacy untuk print laporan
         $idPerusahaan = $this->getBusinessId();
-
-        if (!$idPerusahaan) {
-            return response()->json(['error' => 'Company not set'], 400);
-        }
+        if (!$idPerusahaan) return response()->json(['error' => 'Company not set'], 400);
 
         $now = Carbon::now();
         $startDate = $now->clone()->startOfMonth();
@@ -236,29 +272,13 @@ class DashboardController extends Controller
         $query = Transaction::where('business_id', $idPerusahaan)
             ->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
 
-        $pemasukanPeriod = $query->clone()->whereHas('category', function ($q) {
-            $q->where('tipe', 'pemasukan');
-        })->sum('jumlah');
+        $pemasukanPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $pengeluaranPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
-        $pengeluaranPeriod = $query->clone()->whereHas('category', function ($q) {
-            $q->where('tipe', 'pengeluaran');
-        })->sum('jumlah');
+        $saldoTotal = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q)=>$q->where('tipe','pemasukan'))->sum('jumlah') -
+                      Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q)=>$q->where('tipe','pengeluaran'))->sum('jumlah');
 
-        // [FIX] Saldo Total Query menggunakan ID yang benar
-        $saldoTotal = Transaction::where('business_id', $idPerusahaan)
-            ->whereHas('category', function ($q) {
-                $q->where('tipe', 'pemasukan');
-            })->sum('jumlah') -
-            Transaction::where('business_id', $idPerusahaan)
-            ->whereHas('category', function ($q) {
-                $q->where('tipe', 'pengeluaran');
-            })->sum('jumlah');
-
-        $recentTransactions = $query->clone()
-            ->with('category')
-            ->latest('tanggal_transaksi')
-            ->take(10)
-            ->get();
+        $recentTransactions = $query->clone()->with('category')->latest('tanggal_transaksi')->take(10)->get();
 
         return response()->json([
             'summary' => [
