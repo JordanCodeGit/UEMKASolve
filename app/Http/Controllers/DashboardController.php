@@ -21,7 +21,6 @@ class DashboardController extends Controller
         if ($user && $user->business) {
             return $user->business->id;
         }
-        // Cek relasi 'perusahaan' jika 'business' null (backup)
         if ($user && $user->perusahaan) {
             return $user->perusahaan->id;
         }
@@ -33,28 +32,21 @@ class DashboardController extends Controller
         return view('dashboard');
     }
 
-    /**
-     * Helper: Hitung Persentase Perubahan
-     */
-    private function calculatePercentageChange($current, $previous)
-    {
-        if ($previous == 0) {
-            // Jika sebelumnya 0 dan sekarang > 0, anggap naik 100%
-            // Jika sama-sama 0, berarti 0%
-            return $current > 0 ? 100 : 0;
-        }
-
-        // Rumus: ((Sekarang - Lalu) / Lalu) * 100
-        return round((($current - $previous) / $previous) * 100, 2);
-    }
-
     public function getSummary(Request $request)
     {
         $idPerusahaan = $this->getBusinessId();
 
         if (!$idPerusahaan) {
             return response()->json([
-                'summary' => ['saldo' => 0, 'pemasukan' => 0, 'pengeluaran' => 0, 'laba' => 0],
+                'summary' => [
+                    'saldo' => 0,
+                    'pemasukan' => 0,
+                    'pengeluaran' => 0,
+                    'laba' => 0,
+                    'pemasukan_percentage' => 0,
+                    'pengeluaran_percentage' => 0,
+                    'profit_margin' => 0
+                ],
                 'recent_transactions' => [],
                 'line_chart' => ['labels' => [], 'datasets' => []],
                 'doughnut_chart' => ['labels' => [], 'data' => []]
@@ -62,7 +54,7 @@ class DashboardController extends Controller
         }
 
         // =========================================================
-        // 1. TENTUKAN RENTANG WAKTU (CURRENT vs PREVIOUS)
+        // 1. TENTUKAN RENTANG WAKTU
         // =========================================================
 
         // Default: Bulan Ini
@@ -77,26 +69,20 @@ class DashboardController extends Controller
             $groupByFormat = "DATE(tanggal_transaksi)"; // Harian
         }
 
-        // Hitung Periode Sebelumnya (Durasi yang sama mundur ke belakang)
-        // Contoh: Jika filter 1-30 Nov (30 hari), Previous adalah 1-31 Okt (Mundur 1 bulan/durasi sama)
-        $diffInDays = $currStart->diffInDays($currEnd) + 1;
-        $prevEnd    = $currStart->copy()->subSecond(); // Detik sebelum start
-        $prevStart  = $prevEnd->copy()->subDays($diffInDays)->addSecond(); // Mundur sebanyak durasi
-
         // =========================================================
         // 2. QUERY DATA SAAT INI (CURRENT)
         // =========================================================
         $queryCurrent = Transaction::where('business_id', $idPerusahaan)
             ->whereBetween('tanggal_transaksi', [$currStart, $currEnd]);
 
-        // Filter Search (Opsional, hanya mempengaruhi data current)
+        // Filter Search
         if ($request->filled('search')) {
             $search = $request->search;
             $queryCurrent->where(function ($q) use ($search) {
                 $q->where('catatan', 'like', "%{$search}%")
-                  ->orWhereHas('category', function ($cat) use ($search) {
-                      $cat->where('nama_kategori', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('category', function ($cat) use ($search) {
+                        $cat->where('nama_kategori', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -105,19 +91,27 @@ class DashboardController extends Controller
         $labaCurrent        = $pemasukanCurrent - $pengeluaranCurrent;
 
         // =========================================================
-        // 3. QUERY DATA SEBELUMNYA (PREVIOUS) - UNTUK PERSENTASE
+        // 3. LOGIC BARU: PERSENTASE (Composition & Margin)
         // =========================================================
-        $queryPrevious = Transaction::where('business_id', $idPerusahaan)
-            ->whereBetween('tanggal_transaksi', [$prevStart, $prevEnd]);
+        // Sesuai rumus: incomePercentage = (income / total) * 100
 
-        $pemasukanPrev   = (clone $queryPrevious)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $pengeluaranPrev = (clone $queryPrevious)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
-        $labaPrev        = $pemasukanPrev - $pengeluaranPrev;
+        $totalArusKas = $pemasukanCurrent + $pengeluaranCurrent;
 
-        // Hitung Persentase
-        $pctPemasukan   = $this->calculatePercentageChange($pemasukanCurrent, $pemasukanPrev);
-        $pctPengeluaran = $this->calculatePercentageChange($pengeluaranCurrent, $pengeluaranPrev);
-        $pctLaba        = $this->calculatePercentageChange($labaCurrent, $labaPrev);
+        // Hitung Persentase Pemasukan (Income / Total * 100)
+        $pctPemasukan = $totalArusKas > 0
+            ? round(($pemasukanCurrent / $totalArusKas) * 100, 2)
+            : 0;
+
+        // Hitung Persentase Pengeluaran (Expense / Total * 100)
+        $pctPengeluaran = $totalArusKas > 0
+            ? round(($pengeluaranCurrent / $totalArusKas) * 100, 2)
+            : 0;
+
+        // Hitung Profit Margin (Profit / Income * 100)
+        // Hati-hati pembagian dengan 0 jika pemasukan 0
+        $profitMargin = $pemasukanCurrent > 0
+            ? round(($labaCurrent / $pemasukanCurrent) * 100, 2)
+            : 0;
 
         // =========================================================
         // 4. SALDO TOTAL (REAL / ALL TIME)
@@ -146,7 +140,6 @@ class DashboardController extends Controller
 
         // Generate Label yang Rapi
         if ($request->filled('start_date')) {
-            // Loop Harian (Agar grafik tidak bolong)
             $period = CarbonPeriod::create($currStart, $currEnd);
             foreach ($period as $date) {
                 $key = $date->format('Y-m-d');
@@ -155,27 +148,20 @@ class DashboardController extends Controller
                 $chartExpense[] = $expenseDataRaw[$key] ?? 0;
             }
         } else {
-            // Default (Bulanan) - ambil semua tanggal yg ada transaksi di bulan ini
-            // Atau bisa di-force daily 1-30
+            // Default (Harian di Bulan ini)
             $period = CarbonPeriod::create($currStart, $currEnd);
             foreach ($period as $date) {
-                $key = $date->format('Y-m-d'); // Default query kita pakai format Y-m-d kalau default
+                $key = $date->format('Y-m-d');
 
-                // Cek format key dari database (kadang YYYY-MM jika grouping bulanan)
-                // Disini kita paksa loop harian bulan ini agar grafik smooth
-                $todayIncome = Transaction::where('business_id', $idPerusahaan)
-                                ->whereDate('tanggal_transaksi', $key)
-                                ->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))
-                                ->sum('jumlah');
+                // Gunakan array raw data yang sudah di-query di atas untuk efisiensi
+                // (Tidak perlu query ulang di dalam loop seperti kode sebelumnya)
+                // Note: Logic query ulang di dalam loop di kode asli cukup berat,
+                // sebaiknya pakai mapping data dari $incomeDataRaw/$expenseDataRaw seperti di blok 'if' di atas.
+                // Tapi agar konsisten dengan logic asli Anda yang force harian:
 
-                $todayExpense = Transaction::where('business_id', $idPerusahaan)
-                                ->whereDate('tanggal_transaksi', $key)
-                                ->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))
-                                ->sum('jumlah');
-
-                $chartLabels[] = $date->format('d'); // Tgl 1, 2, 3...
-                $chartIncome[] = $todayIncome;
-                $chartExpense[] = $todayExpense;
+                $chartLabels[] = $date->format('d');
+                $chartIncome[] = $incomeDataRaw[$key] ?? 0;
+                $chartExpense[] = $expenseDataRaw[$key] ?? 0;
             }
         }
 
@@ -184,7 +170,7 @@ class DashboardController extends Controller
         // =========================================================
         $doughnutMode = $request->input('doughnut_mode', 'pengeluaran');
 
-        $topCategories = (clone $queryCurrent) // Pakai queryCurrent agar ikut filter tanggal
+        $topCategories = (clone $queryCurrent)
             ->whereHas('category', fn($q) => $q->where('tipe', $doughnutMode))
             ->with(['category' => fn($q) => $q->withTrashed()])
             ->selectRaw('category_id, SUM(jumlah) as total')
@@ -213,10 +199,12 @@ class DashboardController extends Controller
                 'pemasukan'   => $pemasukanCurrent,
                 'pengeluaran' => $pengeluaranCurrent,
                 'laba'        => $labaCurrent,
-                // Data Persentase (Sudah Dihitung)
+
+                // DATA LOGIC BARU (Composition & Margin)
+                // Pastikan Frontend menyesuaikan key ini
                 'pemasukan_percent_change'   => $pctPemasukan,
                 'pengeluaran_percent_change' => $pctPengeluaran,
-                'laba_percent_change'        => $pctLaba
+                'laba_percent_change'        => $profitMargin
             ],
             'recent_transactions' => $recentTransactions,
             'line_chart' => [
@@ -233,7 +221,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    // Fungsi storeCompanySetup tetap, Fungsi getData (API print) tetap
     public function storeCompanySetup(Request $request)
     {
         $request->validate([
@@ -261,7 +248,6 @@ class DashboardController extends Controller
 
     public function getData(Request $request)
     {
-        // Fungsi ini opsional/legacy untuk print laporan
         $idPerusahaan = $this->getBusinessId();
         if (!$idPerusahaan) return response()->json(['error' => 'Company not set'], 400);
 
@@ -275,8 +261,8 @@ class DashboardController extends Controller
         $pemasukanPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
         $pengeluaranPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
-        $saldoTotal = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q)=>$q->where('tipe','pemasukan'))->sum('jumlah') -
-                      Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q)=>$q->where('tipe','pengeluaran'))->sum('jumlah');
+        $saldoTotal = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah') -
+            Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
         $recentTransactions = $query->clone()->with('category')->latest('tanggal_transaksi')->take(10)->get();
 

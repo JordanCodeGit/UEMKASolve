@@ -279,19 +279,24 @@
     </div>
 
     <div class="modal-overlay" id="print-laporan-overlay" style="display: none;">
-        <div class="modal-box" style="max-width: 550px; max-height: 90vh; overflow-y: auto;">
+        {{-- UBAH 1: Tambahkan display:flex, flex-column, dan padding:0 pada modal-box --}}
+        {{-- Hapus overflow-y: auto dari sini --}}
+        <div class="modal-box"
+            style="max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
 
-            <div class="modal-header">
+            {{-- UBAH 2: Header diberi padding manual (karena padding parent dihapus) --}}
+            <div class="modal-header" style="padding: 20px; flex-shrink: 0; border-bottom: 1px solid #eee;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <img src="{{ asset('icons/print_icon.png') }}" alt="Print" style="width: 24px; height: 24px;">
-                    <h2>Preview Laporan Keuangan</h2>
+                    <h2 style="margin:0; font-size: 1.25rem;">Preview Laporan Keuangan</h2>
                 </div>
                 <button class="modal-close-btn" data-close-modal="print-laporan-overlay">
                     <i class="fa-solid fa-times"></i>
                 </button>
             </div>
 
-            <div class="modal-body">
+            {{-- UBAH 3: Body diberi flex: 1 dan overflow-y: auto (SCROLL DISINI) --}}
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
 
                 <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
                     <div style="margin-bottom: 12px;">
@@ -318,11 +323,14 @@
 
                 <div id="print-preview-container"
                     style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: white; min-height: 300px;">
+                    {{-- Konten preview akan dimuat di sini oleh JS --}}
                 </div>
 
             </div>
 
-            <div class="modal-footer">
+            {{-- UBAH 4: Footer diberi background putih & border atas agar terpisah visualnya saat discroll --}}
+            <div class="modal-footer"
+                style="padding: 20px; flex-shrink: 0; border-top: 1px solid #eee; background: #fff;">
                 <button type="button" class="btn btn-secondary-modal"
                     data-close-modal="print-laporan-overlay">Batal</button>
                 <button type="button" class="btn btn-primary-modal" id="btn-download-pdf">Download sebagai PDF</button>
