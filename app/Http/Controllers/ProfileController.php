@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Business; // [FIX] Gunakan Model Business
+use App\Models\Business;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -71,36 +72,56 @@ class ProfileController extends Controller
 
     public function updateAkun(Request $request)
     {
-        // Bagian ini TIDAK DIUBAH (Logika User sudah benar)
         $user = Auth::user();
 
+        // 1. Validasi Data Dasar
         $rules = [
-            'name' => 'required|string|max:32',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:8|confirmed',
+            'name'  => ['required', 'string', 'max:32'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
         ];
 
-        if ($user->password !== null) {
-            $rules['current_password'] = 'required_with:password';
-        } else {
-            $rules['current_password'] = 'nullable';
+        // 2. LOGIKA PASSWORD
+        if ($request->filled('password')) {
+
+            // Rule dasar password baru
+            $rules['password'] = ['confirmed', \Illuminate\Validation\Rules\Password::defaults()];
+
+            // Validasi Password Lama (Hanya jika user bukan Google User / punya password)
+            if ($user->password !== null) {
+                $rules['current_password'] = ['required', 'current_password'];
+            }
         }
 
-        $request->validate($rules);
+        // Jalankan Validasi Dasar Dulu
+        $validated = $request->validate($rules);
 
-        $user->name = $request->name;
-
-        if ($request->filled('password')) {
-            if ($user->password !== null) {
-                if (!Hash::check($request->current_password, $user->password)) {
-                    return back()->withErrors(['current_password' => 'Password saat ini salah.']);
-                }
+        // --- [BARU] CEK APAKAH PASSWORD BARU == PASSWORD LAMA? ---
+        if ($request->filled('password') && $user->password !== null) {
+            // Kita cek: Jika password inputan COCOK dengan password di database
+            if (Hash::check($request->password, $user->password)) {
+                // Lempar Error Validasi
+                throw ValidationException::withMessages([
+                    'password' => 'Password baru tidak boleh sama dengan password lama.',
+                ]);
             }
-            $user->password = Hash::make($request->password);
+        }
+        // ---------------------------------------------------------
+
+        // 4. Update Data User
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        // 5. Update Password
+        if ($request->filled('password')) {
+            $user->password = Hash::make($validated['password']);
         }
 
         $user->save();
 
-        return back()->with('success', 'Profil akun berhasil diperbarui!');
+        return back()
+            ->with('success', 'Profil akun berhasil diperbarui!')
+            ->with('active_tab', 'akun');
     }
 }
