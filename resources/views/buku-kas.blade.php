@@ -45,7 +45,8 @@
             </div>
 
             <button class="btn-filter" id="filter-button">
-                <i class="fa-solid fa-filter"></i> Filter
+                <i class="fa-solid fa-filter"></i>
+                <span class="btn-label">Filter</span>
             </button>
         </div>
 
@@ -55,36 +56,45 @@
             </button>
 
             <button class="btn-primary-green" id="add-transaction-btn">
-                <i class="fa-solid fa-plus"></i> Tambah Transaksi
+                <i class="fa-solid fa-plus"></i>
+                <span class="btn-label">Tambah Transaksi</span>
             </button>
         </div>
     </div>
 
-    <div class="transaction-table-card">
+    <div class="transaction-table-card bukukas-transaction-card">
 
-        <div class="transaction-row header">
-            <div class="cell-check"><input type="checkbox" id="check-all-transactions"></div>
-            <div class="cell-kategori">Kategori</div>
-            <div class="cell-tanggal">
-                Tanggal & Waktu
+        <div class="bukukas-transaction-table">
+
+            <div class="transaction-row header">
+                <div class="cell-check"><input type="checkbox" id="check-all-transactions"></div>
+                <div class="cell-kategori">Kategori</div>
+                <div class="cell-tanggal">
+                    Tanggal & Waktu
+                </div>
+                <div class="cell-deskripsi">Deskripsi</div>
+                <div class="cell-nominal">Nominal</div>
             </div>
-            <div class="cell-deskripsi">Deskripsi</div>
-            <div class="cell-nominal">Nominal</div>
+
+            <div id="transaction-list-container">
+                <div class="transaction-row" style="justify-content: center; padding: 30px; color: var(--text-secondary);">
+                    Memuat data transaksi...
+                </div>
+            </div>
+
         </div>
 
-        <div id="transaction-list-container">
-            <div class="transaction-row" style="justify-content: center; padding: 30px; color: var(--text-secondary);">
-                Memuat data transaksi...
-            </div>
+        <div id="transaction-card-container" class="transaction-card-container" aria-live="polite">
+            <div class="transaction-card-empty">Memuat data transaksi...</div>
         </div>
 
         <div class="pagination-container" id="pagination-links">
         </div>
 
         <div class="transaction-footer">
-            <span>Total Pemasukan: <strong class="text-green" id="footer-total-pemasukan">Rp 0</strong></span>
-            <span>Total Pengeluaran: <strong class="text-red" id="footer-total-pengeluaran">Rp 0</strong></span>
-            <span>Laba:
+            <span class="footer-total footer-total-pemasukan">Total Pemasukan: <strong class="text-green" id="footer-total-pemasukan">Rp 0</strong></span>
+            <span class="footer-total footer-total-pengeluaran">Total Pengeluaran: <strong class="text-red" id="footer-total-pengeluaran">Rp 0</strong></span>
+            <span class="footer-laba">Laba:
                 <span class="laba-badge profit" id="footer-laba-badge">Rp 0</span>
             </span>
         </div>
@@ -394,12 +404,13 @@
 
             const token = localStorage.getItem('auth_token');
             if (!token) {
-                window.location.href = '{{ url('/login') }}';
+                window.location.href = "{{ url('/login') }}";
                 return;
             }
 
             // --- Elemen Halaman Utama ---
             const transactionListContainer = document.getElementById('transaction-list-container');
+            const transactionCardContainer = document.getElementById('transaction-card-container');
             const paginationLinksContainer = document.getElementById('pagination-links');
             const searchInput = document.getElementById('search-input');
             const openAddTxBtn = document.getElementById('add-transaction-btn');
@@ -422,9 +433,10 @@
             const katModalTabs = document.querySelectorAll('#kategori-modal-overlay .modal-tab-item');
 
             // --- Variabel API URL ---
-            const API_TRANSACTIONS = '{{ url('/api/transactions') }}';
-            const API_CATEGORIES = '{{ url('/api/categories') }}';
-            const API_DASHBOARD = '{{ url('/api/dashboard') }}';
+            const API_TRANSACTIONS = "{{ url('/api/transactions') }}";
+            const API_CATEGORIES = "{{ url('/api/categories') }}";
+            const API_DASHBOARD = "{{ url('/api/dashboard') }}";
+            const ICON_BASE = "{{ asset('icons') }}";
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
@@ -539,7 +551,7 @@
                     icons.push(`Button-${i}.png`);
                 }
 
-                const iconBasePath = '{{ asset('icons') }}';
+                const iconBasePath = ICON_BASE;
                 const shapeClass = type === 'pemasukan' ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
 
                 container.innerHTML = icons.map(icon => `
@@ -862,6 +874,10 @@
                     transactionListContainer.innerHTML =
                         '<div class="transaction-row" style="justify-content: center; padding: 30px;">Sedang memuat data...</div>';
                 }
+                if (transactionCardContainer) {
+                    transactionCardContainer.innerHTML =
+                        '<div class="transaction-card-empty">Sedang memuat data...</div>';
+                }
 
                 try {
                     const response = await fetch(targetUrl.toString(), {
@@ -893,6 +909,10 @@
                     if (transactionListContainer) {
                         transactionListContainer.innerHTML =
                             '<div class="transaction-row" style="color:red; justify-content:center; padding:30px;">Gagal memuat data.</div>';
+                    }
+                    if (transactionCardContainer) {
+                        transactionCardContainer.innerHTML =
+                            '<div class="transaction-card-empty" style="color:red;">Gagal memuat data.</div>';
                     }
                 }
             }
@@ -1084,12 +1104,112 @@
                 const container = document.getElementById('transaction-list-container');
                 container.innerHTML = '';
 
+                const cardContainer = document.getElementById('transaction-card-container');
+                if (cardContainer) cardContainer.innerHTML = '';
+
                 if (transactions.length === 0) {
                     container.innerHTML =
                         '<div class="transaction-row" style="justify-content: center; padding: 30px; color: #94a3b8;">Belum ada transaksi.</div>';
+
+                    if (cardContainer) {
+                        cardContainer.innerHTML =
+                            '<div class="transaction-card-empty">Belum ada transaksi.</div>';
+                    }
                     return;
                 }
 
+                // ===== Render Card List (Mobile) =====
+                if (cardContainer) {
+                    const parseTxDate = (raw) => {
+                        if (!raw) return new Date();
+                        if (typeof raw !== 'string') return new Date(raw);
+                        if (raw.includes('T')) return new Date(raw);
+                        if (raw.includes(' ')) return new Date(raw.replace(' ', 'T'));
+                        return new Date(raw);
+                    };
+
+                    const getDayKey = (dateObj) => {
+                        const y = dateObj.getFullYear();
+                        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const d = String(dateObj.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    };
+
+                    let currentDayKey = null;
+                    let currentGroupEl = null;
+
+                    transactions.forEach(tx => {
+                        const category = tx.category || {};
+                        const isPemasukan = category.tipe === 'pemasukan';
+                        const amountClass = isPemasukan ? 'text-green' : 'text-red';
+                        const amountSign = isPemasukan ? '+' : '-';
+                        const shapeClass = isPemasukan ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
+
+                        let iconHtml = '';
+                        if (category.ikon && (category.ikon.includes('.png') || category.ikon.includes('.jpg') ||
+                                category.ikon.includes('.svg') || category.ikon.includes('.jpeg'))) {
+                            let iconPath = category.ikon;
+                            if (!iconPath.includes('/')) {
+                                iconPath = `${category.tipe}/${iconPath}`;
+                            }
+                            const iconUrl = `${ICON_BASE}/${iconPath}`;
+                            iconHtml =
+                                `<img src="${iconUrl}" alt="icon" style="width:24px; height:24px; object-fit:contain;">`;
+                        } else {
+                            const iconClass = category.ikon || 'fa-solid fa-question';
+                            iconHtml = `<i class="${iconClass}"></i>`;
+                        }
+
+                        const safeCatatan = escapeHtml(tx.catatan || '-');
+                        const safeNamaKategori = category.nama_kategori ?
+                            escapeHtml(category.nama_kategori) :
+                            '(Kategori Terhapus)';
+
+                        const dateObj = parseTxDate(tx.tanggal_transaksi || tx.created_at);
+                        const dayKey = getDayKey(dateObj);
+
+                        if (dayKey !== currentDayKey) {
+                            currentDayKey = dayKey;
+
+                            const dayNum = dateObj.toLocaleDateString('id-ID', { day: '2-digit' });
+                            const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
+                            const monthYear = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+                            const groupEl = document.createElement('div');
+                            groupEl.className = 'tx-day-group';
+                            groupEl.innerHTML = `
+                                <div class="tx-day-header">
+                                    <div class="tx-day-pill">${dayNum}</div>
+                                    <div class="tx-day-text">
+                                        <div class="tx-day-name">${dayName}</div>
+                                        <div class="tx-day-month">${monthYear}</div>
+                                    </div>
+                                </div>
+                                <div class="tx-day-card"></div>
+                            `;
+                            cardContainer.appendChild(groupEl);
+                            currentGroupEl = groupEl.querySelector('.tx-day-card');
+                        }
+
+                        const itemBtn = document.createElement('button');
+                        itemBtn.type = 'button';
+                        itemBtn.className = 'tx-item';
+                        itemBtn.innerHTML = `
+                            <div class="tx-item-left">
+                                <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
+                                <div class="tx-item-text">
+                                    <div class="tx-item-title">${safeNamaKategori}</div>
+                                    <div class="tx-item-subtitle">${safeCatatan}</div>
+                                </div>
+                            </div>
+                            <div class="tx-item-amount ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
+                        `;
+                        itemBtn.addEventListener('click', () => openEditModal(tx));
+                        if (currentGroupEl) currentGroupEl.appendChild(itemBtn);
+                    });
+                }
+
+                // ===== Render Table Rows (Desktop) =====
                 transactions.forEach(tx => {
                     const row = document.createElement('div');
                     row.className = 'transaction-row';
@@ -1109,7 +1229,7 @@
                         if (!iconPath.includes('/')) {
                             iconPath = `${category.tipe}/${iconPath}`;
                         }
-                        const iconUrl = `{{ asset('icons') }}/${iconPath}`;
+                        const iconUrl = `${ICON_BASE}/${iconPath}`;
                         iconHtml =
                             `<img src="${iconUrl}" alt="icon" style="width:24px; height:24px; object-fit:contain;">`;
                     } else {

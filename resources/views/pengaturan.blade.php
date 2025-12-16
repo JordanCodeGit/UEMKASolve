@@ -25,34 +25,79 @@
         /* Responsive untuk Pengaturan - Tablet */
         @media (max-width: 768px) {
             .content-card.settings-card {
-                margin: 0;
-                border-radius: 0;
+                margin: 12px;
+                border-radius: 18px;
                 padding: 0;
-                box-shadow: none;
-                background-color: #f5f7fa;
+                overflow: hidden;
             }
 
             .settings-content-card {
-                padding: 0 !important;
+                padding: 16px !important;
                 border-radius: 0;
             }
 
             .profile-header-content {
-                top: -30px;
-                right: 0;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                gap: 10px;
+                padding: 0;
+                top: -44px;
+                right: auto;
+                left: 0;
+                margin-bottom: -44px;
+            }
+
+            .profile-header-container {
+                padding: 16px 16px 0 16px;
+                margin-bottom: 0;
+            }
+
+            .profile-header-banner {
+                height: 150px;
+                border-radius: 18px;
+            }
+
+            .profile-avatar-placeholder {
+                width: 110px;
+                height: 110px;
+                border-radius: 14px;
+            }
+
+            .profile-info {
+                padding-top: 0;
+            }
+
+            .profile-info h2 {
+                font-size: 20px;
+            }
+
+            .tabs-nav-container {
+                padding: 10px 16px 0 16px;
+            }
+
+            .tabs-nav.full-width {
+                border-radius: 16px;
+            }
+
+            .tabs-nav.full-width .tab-item {
+                font-size: 13px;
+                padding: 10px 10px;
+                border-radius: 14px;
             }
         }
 
         /* Responsive untuk Pengaturan - Mobile */
         @media (max-width: 480px) {
             .content-card.settings-card {
-                margin: 0;
-                border-radius: 0;
+                margin: 10px;
+                border-radius: 18px;
                 padding: 0;
             }
 
             .settings-content-card {
-                padding: 0 !important;
+                padding: 14px !important;
             }
         }
 
@@ -65,7 +110,7 @@
         }
     </style>
 
-    <div class="content-card settings-card">
+    <div class="content-card settings-card" data-active-tab="{{ session('active_tab') }}">
 
         <div class="profile-header-container">
             <div class="profile-header-banner">
@@ -279,10 +324,8 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            @if (session('active_tab'))
-                const tabToActivate = "{{ session('active_tab') }}";
-                switchTab(null, tabToActivate);
-            @endif
+            const tabToActivate = document.querySelector('.content-card.settings-card')?.dataset?.activeTab;
+            if (tabToActivate) switchTab(null, tabToActivate);
 
             const successAlert = document.getElementById('auto-close-alert');
 

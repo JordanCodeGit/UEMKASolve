@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="{{ Request::is('buku-kas') ? 'page-buku-kas' : '' }} {{ Request::is('kategori') ? 'page-kategori' : '' }} {{ Request::is('pengaturan') ? 'page-pengaturan' : '' }}">
 
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-logo">
@@ -126,6 +126,25 @@
         </main>
 
     </div>
+
+    <nav class="mobile-bottom-nav" aria-label="Navigasi bawah">
+        <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item {{ Request::is('dashboard') ? 'active' : '' }}">
+            <i class="fa-solid fa-house-chimney"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{{ route('buku-kas') }}" class="mobile-bottom-nav__item {{ Request::is('buku-kas') ? 'active' : '' }}">
+            <i class="fa-solid fa-book-open"></i>
+            <span>Buku Kas</span>
+        </a>
+        <a href="{{ route('kategori') }}" class="mobile-bottom-nav__item {{ Request::is('kategori') ? 'active' : '' }}">
+            <i class="fa-solid fa-tags"></i>
+            <span>Kategori</span>
+        </a>
+        <a href="{{ route('pengaturan.show') }}" class="mobile-bottom-nav__item {{ Request::is('pengaturan') ? 'active' : '' }}">
+            <i class="fa-solid fa-gear"></i>
+            <span>Pengaturan</span>
+        </a>
+    </nav>
 
     {{-- SCRIPT PENGATURAN TEMA --}}
     <script>
@@ -301,7 +320,7 @@
                     desc: `Semua riwayat login Anda tersimpan di bawah.`,
                     descExtended: historyHTML,
                     time: 'Baru saja',
-                    icon: '{{ asset('icons/notif_login.png') }}'
+                    icon: "{{ asset('icons/notif_login.png') }}"
                 });
             }
 
@@ -406,7 +425,7 @@
 
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = '{{ url('/logout') }}';
+                    form.action = "{{ url('/logout') }}";
                     form.style.display = 'none';
                     const csrfToken = document.createElement('input');
                     csrfToken.type = 'hidden';
@@ -427,7 +446,7 @@
             const avatarEl = document.getElementById('global-header-avatar');
 
             if (token && businessNameEl && avatarEl) {
-                fetch('{{ url('/api/profile') }}', {
+                fetch("{{ url('/api/profile') }}", {
                         headers: {
                             'Accept': 'application/json',
                             'Authorization': 'Bearer ' + token
@@ -436,7 +455,7 @@
                     .then(response => {
                         if (response.status === 401) {
                             localStorage.removeItem('auth_token');
-                            window.location.href = '{{ url('/login') }}';
+                            window.location.href = "{{ url('/login') }}";
                         }
                         return response.json();
                     })

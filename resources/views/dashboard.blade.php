@@ -182,6 +182,10 @@
                 </li>
 
             </ul>
+
+            <div id="recent-transactions-card-container" class="transaction-card-container" aria-live="polite">
+                <div class="transaction-card-empty">Memuat...</div>
+            </div>
         </div>
     </div>
 
@@ -668,6 +672,7 @@
                     if (data.doughnut_chart) renderDoughnutChart(data.doughnut_chart);
 
                     const txList = document.getElementById('recent-transactions-list');
+                    const txCardContainer = document.getElementById('recent-transactions-card-container');
                     if (txList) {
                         txList.innerHTML = '';
                         if (!data.recent_transactions || data.recent_transactions.length === 0) {
@@ -698,6 +703,99 @@
                                 <div class="transaction-amount ${amountClass}">${isMasuk?'+':'-'}${formatRupiah(tx.jumlah)}</div>
                             `;
                                 txList.appendChild(li);
+                            });
+                        }
+                    }
+
+                    // ===== Render Card List (Mobile, match Buku Kas style; no footer) =====
+                    if (txCardContainer) {
+                        txCardContainer.innerHTML = '';
+
+                        const transactions = (data.recent_transactions || []).slice(0);
+                        if (transactions.length === 0) {
+                            txCardContainer.innerHTML =
+                                '<div class="transaction-card-empty">Belum ada transaksi.</div>';
+                        } else {
+                            const parseTxDate = (raw) => {
+                                if (!raw) return new Date();
+                                if (typeof raw !== 'string') return new Date(raw);
+                                if (raw.includes('T')) return new Date(raw);
+                                if (raw.includes(' ')) return new Date(raw.replace(' ', 'T'));
+                                return new Date(raw);
+                            };
+
+                            const getDayKey = (dateObj) => {
+                                const y = dateObj.getFullYear();
+                                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                const d = String(dateObj.getDate()).padStart(2, '0');
+                                return `${y}-${m}-${d}`;
+                            };
+
+                            let currentDayKey = null;
+                            let currentGroupEl = null;
+
+                            transactions.forEach(tx => {
+                                const category = tx.category || {};
+                                const isPemasukan = category.tipe === 'pemasukan';
+                                const amountClass = isPemasukan ? 'text-green' : 'text-red';
+                                const amountSign = isPemasukan ? '+' : '-';
+                                const shapeClass = isPemasukan ? 'icon-shape-pemasukan' :
+                                    'icon-shape-pengeluaran';
+
+                                const iconClass = category.ikon || 'fa-solid fa-question';
+                                const iconHtml = iconClass.includes('.') ?
+                                    `<img src="{{ asset('icons') }}/${iconClass}" alt="icon" style="width:24px; height:24px; object-fit:contain;">` :
+                                    `<i class="${iconClass}"></i>`;
+
+                                const safeCatatan = escapeHtml(tx.catatan || '-');
+                                const safeNamaKategori = escapeHtml(category.nama_kategori || 'Tanpa Kategori');
+
+                                const dateObj = parseTxDate(tx.tanggal_transaksi || tx.created_at);
+                                const dayKey = getDayKey(dateObj);
+
+                                if (dayKey !== currentDayKey) {
+                                    currentDayKey = dayKey;
+
+                                    const dayNum = dateObj.toLocaleDateString('id-ID', {
+                                        day: '2-digit'
+                                    });
+                                    const dayName = dateObj.toLocaleDateString('id-ID', {
+                                        weekday: 'long'
+                                    });
+                                    const monthYear = dateObj.toLocaleDateString('id-ID', {
+                                        month: 'long',
+                                        year: 'numeric'
+                                    });
+
+                                    const groupEl = document.createElement('div');
+                                    groupEl.className = 'tx-day-group';
+                                    groupEl.innerHTML = `
+                                        <div class="tx-day-header">
+                                            <div class="tx-day-pill">${dayNum}</div>
+                                            <div class="tx-day-text">
+                                                <div class="tx-day-name">${dayName}</div>
+                                                <div class="tx-day-month">${monthYear}</div>
+                                            </div>
+                                        </div>
+                                        <div class="tx-day-card"></div>
+                                    `;
+                                    txCardContainer.appendChild(groupEl);
+                                    currentGroupEl = groupEl.querySelector('.tx-day-card');
+                                }
+
+                                const itemEl = document.createElement('div');
+                                itemEl.className = 'tx-item';
+                                itemEl.innerHTML = `
+                                    <div class="tx-item-left">
+                                        <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
+                                        <div class="tx-item-text">
+                                            <div class="tx-item-title">${safeNamaKategori}</div>
+                                            <div class="tx-item-subtitle">${safeCatatan}</div>
+                                        </div>
+                                    </div>
+                                    <div class="tx-item-amount ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
+                                `;
+                                if (currentGroupEl) currentGroupEl.appendChild(itemEl);
                             });
                         }
                     }
