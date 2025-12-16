@@ -2237,6 +2237,20 @@ body.dark-mode .btn-primary-light {
     flex: 1;
 }
 
+.bukukas-transaction-card .tx-item-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bukukas-transaction-card .tx-item-check .check-item {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary-blue);
+}
+
 .bukukas-transaction-card .tx-item .icon-wrapper {
     width: 44px;
     height: 44px;
@@ -6701,7 +6715,7 @@ textarea.form-input-modal {
 
 @media (max-width: 768px) {
     .bukukas-header {
-        align-items: flex-start;
+        align-items: center;
         gap: 12px;
         padding: 14px 14px;
     }
@@ -6716,7 +6730,7 @@ textarea.form-input-modal {
     }
 
     .saldo-display-lg h3 {
-        font-size: 28px;
+        font-size: 24px;
     }
 
     .header-actions {
@@ -6741,8 +6755,8 @@ textarea.form-input-modal {
     }
 
     .bukukas-toolbar {
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-wrap: nowrap;
+        gap: 8px;
         margin-bottom: 16px;
     }
 
@@ -6755,17 +6769,20 @@ textarea.form-input-modal {
     .search-bar-lg {
         height: 44px;
         border-radius: 14px;
-        padding: 0 14px;
+        padding: 0 12px;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .search-bar-lg i {
         font-size: 18px;
-        margin-right: 10px;
+        margin-right: 8px;
     }
 
     .search-bar-lg input {
         font-size: 14px;
         margin: 0;
+        min-width: 0;
     }
 
     .btn-filter {
@@ -6784,7 +6801,32 @@ textarea.form-input-modal {
     .toolbar-actions {
         flex: 0 0 auto;
         margin-right: 0;
-        gap: 10px;
+        gap: 8px;
+    }
+
+    /* Buku Kas: bulk delete as compact trash icon + count */
+    #bulk-delete-btn {
+        height: 44px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-size: 0;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    #bulk-delete-btn i {
+        font-size: 16px;
+    }
+
+    #bulk-delete-btn #selected-count {
+        display: none;
+    }
+
+    #bulk-delete-btn::after {
+        content: '(' attr(data-count) ')';
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     .btn-primary-green {
@@ -7131,8 +7173,11 @@ textarea.form-input-modal {
 
     .card-header-grafik-kas {
         padding: 10px 12px !important;
-        flex-direction: column !important;
-        gap: 8px !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        flex-wrap: nowrap;
     }
 
     .card-header-grafik-kas .card-title-with-icon {
@@ -7140,10 +7185,28 @@ textarea.form-input-modal {
     }
 
     .card-header-grafik-kas .grafik-kas-header {
-        width: 100%;
+        width: auto;
         padding: 0 !important;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: flex-end;
+        flex: 0 0 auto;
+    }
+
+    .card-header-grafik-kas .grafik-kas-header .filter-container {
+        align-items: flex-end;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn {
+        min-width: 0 !important;
+        padding: 8px 10px !important;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn span {
+        display: block;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .card-body-grafik-kas {
@@ -7187,8 +7250,10 @@ textarea.form-input-modal {
 
     .grafik-kas-legend {
         margin-top: 8px;
-        gap: 12px;
-        width: 100%;
+        gap: 10px;
+        width: auto;
+        justify-content: flex-end;
+        flex-wrap: wrap;
     }
 
     .legend-item {
@@ -7385,8 +7450,26 @@ textarea.form-input-modal {
 
     /* Delete button */
     #bulk-delete-btn {
-        padding: 8px 12px;
+        height: 44px;
+        padding: 0 12px;
+        border-radius: 12px;
+        font-size: 0;
+        gap: 6px;
+    }
+
+    #bulk-delete-btn i {
+        font-size: 16px;
+    }
+
+    #bulk-delete-btn #selected-count {
+        display: none;
+    }
+
+    #bulk-delete-btn::after {
+        content: '(' attr(data-count) ')';
         font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     /* ===== TABS ===== */
@@ -7560,13 +7643,28 @@ textarea.form-input-modal {
 
     #category-modal-overlay #dynamic-icon-grid.icon-picker-container {
         max-height: 240px;
-        max-width: 100%;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         padding: 10px;
         gap: 10px;
     }
 
+    /* Prevent horizontal clipping on small screens */
+    #category-modal-overlay #dynamic-icon-grid .icon-option {
+        min-width: 0;
+        padding: 4px;
+    }
+
+    /* Match Buku Kas: no scale-up that can clip on mobile */
+    #category-modal-overlay #dynamic-icon-grid .icon-option:hover,
+    #category-modal-overlay #dynamic-icon-grid .icon-option.active {
+        transform: none;
+    }
+
     #kategori-modal-overlay .icon-option img,
-    #category-modal-overlay .icon-option img {
+    #category-modal-overlay #dynamic-icon-grid .icon-option img {
         width: 32px;
         height: 32px;
     }
@@ -7574,6 +7672,36 @@ textarea.form-input-modal {
     /* Add Transaction modal (Buku Kas): keep compact on mobile */
     #transaksi-modal-overlay.modal-overlay {
         padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
+    }
+
+    /* Filter Transaksi modal (Buku Kas): keep compact on mobile */
+    #filter-modal-overlay.modal-overlay {
+        padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
+    }
+
+    #filter-modal-overlay .modal-box {
+        width: 100% !important;
+        max-width: 420px !important;
+        max-height: calc(100vh - 160px);
+    }
+
+    #filter-modal-overlay .modal-header {
+        padding: 12px 14px;
+    }
+
+    #filter-modal-overlay .modal-header h2 {
+        font-size: 16px;
+    }
+
+    #filter-modal-overlay .modal-body {
+        padding: 14px;
+        gap: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #filter-modal-overlay .modal-footer {
+        padding: 12px 14px;
     }
 
     #transaksi-modal-overlay .modal-box {
@@ -7680,22 +7808,42 @@ textarea.form-input-modal {
     }
 
     /* Delete modal */
+    #delete-modal-overlay.modal-overlay {
+        padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
+    }
+
     .delete-modal-box {
         max-width: 90vw;
+        width: 100%;
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 14px 14px 12px;
+        padding-top: 14px;
     }
 
     .delete-icon-wrapper {
         width: 50px;
         height: 50px;
         font-size: 24px;
+        margin: 0 auto 12px auto;
     }
 
     .delete-title {
         font-size: 1.1rem;
+        margin-bottom: 8px;
     }
 
     .delete-message {
         font-size: 0.85rem;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+
+    .text-danger-warning {
+        font-size: 0.8rem;
+        padding: 6px;
+        margin-top: 8px;
     }
 
     .delete-footer {
@@ -7807,6 +7955,15 @@ textarea.form-input-modal {
         padding: 8px;
     }
 
+    #category-modal-overlay #dynamic-icon-grid.icon-picker-container {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    #category-modal-overlay #dynamic-icon-grid .icon-option img {
+        width: 28px;
+        height: 28px;
+    }
+
     #transaksi-modal-overlay .modal-box {
         max-width: 360px;
         max-height: calc(100vh - 150px);
@@ -7817,6 +7974,16 @@ textarea.form-input-modal {
         gap: 12px;
     }
 
+    #filter-modal-overlay .modal-box {
+        max-width: 360px !important;
+        max-height: calc(100vh - 180px);
+    }
+
+    #filter-modal-overlay .modal-body {
+        padding: 12px;
+        gap: 10px;
+    }
+
     #print-laporan-overlay .modal-box {
         max-width: 360px !important;
         max-height: calc(100vh - 260px) !important;
@@ -7825,6 +7992,27 @@ textarea.form-input-modal {
     #print-laporan-overlay #print-preview-container {
         padding: 12px !important;
         min-height: 160px !important;
+    }
+
+    /* Delete modal: extra compact on very small devices */
+    .delete-modal-box {
+        max-height: calc(100vh - 240px);
+        padding: 12px;
+    }
+
+    .delete-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .delete-title {
+        font-size: 1.02rem;
+    }
+
+    .delete-message {
+        font-size: 0.82rem;
     }
 
     html {
@@ -8058,8 +8246,25 @@ textarea.form-input-modal {
     }
 
     #bulk-delete-btn {
-        padding: 6px 10px;
-        font-size: 11px;
+        height: 44px;
+        padding: 0 10px;
+        font-size: 0;
+        gap: 6px;
+    }
+
+    #bulk-delete-btn i {
+        font-size: 16px;
+    }
+
+    #bulk-delete-btn #selected-count {
+        display: none;
+    }
+
+    #bulk-delete-btn::after {
+        content: '(' attr(data-count) ')';
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     /* Form buttons */

@@ -961,14 +961,25 @@
                 }
             });
 
+            if (transactionCardContainer) {
+                transactionCardContainer.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('check-item')) {
+                        updateBulkDeleteButton();
+                    }
+                });
+            }
+
             function updateBulkDeleteButton() {
                 const selected = document.querySelectorAll('.check-item:checked');
+                const selectedIds = new Set(Array.from(selected).map(cb => cb.dataset.id));
                 const btn = document.getElementById('bulk-delete-btn');
                 const countSpan = document.getElementById('selected-count');
 
-                if (selected.length > 0) {
+                if (btn) btn.dataset.count = String(selectedIds.size);
+
+                if (selectedIds.size > 0) {
                     btn.style.display = 'inline-flex';
-                    countSpan.textContent = selected.length;
+                    countSpan.textContent = selectedIds.size;
                 } else {
                     btn.style.display = 'none';
                 }
@@ -994,7 +1005,7 @@
                 if (dialogOverlay) dialogOverlay.style.display = 'flex';
                 document.querySelector('.dialog-actions').style.display = 'none';
 
-                const ids = Array.from(selected).map(cb => cb.dataset.id);
+                const ids = Array.from(new Set(Array.from(selected).map(cb => cb.dataset.id)));
 
                 let successCount = 0;
                 let failCount = 0;
@@ -1012,12 +1023,13 @@
                         // agar me-return 200 meskipun data sudah soft-deleted (withTrashed)
                         if (response.ok) {
                             successCount++;
-                            // Hapus baris dari tabel HTML secara langsung agar UI responsif
-                            const checkbox = document.querySelector(`.check-item[data-id="${id}"]`);
-                            if (checkbox) {
+                            // Hapus elemen UI (table row / mobile card) secara langsung agar UI responsif
+                            document.querySelectorAll(`.check-item[data-id="${id}"]`).forEach((checkbox) => {
                                 const row = checkbox.closest('.transaction-row');
                                 if (row) row.remove();
-                            }
+                                const cardItem = checkbox.closest('.tx-item');
+                                if (cardItem) cardItem.remove();
+                            });
                         } else {
                             console.warn(`Gagal menghapus ID ${id}: Status ${response.status}`);
                             failCount++;
@@ -1191,11 +1203,15 @@
                             currentGroupEl = groupEl.querySelector('.tx-day-card');
                         }
 
-                        const itemBtn = document.createElement('button');
-                        itemBtn.type = 'button';
-                        itemBtn.className = 'tx-item';
-                        itemBtn.innerHTML = `
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'tx-item';
+                        itemEl.setAttribute('role', 'button');
+                        itemEl.tabIndex = 0;
+                        itemEl.innerHTML = `
                             <div class="tx-item-left">
+                                <span class="tx-item-check" aria-label="Pilih transaksi" onclick="event.stopPropagation()">
+                                    <input type="checkbox" class="check-item" data-id="${tx.id}" onclick="event.stopPropagation()">
+                                </span>
                                 <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
                                 <div class="tx-item-text">
                                     <div class="tx-item-title">${safeNamaKategori}</div>
@@ -1204,8 +1220,19 @@
                             </div>
                             <div class="tx-item-amount ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
                         `;
-                        itemBtn.addEventListener('click', () => openEditModal(tx));
-                        if (currentGroupEl) currentGroupEl.appendChild(itemBtn);
+
+                        itemEl.addEventListener('click', (e) => {
+                            if (e.target && e.target.closest && e.target.closest('.tx-item-check')) return;
+                            openEditModal(tx);
+                        });
+                        itemEl.addEventListener('keydown', (e) => {
+                            if (e.key !== 'Enter' && e.key !== ' ') return;
+                            if (e.target && e.target.closest && e.target.closest('.tx-item-check')) return;
+                            e.preventDefault();
+                            openEditModal(tx);
+                        });
+
+                        if (currentGroupEl) currentGroupEl.appendChild(itemEl);
                     });
                 }
 
