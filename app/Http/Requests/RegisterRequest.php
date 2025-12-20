@@ -11,6 +11,7 @@ class RegisterRequest extends FormRequest
      * Determine if the user is authorized to make this request.
      * Kita izinkan siapa saja mencoba registrasi.
      */
+    // Kode fungsi otorisasi request
     public function authorize(): bool
     {
         return true;
@@ -21,6 +22,7 @@ class RegisterRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+    // Kode fungsi aturan validasi
     public function rules(): array
 {
     return [
@@ -43,6 +45,7 @@ class RegisterRequest extends FormRequest
      *
      * @return array
      */
+    // Kode fungsi pesan validasi kustom
     public function messages(): array
     {
         return [

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 
 class CheckCompanySetup
 {
+    // Kode fungsi mengecek setup perusahaan
     public function handle(Request $request, Closure $next)
     {
         if (Auth::check()) {

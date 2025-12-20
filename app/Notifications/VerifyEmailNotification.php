@@ -22,6 +22,7 @@ class VerifyEmailNotification extends Notification
      *
      * @return array<int, string>
      */
+    // Kode fungsi menentukan channel pengiriman
     public function via(object $notifiable): array
     {
         return ['mail'];
@@ -30,6 +31,7 @@ class VerifyEmailNotification extends Notification
     /**
      * Get the mail representation of the notification.
      */
+    // Kode fungsi mendefinisikan representasi email
     public function toMail(object $notifiable): MailMessage
     {
         /** @var \App\Models\User $notifiable */

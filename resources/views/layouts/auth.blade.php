@@ -2,6 +2,7 @@
 <html lang="id">
 
 <head>
+    {{-- // Bagian Head & Style --}}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - Uemkas</title>
@@ -43,6 +44,7 @@
 </head>
 
 <body>
+    {{-- // Bagian Layout Auth (Kiri: Logo, Kanan: Konten) --}}
     <div class="auth-container">
         <div class="auth-left">
             <div class="logo-container">
@@ -54,8 +56,13 @@
             @yield('content')
         </div>
     </div>
-    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <div id="toast-container"
+        aria-live="polite"
+        aria-atomic="true"
+        data-status="{{ session('status') }}"
+        data-error="{{ isset($errors) && $errors->any() ? $errors->first() : '' }}"></div>
     <script>
+        // Kode fungsi showToast
         function showToast(type, message, timeout = 3500) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -70,16 +77,18 @@
                 setTimeout(() => container.removeChild(div), 300);
             }, timeout);
         }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Show server-side session messages as minimal toast
-            @if (session('status'))
-                showToast('success', {!! json_encode(session('status')) !!});
-            @endif
+            // Kode penanganan pesan sesi server-side
+            const container = document.getElementById('toast-container');
+            if (!container) return;
 
-            @if (isset($errors) && $errors->any())
-                // show first error
-                showToast('error', {!! json_encode($errors->first()) !!});
-            @endif
+            const serverStatusMessage = container.dataset.status;
+            const firstServerError = container.dataset.error;
+
+            if (serverStatusMessage) showToast('success', serverStatusMessage);
+            if (firstServerError) showToast('error', firstServerError);
         });
     </script>
     @stack('scripts')

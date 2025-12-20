@@ -86,6 +86,11 @@
                 padding: 10px 10px;
                 border-radius: 14px;
             }
+
+            /* Logout button only needed on mobile/tablet (no header) */
+            .settings-mobile-logout {
+                display: block !important;
+            }
         }
 
         /* Responsive untuk Pengaturan - Mobile */
@@ -108,10 +113,38 @@
             margin-top: 0.25rem;
             display: block;
         }
+
+        /* Hidden by default (desktop has header logout) */
+        .settings-mobile-logout {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .settings-logout-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--color-primary-red);
+            color: var(--color-primary-red);
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .settings-logout-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     </style>
 
     <div class="content-card settings-card" data-active-tab="{{ session('active_tab') }}">
 
+        {{-- // Bagian Header Profil (Banner & Avatar) --}}
         <div class="profile-header-container">
             <div class="profile-header-banner">
             </div>
@@ -134,6 +167,7 @@
             </div>
         </div>
 
+        {{-- // Navigasi Tab (Profil Usaha / Profil Akun) --}}
         <div class="tabs-nav-container">
             <nav class="tabs-nav full-width">
                 <a href="#" class="tab-item active" id="tab-usaha" onclick="switchTab(event, 'usaha')">
@@ -148,6 +182,7 @@
 
         <div class="settings-content-card">
 
+            {{-- // Bagian Notifikasi (Success/Error) --}}
             <div class="alert-container">
 
                 @if (session('success'))
@@ -179,6 +214,7 @@
 
             </div>
 
+            {{-- // Panel Tab: Profil Usaha --}}
             <div class="tab-pane active" id="pane-usaha">
 
                 <form id="form-profil-usaha" action="{{ route('pengaturan.update.usaha') }}" method="POST"
@@ -211,11 +247,18 @@
                     <div class="form-footer">
                         <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                     </div>
+
+                    <div class="settings-mobile-logout">
+                        <button type="button" class="settings-logout-btn" data-settings-logout>
+                            <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                        </button>
+                    </div>
                 </form>
             </div>
 
         </div>
 
+        {{-- // Panel Tab: Profil Akun --}}
         <div class="tab-pane" id="pane-akun" style="display: none;">
 
             <form id="form-profil-akun" action="{{ route('pengaturan.update.akun') }}" method="POST">
@@ -291,6 +334,12 @@
                 <div class="form-footer">
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                 </div>
+
+                <div class="settings-mobile-logout">
+                    <button type="button" class="settings-logout-btn" data-settings-logout>
+                        <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                    </button>
+                </div>
             </form>
 
         </div>
@@ -299,6 +348,7 @@
 @endsection
 
 @push('scripts')
+    {{-- // Kode fungsi berpindah antar tab pengaturan --}}
     <script>
         function switchTab(event, tabName) {
             if (event) event.preventDefault();
@@ -322,7 +372,8 @@
                 selectedBtn.classList.add('active');
             }
         }
-
+// Kode inisialisasi saat halaman dimuat
+        
         document.addEventListener("DOMContentLoaded", function() {
             const tabToActivate = document.querySelector('.content-card.settings-card')?.dataset?.activeTab;
             if (tabToActivate) switchTab(null, tabToActivate);
@@ -352,6 +403,34 @@
                             this.classList.add('fa-eye');
                         }
                     }
+                });
+            });
+
+            // Logout button for mobile (no header)
+            document.querySelectorAll('[data-settings-logout]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    this.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Keluar...';
+                    this.disabled = true;
+
+                    // Bersih-bersih (samakan dengan logic logout di header)
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    localStorage.removeItem('login_history');
+                    sessionStorage.clear();
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = "{{ url('/logout') }}";
+                    form.style.display = 'none';
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    form.appendChild(csrfToken);
+                    document.body.appendChild(form);
+                    form.submit();
                 });
             });
 

@@ -15,23 +15,24 @@ class DashboardController extends Controller
     /**
      * Helper untuk mengambil ID Bisnis dengan aman
      */
+    // Kode fungsi mengambil ID bisnis
     private function getBusinessId()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         if ($user && $user->business) {
             return $user->business->id;
         }
-        if ($user && $user->perusahaan) {
-            return $user->perusahaan->id;
-        }
         return null;
     }
 
+    // Kode fungsi menampilkan dashboard
     public function index()
     {
         return view('dashboard');
     }
-
+// Kode fungsi mengambil ringkasan data dashboard
+    
     public function getSummary(Request $request)
     {
         $idPerusahaan = $this->getBusinessId();
@@ -57,13 +58,28 @@ class DashboardController extends Controller
         // 1. TENTUKAN RENTANG WAKTU
         // =========================================================
 
-        // Default: Bulan Ini
+        $isAllTimeMonthly = $request->input('mode') === 'monthly' && $request->boolean('all_time');
+
+        // Default: Bulan Ini (harian)
         $currStart = Carbon::now()->startOfMonth();
         $currEnd   = Carbon::now()->endOfMonth();
-        $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
+        $groupByFormat = "DATE(tanggal_transaksi)";
 
-        // Jika Filter Aktif
-        if ($request->filled('start_date') && $request->filled('end_date')) {
+        if ($isAllTimeMonthly) {
+            // Semua: rekap per bulan (all time)
+            $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
+
+            $minDate = Transaction::where('business_id', $idPerusahaan)->min('tanggal_transaksi');
+            $maxDate = Transaction::where('business_id', $idPerusahaan)->max('tanggal_transaksi');
+
+            if ($minDate && $maxDate) {
+                $currStart = Carbon::parse($minDate)->startOfMonth();
+                $currEnd = Carbon::parse($maxDate)->endOfMonth();
+            }
+        }
+
+        // Jika Filter Aktif (harian berdasarkan rentang tanggal)
+        if (!$isAllTimeMonthly && $request->filled('start_date') && $request->filled('end_date')) {
             $currStart = Carbon::parse($request->start_date)->startOfDay();
             $currEnd   = Carbon::parse($request->end_date)->endOfDay();
             $groupByFormat = "DATE(tanggal_transaksi)"; // Harian
@@ -72,8 +88,10 @@ class DashboardController extends Controller
         // =========================================================
         // 2. QUERY DATA SAAT INI (CURRENT)
         // =========================================================
-        $queryCurrent = Transaction::where('business_id', $idPerusahaan)
-            ->whereBetween('tanggal_transaksi', [$currStart, $currEnd]);
+        $queryCurrent = Transaction::where('business_id', $idPerusahaan);
+        if (!$isAllTimeMonthly) {
+            $queryCurrent->whereBetween('tanggal_transaksi', [$currStart, $currEnd]);
+        }
 
         // Filter Search
         if ($request->filled('search')) {
@@ -139,7 +157,17 @@ class DashboardController extends Controller
             ->groupBy('date')->pluck('total', 'date');
 
         // Generate Label yang Rapi
-        if ($request->filled('start_date')) {
+        if ($isAllTimeMonthly) {
+            if ($currStart && $currEnd) {
+                $period = CarbonPeriod::create($currStart->copy()->startOfMonth(), '1 month', $currEnd->copy()->startOfMonth());
+                foreach ($period as $date) {
+                    $key = $date->format('Y-m');
+                    $chartLabels[] = $date->translatedFormat('M Y');
+                    $chartIncome[] = $incomeDataRaw[$key] ?? 0;
+                    $chartExpense[] = $expenseDataRaw[$key] ?? 0;
+                }
+            }
+        } elseif ($request->filled('start_date')) {
             $period = CarbonPeriod::create($currStart, $currEnd);
             foreach ($period as $date) {
                 $key = $date->format('Y-m-d');
@@ -152,13 +180,6 @@ class DashboardController extends Controller
             $period = CarbonPeriod::create($currStart, $currEnd);
             foreach ($period as $date) {
                 $key = $date->format('Y-m-d');
-
-                // Gunakan array raw data yang sudah di-query di atas untuk efisiensi
-                // (Tidak perlu query ulang di dalam loop seperti kode sebelumnya)
-                // Note: Logic query ulang di dalam loop di kode asli cukup berat,
-                // sebaiknya pakai mapping data dari $incomeDataRaw/$expenseDataRaw seperti di blok 'if' di atas.
-                // Tapi agar konsisten dengan logic asli Anda yang force harian:
-
                 $chartLabels[] = $date->format('d');
                 $chartIncome[] = $incomeDataRaw[$key] ?? 0;
                 $chartExpense[] = $expenseDataRaw[$key] ?? 0;
@@ -220,7 +241,8 @@ class DashboardController extends Controller
             ]
         ]);
     }
-
+// Kode fungsi menyimpan pengaturan perusahaan
+    
     public function storeCompanySetup(Request $request)
     {
         $request->validate([
@@ -228,6 +250,7 @@ class DashboardController extends Controller
             'logo'            => 'nullable|image|max:2048',
         ]);
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         if ($user->business) return redirect()->back();
 
@@ -245,7 +268,8 @@ class DashboardController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Profil usaha berhasil dibuat!');
     }
-
+// Kode fungsi mengambil data dashboard untuk laporan
+    
     public function getData(Request $request)
     {
         $idPerusahaan = $this->getBusinessId();

@@ -8,12 +8,14 @@ use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
+    // Kode fungsi otorisasi request
     public function authorize(): bool
     {
         return true; // Otorisasi ditangani oleh middleware
     }
 
- public function rules(): array
+    // Kode fungsi aturan validasi
+    public function rules(): array
     {
         $userId = Auth::id();
 

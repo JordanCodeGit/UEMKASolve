@@ -31,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
+    // Kode fungsi casting atribut
     protected function casts(): array
     {
         return [
@@ -43,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * Get the business associated with the user.
      * RELASI: User MEMILIKI satu Business.
      */
+    // Kode fungsi relasi ke bisnis
     public function business(): HasOne
     {
         // Parameter kedua ('user_id') adalah Foreign Key yang ada di tabel businesses
@@ -52,6 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Send the email verification notification.
      */
+    // Kode fungsi mengirim notifikasi verifikasi email
     public function sendEmailVerificationNotification()
     {
         $this->notify(new VerifyEmailNotification());

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    {{-- // Bagian Head & Style PDF --}}
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Laporan Keuangan</title>
     <style>
@@ -140,6 +141,7 @@
 </head>
 <body>
 
+    {{-- // Bagian Header Laporan --}}
     <div class="header">
         <h1>Laporan Keuangan</h1>
         <h2>{{ $company['name'] }}</h2>
@@ -147,6 +149,7 @@
     </div>
 
     @if($sections['ringkasan'] ?? false)
+    {{-- // Bagian Ringkasan Keuangan --}}
     <div class="mb-20">
         <h3 class="section-title">Ringkasan Keuangan</h3>
         <table class="summary-table">
@@ -182,6 +185,7 @@
     @endif
 
     @if($sections['grafik'] ?? false)
+    {{-- // Bagian Grafik Kas & Kategori --}}
     <table class="charts-table">
         <tr>
             <td class="chart-cell" style="width: 58%; padding-right: 10px;">
@@ -206,6 +210,7 @@
     @endif
 
     @if($sections['rincian'] ?? false)
+    {{-- // Bagian Rincian Transaksi --}}
     <div class="mt-20">
         <h3 class="section-title">Rincian Transaksi Terakhir</h3>
         <table class="table-data">

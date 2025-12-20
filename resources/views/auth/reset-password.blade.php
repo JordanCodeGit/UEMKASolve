@@ -3,6 +3,7 @@
 @section('title', 'Reset Password')
 
 @section('content')
+    {{-- // Bagian Form Reset Password --}}
     <div class="auth-form">
         <h2>Reset Password</h2>
 
@@ -51,6 +52,7 @@
 
 @push('scripts')
 <script>
+    // Kode toggle visibilitas password
     document.addEventListener('DOMContentLoaded', function() {
         // TOGGLE PASSWORD VISIBILITY
         document.querySelectorAll('.password-toggle-icon').forEach(icon => {

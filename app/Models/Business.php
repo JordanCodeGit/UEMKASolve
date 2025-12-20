@@ -20,12 +20,14 @@ class Business extends Model // Jangan extends Perusahaan lagi
         'logo_path',
     ];
 
+    // Kode fungsi relasi ke transaksi
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class, 'business_id');
     }
 
     // Relasi ke kategori (Tambahkan ini agar lengkap)
+    // Kode fungsi relasi ke kategori
     public function categories(): HasMany
     {
         return $this->hasMany(Category::class, 'business_id');

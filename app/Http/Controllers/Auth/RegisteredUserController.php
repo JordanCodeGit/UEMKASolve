@@ -18,6 +18,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
+    // Kode fungsi menyimpan user baru
     public function store(Request $request): Response
     {
         $request->validate([

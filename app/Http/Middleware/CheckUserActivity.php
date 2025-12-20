@@ -16,6 +16,7 @@ class CheckUserActivity
      * Remember Me: 12 jam (dengan activity tracking)
      * Auto Logout: 20 jam (idle/tidak ada aktivitas)
      */
+    // Kode fungsi mengecek aktivitas user (auto logout)
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {

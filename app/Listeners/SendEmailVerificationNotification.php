@@ -20,18 +20,20 @@ class SendEmailVerificationNotification
     /**
      * Handle the event.
      */
+    // Kode fungsi menangani event registrasi (kirim email)
     public function handle(Registered $event): void
     {
         try {
+            /** @var \App\Models\User $user */
+            $user = $event->user;
+            
             // Log untuk debugging
-            $emailAttr = $event->user->getAttribute('email');
+            $emailAttr = $user->getAttribute('email');
             $email = is_string($emailAttr) ? $emailAttr : '';
             Log::info('SendEmailVerificationNotification: User registered - ' . $email);
 
             // Jika user belum verifikasi email, kirim email
-            if (!$event->user->hasVerifiedEmail()) {
-                /** @var \App\Models\User $user */
-                $user = $event->user;
+            if (!$user->hasVerifiedEmail()) {
                 // Pastikan kita mengirim ke alamat user — gunakan Mail::to() agar header To ter-set
                 Mail::to($user->getEmailForVerification() ?? $email)->send(new VerifyEmailMail($user));
                 Log::info('Verification email sent to: ' . $email);

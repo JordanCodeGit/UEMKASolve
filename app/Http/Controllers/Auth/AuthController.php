@@ -8,8 +8,8 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
-// use App\Models\Business; // Tidak dipakai lagi karena diganti Perusahaan
-use App\Models\Perusahaan; // Pastikan model ini ada
+use App\Models\Business; // Gunakan Model Business (terbaru)
+// use App\Models\Perusahaan; // Tidak dipakai lagi
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +28,7 @@ class AuthController extends Controller
     /**
      * Handle user registration request.
      */
+    // Kode fungsi registrasi user
     public function register(RegisterRequest $request): JsonResponse
     {
         DB::beginTransaction();
@@ -47,7 +48,7 @@ class AuthController extends Controller
                 'name' => $name,
                 'email' => $email,
                 'password' => Hash::make($password),
-                'id_perusahaan' => null, // Biarkan kosong
+                // 'id_perusahaan' => null, // [HAPUS] Kita pakai relasi business
             ]);
 
             Log::info('User created for registration: ' . $user->email);
@@ -89,6 +90,7 @@ class AuthController extends Controller
      * - Jika checkbox 'remember' di-check: session berlaku 12 jam (720 menit)
      * - Jika checkbox 'remember' tidak di-check: session berlaku selama browser terbuka
      */
+    // Kode fungsi login user
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
@@ -134,7 +136,7 @@ class AuthController extends Controller
         $deviceNameInput = $request->input('device_name');
         $deviceName = is_string($deviceNameInput) ? $deviceNameInput : $user->email;
         $token = $user->createToken($deviceName)->plainTextToken;
-        $perusahaan = $user->perusahaan;
+        $business = $user->business; // [FIX] Menggunakan relasi business
 
         return response()->json([
             'message' => 'Login berhasil.',
@@ -144,11 +146,10 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'id_perusahaan' => $user->id_perusahaan,
-                'business' => $perusahaan ? [
-                    'id' => $perusahaan->id,
-                    'nama_usaha' => $perusahaan->nama_perusahaan,
-                    'logo' => $perusahaan->logo,
+                'business' => $business ? [
+                    'id' => $business->id,
+                    'nama_usaha' => $business->nama_usaha,
+                    'logo' => $business->logo_path,
                 ] : null,
             ]
         ], 200);
@@ -157,11 +158,13 @@ class AuthController extends Controller
     /**
      * Handle Google Callback
      */
+    // Kode fungsi callback Google Login
     public function handleGoogleCallback()
     {
         try {
-            /** @phpstan-ignore-next-line */
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
+            $driver = Socialite::driver('google');
+            $googleUser = $driver->stateless()->user();
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if (!$user) {
@@ -172,7 +175,7 @@ class AuthController extends Controller
                     'google_id'         => $googleUser->getId(),
                     'password'          => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                    'id_perusahaan'     => null
+                    // 'id_perusahaan'     => null // [HAPUS]
                 ]);
             } else {
                 // --- USER LAMA ---
@@ -204,6 +207,7 @@ class AuthController extends Controller
     /**
      * Handle user logout request.
      */
+    // Kode fungsi logout user
     public function logout(Request $request)
     {
         // Hapus token API (jika ada)
@@ -231,6 +235,7 @@ class AuthController extends Controller
     }
 
     // --- Forgot & Reset Password (Tidak Berubah) ---
+    // Kode fungsi lupa password
     public function forgotPassword(ForgotPasswordRequest $request)
     {
         $credentials = $request->validated();
@@ -245,6 +250,7 @@ class AuthController extends Controller
         return back()->withErrors(['email' => __($status)]);
     }
 
+    // Kode fungsi reset password
     public function resetPassword(ResetPasswordRequest $request)
     {
         $credentials = $request->validated();
@@ -263,10 +269,12 @@ class AuthController extends Controller
 
         return back()->withErrors(['email' => __(is_string($status) ? $status : '')]);
     }
-
+// Kode fungsi redirect ke Google Auth
+    
     public function redirectToGoogle()
     {
-        /** @phpstan-ignore-next-line */
-        return Socialite::driver('google')->stateless()->redirect();
+        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
+        $driver = Socialite::driver('google');
+        return $driver->stateless()->redirect();
     }
 }

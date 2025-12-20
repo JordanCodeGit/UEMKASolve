@@ -14,6 +14,7 @@ class CategoryController extends Controller
      * Tampilkan semua kategori milik bisnis user
      * [UPDATED] Mendukung filter ?tipe=pemasukan atau ?tipe=pengeluaran
      */
+    // Kode fungsi mengambil daftar kategori
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -44,6 +45,7 @@ class CategoryController extends Controller
     /**
      * Simpan kategori baru
      */
+    // Kode fungsi menyimpan kategori baru
     public function store(Request $request)
     {
         $user = Auth::user();
@@ -70,6 +72,7 @@ class CategoryController extends Controller
     /**
      * Update Kategori (Bisa Drag-Drop atau Edit Form)
      */
+    // Kode fungsi memperbarui data kategori
     public function update(Request $request, $id)
     {
         $user = Auth::user();
@@ -121,6 +124,7 @@ class CategoryController extends Controller
     /**
      * Hapus Kategori (Soft Delete)
      */
+    // Kode fungsi menghapus kategori
     public function destroy($id)
     {
         $user = Auth::user();

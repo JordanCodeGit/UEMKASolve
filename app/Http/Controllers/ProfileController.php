@@ -14,8 +14,10 @@ class ProfileController extends Controller
     /**
      * Menampilkan halaman pengaturan & profile.
      */
+    // Kode fungsi menampilkan profil
     public function show()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         // [FIX] Load relasi 'business' (bukan perusahaan lagi)
@@ -26,6 +28,7 @@ class ProfileController extends Controller
         ]);
     }
 
+    // Kode fungsi memperbarui data usaha
     public function updateUsaha(Request $request)
     {
         // Validasi input
@@ -70,8 +73,10 @@ class ProfileController extends Controller
         return back()->with('success', 'Profil usaha berhasil diperbarui!');
     }
 
+    // Kode fungsi memperbarui data akun
     public function updateAkun(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         // 1. Validasi Data Dasar

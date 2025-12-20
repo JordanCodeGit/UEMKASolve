@@ -3,6 +3,7 @@
 @section('title', 'Daftar')
 
 @section('content')
+{{-- // Bagian Form Daftar --}}
 <div class="auth-form">
     <h2>Daftar</h2>
 
@@ -28,6 +29,7 @@
         </form>
 </div>
 
+{{-- // Modal Verifikasi Email --}}
 <!-- Modal/Popup untuk Email Verification -->
 <div id="verification-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
     <div style="background: white; padding: 40px; border-radius: 8px; text-align: center; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -54,6 +56,7 @@
 
 @push('scripts')
 <script>
+    // Kode fungsi pendaftaran akun
     // Definisikan fungsi di luar agar bisa dipanggil onclick
     function submitRegister() {
         const registerForm = document.getElementById('register-form');

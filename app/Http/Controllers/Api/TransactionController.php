@@ -14,11 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TransactionController extends Controller
 {
-    /**
-     * Helper: Ambil ID Bisnis (Support relasi 'business' atau 'perusahaan')
-     */
+    // Kode fungsi mengambil ID perusahaan
     private function getPerusahaanId()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         if (!$user) return null;
 
@@ -35,9 +34,7 @@ class TransactionController extends Controller
         return null;
     }
 
-    /**
-     * Menampilkan daftar transaksi
-     */
+    // Kode fungsi mengambil daftar transaksi
     public function index(Request $request): JsonResponse
     {
         $idPerusahaan = $this->getPerusahaanId();
@@ -106,6 +103,7 @@ class TransactionController extends Controller
     /**
      * Simpan transaksi
      */
+    // Kode fungsi menyimpan transaksi baru
     public function store(StoreTransactionRequest $request): JsonResponse
     {
         $idPerusahaan = $this->getPerusahaanId();
@@ -132,6 +130,7 @@ class TransactionController extends Controller
 
     /**
      * Show transaksi
+    // Kode fungsi menampilkan detail transaksi
      */
     public function show($id): JsonResponse
     {
@@ -146,6 +145,7 @@ class TransactionController extends Controller
 
     /**
      * Update transaksi (FIXED: Soft Delete & Type Mismatch)
+    // Kode fungsi memperbarui data transaksi
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
@@ -182,6 +182,7 @@ class TransactionController extends Controller
 
     /**
      * Hapus transaksi (FIXED: Soft Delete & Idempotency)
+    // Kode fungsi menghapus transaksi
      */
     public function destroy($id): JsonResponse
     {

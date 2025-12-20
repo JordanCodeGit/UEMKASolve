@@ -1020,6 +1020,7 @@ body {
     justify-content: space-between;
     /* Konten kiri, ikon tren kanan */
     align-items: flex-start;
+    gap: 12px;
     background-color: #ffffff;
     /* Latar putih */
     border-radius: 16px;
@@ -1056,6 +1057,7 @@ body {
     flex-direction: column;
     gap: 6px;
     flex: 1;
+    min-width: 0;
 }
 
 .summary-card .card-content p {
@@ -1076,6 +1078,7 @@ body {
     display: flex;
     align-items: center;
     gap: 3px;
+    min-width: 0;
 }
 
 .summary-card .card-header p {
@@ -1085,17 +1088,21 @@ body {
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-trend-icon {
     font-size: 24px;
-    padding-top: 5px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 50px;
     height: 50px;
+    flex: 0 0 auto;
 }
 
 .trend-icon-bg {
@@ -1104,7 +1111,8 @@ body {
     height: 150px;
     border-radius: 10px;
     top: -49px;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 0;
 }
 
@@ -1119,8 +1127,6 @@ body {
 .trend-icon {
     width: 40px;
     height: 40px;
-    right: 8px;
-    top: -3px;
     object-fit: contain;
     position: relative;
     z-index: 1;
@@ -6179,19 +6185,23 @@ textarea.form-input-modal {
     }
 
     .summary-card .card-content h3 {
-        font-size: 22px;
+        font-size: 24px;
     }
 
     .summary-card .card-content p {
-        font-size: 14px;
+        font-size: 16px;
     }
 
-    .summary-card .card-header {
+    .summary-card:not(.summary-saldo) .card-header {
         gap: 8px;
     }
 
+    .summary-card:not(.summary-saldo) .icon-box {
+        margin-right: 0;
+    }
+
     .summary-card .card-header p {
-        font-size: 14px;
+        font-size: 16px;
         letter-spacing: 0;
     }
 
@@ -6202,7 +6212,7 @@ textarea.form-input-modal {
     }
 
     .trend-icon-bg {
-        width: 50px;
+        width: 100%;
         height: 120px;
         top: -39px;
     }
@@ -6210,7 +6220,6 @@ textarea.form-input-modal {
     .trend-icon {
         width: 30px;
         height: 30px;
-        top: 0px;
     }
 
     .summary-card.summary-saldo .card-content h3 {
@@ -6945,6 +6954,22 @@ textarea.form-input-modal {
         gap: 0;
     }
 
+    /* Buku Kas: footer transaksi lebih ringkas di HP */
+    .page-buku-kas .transaction-footer {
+        padding: 10px 12px;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .page-buku-kas .transaction-footer .footer-total {
+        line-height: 1.2;
+    }
+
+    .page-buku-kas .laba-badge {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
 }
 
 /* ===== BREAKPOINT: MOBILE (480px - 599px) ===== */
@@ -7088,20 +7113,24 @@ textarea.form-input-modal {
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
-    .summary-card .card-header {
-        gap: 6px;
+    .summary-card:not(.summary-saldo) .card-header {
+        gap: 8px;
+    }
+
+    .summary-card:not(.summary-saldo) .icon-box {
+        margin-right: 0;
     }
 
     .summary-card .card-header p {
-        font-size: 12px;
+        font-size: 14px;
     }
 
     .summary-card .card-content h3 {
-        font-size: 20px;
+        font-size: 22px;
     }
 
     .summary-card .card-content p {
-        font-size: 12px;
+        font-size: 14px;
     }
 
     .summary-card .icon-box {
@@ -7124,7 +7153,7 @@ textarea.form-input-modal {
     }
 
     .trend-icon-bg {
-        width: 45px;
+        width: 100%;
         height: 100px;
         top: -34px;
     }

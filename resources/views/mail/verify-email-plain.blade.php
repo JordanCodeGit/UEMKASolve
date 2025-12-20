@@ -2,11 +2,13 @@
 <html>
 
 <head>
+    {{-- // Bagian Head & Meta --}}
     <meta charset="utf-8">
     <title>Verifikasi Email</title>
 </head>
 
 <body>
+    {{-- // Bagian Konten Email Verifikasi (HTML) --}}
     <h1>Verifikasi Email Anda</h1>
     <p>Halo {{ $user->name }},</p>
     <p>Terima kasih telah mendaftar di <strong>UEMKASolve</strong>!</p>

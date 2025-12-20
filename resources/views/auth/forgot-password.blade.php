@@ -3,6 +3,7 @@
 @section('title', 'Lupa Password')
 
 @section('content')
+{{-- // Bagian Form Lupa Password --}}
 <div class="auth-form">
     <h2>Lupa Password</h2>
     

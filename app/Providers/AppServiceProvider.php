@@ -11,6 +11,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
+    // Kode fungsi registrasi service
     public function register(): void
     {
         //
@@ -19,11 +20,13 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
+    // Kode fungsi bootstrap service (View Composer)
     public function boot(): void
     {
         // Konfigurasi View Composer
         // Kode ini otomatis mengirim variabel $globalUser & $needsCompanySetup ke SEMUA file blade
         View::composer('*', function ($view) {
+            /** @var \App\Models\User|null $user */
             $user = Auth::user();
 
             if ($user) {

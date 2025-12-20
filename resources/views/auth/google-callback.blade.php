@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Memproses Login...</title>
     <script>
+        // Kode penanganan token Google Login
         document.addEventListener('DOMContentLoaded', function() {
             // 1. Ambil token dari URL (dikirim oleh AuthController)
             const urlParams = new URLSearchParams(window.location.search);

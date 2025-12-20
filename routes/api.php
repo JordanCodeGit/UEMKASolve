@@ -17,14 +17,17 @@ use App\Http\Controllers\Api\SetupController;
 */
 
 // --- Rute Publik (Tanpa Login) ---
+// Bagian Rute Publik (Tanpa Login)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
 // --- Google Auth ---
+// Bagian Google Auth
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
 // --- Rute Terproteksi (Login Wajib) ---
+// Bagian Rute Terproteksi (Login Wajib)
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // 1. User & Auth

@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+// Bagian Rute Autentikasi (Register, Login, Password)
 Route::post('/register', [RegisteredUserController::class, 'store'])
     ->middleware('guest')
     ->name('register.perform');
@@ -28,6 +29,7 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
     ->name('password.update');
 
+// Bagian Rute Verifikasi Email
 Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');

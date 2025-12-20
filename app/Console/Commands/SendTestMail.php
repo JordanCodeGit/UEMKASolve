@@ -26,6 +26,7 @@ class SendTestMail extends Command
     /**
      * Execute the console command.
      */
+    // Kode fungsi menjalankan perintah kirim email test
     public function handle(): int
     {
         $email = $this->argument('email') ?? config('mail.from.address') ?? 'hello@example.com';

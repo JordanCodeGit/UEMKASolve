@@ -4,6 +4,7 @@
 
 @section('content')
 
+    {{-- // Kode Header Buku Kas (Saldo + Filter Bulan + Tombol Cetak) --}}
     <div class="bukukas-header">
         <div class="saldo-display-lg">
             <i class="fa-solid fa-wallet"></i>
@@ -37,6 +38,7 @@
         </div>
     </div>
 
+    {{-- // Kode Toolbar Buku Kas (Pencarian + Filter + Aksi Tambah/Hapus Massal) --}}
     <div class="bukukas-toolbar">
         <div class="toolbar-left">
             <div class="search-bar-lg">
@@ -62,6 +64,7 @@
         </div>
     </div>
 
+    {{-- // Kode Tabel/List Transaksi (Desktop Table + Mobile Card List) --}}
     <div class="transaction-table-card bukukas-transaction-card">
 
         <div class="bukukas-transaction-table">
@@ -84,13 +87,16 @@
 
         </div>
 
+        {{-- // Kode Container List Transaksi Versi Mobile (Card) --}}
         <div id="transaction-card-container" class="transaction-card-container" aria-live="polite">
             <div class="transaction-card-empty">Memuat data transaksi...</div>
         </div>
 
+        {{-- // Kode Pagination Transaksi --}}
         <div class="pagination-container" id="pagination-links">
         </div>
 
+        {{-- // Kode Footer Ringkasan Transaksi (Total Pemasukan/Pengeluaran + Laba) --}}
         <div class="transaction-footer">
             <span class="footer-total footer-total-pemasukan">Total Pemasukan: <strong class="text-green" id="footer-total-pemasukan">Rp 0</strong></span>
             <span class="footer-total footer-total-pengeluaran">Total Pengeluaran: <strong class="text-red" id="footer-total-pengeluaran">Rp 0</strong></span>
@@ -100,6 +106,7 @@
         </div>
     </div>
 
+    {{-- // Kode Modal Pop Up Tambah/Edit Transaksi --}}
     <div class="modal-overlay" id="transaksi-modal-overlay" style="display: none;">
         <div class="modal-box">
 
@@ -177,6 +184,7 @@
         </div>
     </div>
 
+    {{-- // Kode Modal Pop Up Filter Transaksi --}}
     <div class="modal-overlay" id="filter-modal-overlay" style="display: none;">
         <div class="modal-box" style="max-width: 400px;">
 
@@ -217,10 +225,12 @@
         </div>
     </div>
 
+    {{-- // Kode Form Hidden (Digunakan untuk kebutuhan Edit/Update Transaksi via JS) --}}
     <form id="transaksi-form-hidden">
         <input type="hidden" id="modal-tx-id" name="id">
     </form>
 
+    {{-- // Kode Modal Pop Up Tambah Kategori --}}
     <div class="modal-overlay" id="kategori-modal-overlay" style="display: none;">
         <div class="modal-box">
 
@@ -274,6 +284,7 @@
         </div>
     </div>
 
+    {{-- // Kode Dialog Konfirmasi / Notifikasi (Custom Dialog) --}}
     <div class="dialog-overlay" id="dialog-overlay" style="display: none;">
         <div class="dialog-box">
             <div class="dialog-content">
@@ -288,13 +299,14 @@
         </div>
     </div>
 
+    {{-- // Kode Modal Preview Laporan + Download PDF --}}
     <div class="modal-overlay" id="print-laporan-overlay" style="display: none;">
-        {{-- UBAH 1: Tambahkan display:flex, flex-column, dan padding:0 pada modal-box --}}
-        {{-- Hapus overflow-y: auto dari sini --}}
+        {{-- // UBAH 1: Tambahkan display:flex, flex-column, dan padding:0 pada modal-box --}}
+        {{-- // Hapus overflow-y: auto dari sini --}}
         <div class="modal-box"
             style="max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
 
-            {{-- UBAH 2: Header diberi padding manual (karena padding parent dihapus) --}}
+            {{-- // UBAH 2: Header diberi padding manual (karena padding parent dihapus) --}}
             <div class="modal-header" style="padding: 20px; flex-shrink: 0; border-bottom: 1px solid #eee;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <img src="{{ asset('icons/print_icon.png') }}" alt="Print" style="width: 24px; height: 24px;">
@@ -305,7 +317,7 @@
                 </button>
             </div>
 
-            {{-- UBAH 3: Body diberi flex: 1 dan overflow-y: auto (SCROLL DISINI) --}}
+            {{-- // UBAH 3: Body diberi flex: 1 dan overflow-y: auto (SCROLL DISINI) --}}
             <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
 
                 <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
@@ -333,12 +345,12 @@
 
                 <div id="print-preview-container"
                     style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: white; min-height: 300px;">
-                    {{-- Konten preview akan dimuat di sini oleh JS --}}
+                    {{-- // Konten preview akan dimuat di sini oleh JS --}}
                 </div>
 
             </div>
 
-            {{-- UBAH 4: Footer diberi background putih & border atas agar terpisah visualnya saat discroll --}}
+            {{-- // UBAH 4: Footer diberi background putih & border atas agar terpisah visualnya saat discroll --}}
             <div class="modal-footer"
                 style="padding: 20px; flex-shrink: 0; border-top: 1px solid #eee; background: #fff;">
                 <button type="button" class="btn btn-secondary-modal"
@@ -351,7 +363,9 @@
 @endsection
 
 @push('scripts')
+    {{-- // Kode Javascript Buku Kas (API, Render Table/Card, Modal, Filter, Cetak, dll.) --}}
     <script>
+        // Kode fungsi format angka ke Rupiah
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -360,6 +374,7 @@
             }).format(number);
         }
 
+        // Kode fungsi format tanggal dan waktu
         function formatDate(dateString) {
 
             const date = new Date(dateString);
@@ -387,12 +402,14 @@
         `;
         }
 
+        // Kode fungsi untuk mengamankan teks HTML
         function escapeHtml(text) {
             if (!text) return text;
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(
                 /'/g, "&#039;");
         }
 
+        // Kode fungsi pilih ikon kategori
         // Fungsi Pilih Ikon untuk Modal Tambah Kategori
         function selectIconKat(element, filename) {
             document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => el.classList.remove('active'));
@@ -478,6 +495,7 @@
                 return parts.length > 1 && parts[1] ? formatted + ',' + parts[1] : formatted;
             }
 
+            // Kode fungsi menampilkan dialog konfirmasi/notifikasi
             // --- UTILITY FUNCTION: Dialog Minimalis untuk Konfirmasi & Notifikasi ---
             function showDialog(message, icon = 'info', isConfirm = false) {
                 return new Promise((resolve) => {
@@ -537,6 +555,7 @@
                 });
             }
 
+            // Kode fungsi render grid ikon kategori
             // --- UTILITY FUNCTION: Render Icon Grid untuk Kategori Modal ---
             function renderIconGrid(type = 'pengeluaran') {
                 const container = document.getElementById('icon-grid-container-kat');
@@ -597,7 +616,8 @@
                 await loadPrintData();
                 updatePrintPreview();
             });
-
+// Kode fungsi memuat data untuk cetak laporan
+            
             async function loadPrintData() {
                 try {
                     const response = await fetch('/api/dashboard-data', {
@@ -610,7 +630,8 @@
                     currentPrintData = {};
                 }
             }
-
+// Kode fungsi update preview cetak laporan
+            
             function updatePrintPreview() {
                 previewContainer.innerHTML = '';
                 if (checkboxRingkasan.checked && currentPrintData) {
@@ -626,6 +647,7 @@
                     previewContainer.innerHTML =
                         '<p style="color: #999; text-align: center; padding: 40px;">Pilih minimal satu opsi untuk ditampilkan</p>';
                 }
+            // Kode fungsi render HTML ringkasan keuangan untuk cetak
             }
 
             function renderRingkasanKeuangan() {
@@ -653,6 +675,7 @@
                     </div>
                 </div>
             `;
+            // Kode fungsi render HTML grafik kas untuk cetak
             }
 
             function renderGrafikKas() {
@@ -662,6 +685,7 @@
                     <p style="color: #999; font-size: 13px; text-align: center; padding: 30px 0;">Grafik akan ditampilkan dalam PDF</p>
                 </div>
             `;
+            // Kode fungsi render HTML rincian transaksi untuk cetak
             }
 
             function renderRincianTransaksi() {
@@ -816,6 +840,7 @@
                     monthMenu.style.display = 'none';
                     fetchTransactions();
                 }
+            // Kode fungsi mengambil data transaksi dari API
             });
 
             async function fetchTransactions(url = null) {
@@ -966,6 +991,7 @@
                     if (e.target.classList.contains('check-item')) {
                         updateBulkDeleteButton();
                     }
+            // Kode fungsi update status tombol hapus massal
                 });
             }
 
@@ -1057,6 +1083,7 @@
                 document.getElementById('check-all-transactions').checked = false;
             });
 
+            // Kode fungsi membuka modal edit transaksi
             window.openEditModal = function(tx) {
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
@@ -1112,6 +1139,7 @@
                 txModalOverlay.style.display = 'flex';
             });
 
+            // Kode fungsi render baris transaksi ke tabel/card
             function renderTransactionRows(transactions) {
                 const container = document.getElementById('transaction-list-container');
                 container.innerHTML = '';
@@ -1294,6 +1322,7 @@
                 });
             }
 
+            // Kode fungsi render link pagination
             function renderPaginationLinks(links) {
                 paginationLinksContainer.innerHTML = '';
                 links.forEach(link => {
@@ -1313,6 +1342,7 @@
                 });
             }
 
+            // Kode fungsi memuat daftar kategori ke dropdown
             async function populateCategoryDropdown(selectedTipe = 'pengeluaran', selectId = null) {
                 const listContainer = document.getElementById('category-list-container');
                 const triggerText = document.getElementById('selected-category-text');
@@ -1397,6 +1427,7 @@
                 txModalOverlay.style.display = 'flex';
             });
 
+            // Kode fungsi simpan transaksi (Tambah/Edit)
             txForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 txMessage.textContent = 'Menyimpan...';
@@ -1463,6 +1494,7 @@
                 katModalOverlay.style.display = 'flex';
             });
 
+            // Kode fungsi simpan kategori baru
             katForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 katMessage.textContent = 'Menyimpan...';
@@ -1490,14 +1522,15 @@
                     }
                 } catch (error) {
                     console.error('Error submitting category:', error);
-                    katMessage.textContent = 'Gagal terhubung ke server.';
                 }
             });
 
+            // Kode fungsi menutup modal
             function closeModal(modal) {
                 if (modal) modal.style.display = 'none';
             }
 
+            // Kode fungsi mengatur tab aktif (Pemasukan/Pengeluaran)
             function setActiveTab(tabs, hiddenInput, tipe) {
                 hiddenInput.value = tipe;
                 tabs.forEach(tab => {
@@ -1555,6 +1588,7 @@
             fetchTransactions(initialUrl.toString());
         });
 
+        // Kode fungsi update ringkasan total di footer
         function updateFooterSummary(summary) {
             const elMasuk = document.getElementById('footer-total-pemasukan');
             const elKeluar = document.getElementById('footer-total-pengeluaran');

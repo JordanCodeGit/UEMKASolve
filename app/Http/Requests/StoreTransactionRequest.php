@@ -8,11 +8,13 @@ use Illuminate\Validation\Rule;
 
 class StoreTransactionRequest extends FormRequest
 {
+    // Kode fungsi otorisasi request
     public function authorize(): bool
     {
         return Auth::check();
     }
 
+    // Kode fungsi aturan validasi
     public function rules(): array
     {
         /** @var \App\Models\User $user */
@@ -36,6 +38,7 @@ class StoreTransactionRequest extends FormRequest
         ];
     }
 
+    // Kode fungsi pesan validasi kustom
     public function messages(): array
     {
         return [

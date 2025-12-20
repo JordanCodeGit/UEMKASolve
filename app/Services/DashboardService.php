@@ -18,6 +18,7 @@ class DashboardService
      * @return array
      * @param string|null $searchQuery [BARU] Tambahkan parameter search
      */
+    // Kode fungsi mengambil ringkasan dashboard
     public function getDashboardSummary(Business $business, array $dateRange, ?string $searchQuery, string $doughnutTipe): array
     {
         // ... (Logic Pemasukan, Pengeluaran, Laba, Saldo tetap sama) ...
@@ -70,6 +71,7 @@ class DashboardService
      * Helper function untuk menghitung SUM transaksi.
      * (Tidak berubah)
      */
+    // Kode fungsi menghitung total transaksi
     private function calculateSum(Business $business, string $tipe, array $dateRange = null): float
     {
         $query = $business->transactions()
@@ -87,6 +89,7 @@ class DashboardService
     /**
      * [BARU] Helper untuk mengambil data Line Chart (Pemasukan vs Pengeluaran Harian)
      */
+    // Kode fungsi mengambil data grafik garis
     private function getLineChartData(Business $business, array $dateRange): array
     {
         $startDate = Carbon::parse($dateRange['startDate']);
@@ -150,6 +153,7 @@ class DashboardService
     /**
      * [BARU] Helper untuk mengambil data Doughnut Chart (Persentase Pengeluaran per Kategori)
      */
+    // Kode fungsi mengambil data grafik donat
     private function getDoughnutChartData(Business $business, array $dateRange, string $tipe, float $total): array
     {
         if ($total == 0) { // [PERBAIKAN] Gunakan $total

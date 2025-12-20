@@ -4,18 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Models\Transaction;
 
 class PrintLaporanController extends Controller
 {
+    // Kode fungsi membuat file PDF laporan
     public function generatePdf(Request $request)
     {
         try {
             // Check PHP GD extension
             if (!extension_loaded('gd')) {
-                \Log::warning('PHP GD extension not loaded');
+                Log::warning('PHP GD extension not loaded');
                 return response()->json([
                     'error' => 'PDF generation requires PHP GD extension',
                     'message' => 'Server tidak memiliki PHP GD extension.',
@@ -23,12 +25,13 @@ class PrintLaporanController extends Controller
                 ], 503);
             }
 
+            /** @var \App\Models\User $user */  
             $user = Auth::user();
 
             // [FIX] Ambil ID Bisnis dari relasi business (bukan id_perusahaan)
             // Pastikan user->business tidak null
             if (!$user || !$user->business) {
-                \Log::error('No business found for user: ' . ($user->id ?? 'unknown'));
+                Log::error('No business found for user: ' . ($user->id ?? 'unknown'));
                 return response()->json([
                     'error' => 'Business not found',
                     'message' => 'Anda belum memiliki profil bisnis. Silakan buat profil bisnis terlebih dahulu.'
@@ -154,11 +157,12 @@ class PrintLaporanController extends Controller
             return $pdf->download('Laporan_Keuangan_' . date('d-m-Y') . '.pdf');
 
         } catch (\Throwable $e) {
-            \Log::error('PDF Error: ' . $e->getMessage());
+            Log::error('PDF Error: ' . $e->getMessage());
             return response()->json(['error' => 'Gagal membuat PDF: ' . $e->getMessage()], 500);
         }
     }
 
+    // Kode fungsi membuat URL grafik garis
     private function generateLineChartUrl($labels, $pemasukan, $pengeluaran)
     {
         $config = [
@@ -173,7 +177,8 @@ class PrintLaporanController extends Controller
         ];
         return "https://quickchart.io/chart?c=" . urlencode(json_encode($config)) . "&w=600&h=300";
     }
-
+// Kode fungsi membuat URL grafik donat
+    
     private function generateDoughnutChartUrl($breakdown)
     {
         $labels = [];
@@ -192,7 +197,8 @@ class PrintLaporanController extends Controller
         ];
         return "https://quickchart.io/chart?c=" . urlencode(json_encode($config)) . "&w=500&h=300";
     }
-
+// Kode fungsi mengambil grafik sebagai base64
+    
     private function getChartAsBase64($url)
     {
         try {

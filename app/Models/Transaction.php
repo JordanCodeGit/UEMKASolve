@@ -24,6 +24,7 @@ class Transaction extends Model
      *
      * @return array<string, string>
      */
+    // Kode fungsi casting atribut
     protected function casts(): array
     {
         return [
@@ -35,6 +36,7 @@ class Transaction extends Model
     /**
      * Get the business that owns the transaction.
      */
+    // Kode fungsi relasi ke bisnis
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
@@ -43,6 +45,7 @@ class Transaction extends Model
     /**
      * Get the category associated with the transaction.
      */
+    // Kode fungsi relasi ke kategori
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

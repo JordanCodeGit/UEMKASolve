@@ -10,10 +10,7 @@ use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    /**
-     * Generate dan download laporan PDF.
-     * Sesuai diagram "Mengunduh Laporan PDF".
-     */
+    // Kode fungsi mengunduh laporan PDF
     public function downloadReport(Request $request)
     {
         // 1. Validasi input tanggal

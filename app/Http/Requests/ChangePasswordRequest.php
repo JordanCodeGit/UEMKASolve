@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Hash;
 
 class ChangePasswordRequest extends FormRequest
 {
+    // Kode fungsi otorisasi request
     public function authorize(): bool
     {
         return true;
     }
 
+    // Kode fungsi aturan validasi
     public function rules(): array
     {
         return [
@@ -37,6 +39,7 @@ class ChangePasswordRequest extends FormRequest
         ];
     }
 
+    // Kode fungsi pesan validasi kustom
     public function messages(): array
     {
         return [

@@ -1,4 +1,5 @@
 @component('mail::message')
+{{-- // Bagian Konten Email Verifikasi (Markdown) --}}
 # Verifikasi Email Anda
 
 Halo {{ $user->name }},

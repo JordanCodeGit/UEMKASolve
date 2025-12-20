@@ -7,11 +7,13 @@ use Illuminate\Validation\Rules\Password;
 
 class ResetPasswordRequest extends FormRequest
 {
+    // Kode fungsi otorisasi request
     public function authorize(): bool
     {
         return true;
     }
 
+    // Kode fungsi aturan validasi
     public function rules(): array
     {
         return [
@@ -25,6 +27,7 @@ class ResetPasswordRequest extends FormRequest
         ];
     }
 
+    // Kode fungsi pesan validasi kustom
     public function messages(): array
     {
         return [

@@ -3,6 +3,7 @@
 @section('title', 'Masuk')
 
 @section('content')
+    {{-- // Bagian Form Login --}}
     <div class="auth-form">
         <h2>Masuk</h2>
 
@@ -34,6 +35,7 @@
             </div>
         </form>
 
+        {{-- // Bagian Login Google --}}
         <div class="divider">
             <span>atau</span>
         </div>
@@ -47,6 +49,7 @@
 
 @push('scripts')
     <script>
+        // Kode inisialisasi dan penanganan login
         document.addEventListener('DOMContentLoaded', function() {
 
             // 1. BERSIH-BERSIH SESSION LAMA (PENTING)
@@ -85,7 +88,7 @@
                 // 1. Gunakan route('login.process') yang ada di web.php (bukan /api/login)
                 // 2. Tambahkan Header 'X-CSRF-TOKEN' (Wajib untuk form web Laravel)
 
-                fetch('{{ route('login.process') }}', {
+                fetch("{{ route('login.process') }}", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -115,7 +118,7 @@
                             sessionStorage.removeItem('login_recorded'); // Biar riwayat tercatat baru
 
                             setTimeout(() => {
-                                window.location.href = '{{ route('dashboard') }}';
+                                window.location.href = "{{ route('dashboard') }}";
                             }, 500);
 
                         } else {
@@ -135,6 +138,7 @@
                     });
             });
 
+            // Kode toggle visibilitas password
             // 4. TOGGLE PASSWORD VISIBILITY
             document.querySelectorAll('.password-toggle-icon').forEach(icon => {
                 icon.addEventListener('click', function() {

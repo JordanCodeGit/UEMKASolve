@@ -3,6 +3,7 @@
 @section('title', 'Email Terverifikasi')
 
 @section('content')
+{{-- // Bagian Notifikasi Verifikasi Berhasil --}}
 <div class="auth-form" style="text-align: center; padding: 40px 20px;">
     <div style="margin-bottom: 30px;">
         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -30,6 +31,7 @@
 </div>
 
 <script>
+    // Kode pengalihan otomatis ke login
     setTimeout(function() {
         window.location.href = '{{ url("/login") }}';
     }, 5000);

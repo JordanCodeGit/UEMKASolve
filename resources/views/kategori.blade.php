@@ -4,6 +4,7 @@
 
 @section('content')
 
+{{-- // Bagian Header & Tombol Tambah Kategori --}}
 <div class="content-card-category">
     <div class="card-body-category add-section-category">
         <h3 class="card-title-category">Tambah Kategori Baru</h3>
@@ -13,6 +14,7 @@
     </div>
 </div>
 
+{{-- // Bagian Daftar Kategori (Pemasukan & Pengeluaran) --}}
 <div class="main-category-container">
 
     <div class="category-section">
@@ -38,6 +40,7 @@
     </div>
 
 </div>
+{{-- // Modal Tambah/Edit Kategori --}}
 
 <div class="modal-overlay" id="category-modal-overlay" style="display: none;">
     <div class="modal-box">
@@ -86,6 +89,7 @@
 
     </div>
 </div>
+{{-- // Modal Konfirmasi Hapus Kategori --}}
 
 <div class="modal-overlay" id="delete-modal-overlay" style="display: none;">
     <div class="modal-box delete-modal-box">
@@ -162,7 +166,8 @@
         const inputIkon = document.getElementById('modal-kat-ikon');
 
         let currentEditingId = null;
-
+// Kode fungsi untuk mengamankan teks HTML
+        
         function escapeHtml(text) {
             if (!text) return text;
             return text
@@ -187,6 +192,7 @@
         };
 
 
+        // Kode fungsi mengambil data kategori dari API
         // --- 1. [READ] Fungsi Mengambil & Menampilkan Kategori ---
         async function fetchCategories() {
             listPemasukan.innerHTML = '<p class="text-gray-500 italic">Memuat...</p>';
@@ -220,6 +226,7 @@
         }
 
         // --- 2. Fungsi Merender HTML Kategori ---
+        // Kode fungsi render elemen kategori ke grid
         // --- 2. Fungsi Merender HTML Kategori (DIPERBAIKI) ---
         function renderCategories(rawData) {
             listPemasukan.innerHTML = '';
@@ -319,6 +326,7 @@
             document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDeleteClick));
         }
 
+        // Kode fungsi reset pilihan ikon di modal
         // --- Helper: Reset Icon Selection ---
         function resetIconSelection() {
             const container = document.getElementById('dynamic-icon-grid');
@@ -330,6 +338,7 @@
             document.getElementById('modal-kat-ikon').value = '';
         }
 
+        // Kode fungsi membuka modal tambah kategori
         // --- 3. [CREATE] Fungsi Modal "Tambah Kategori" ---
         function openAddModal() {
             currentEditingId = null;
@@ -348,7 +357,8 @@
             renderIconGrid('pengeluaran'); // Render icon grid
             modalOverlay.style.display = 'flex';
         }
-
+// Kode fungsi membuka modal edit kategori
+        
         // --- 4. [UPDATE] Fungsi Modal "Edit Kategori" ---
         function handleEditClick(e) {
             // Ambil data dari tombol
@@ -391,7 +401,8 @@
         const deleteModalOverlay = document.getElementById('delete-modal-overlay');
         const deleteTargetName = document.getElementById('delete-target-name');
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-
+// Kode fungsi menangani klik tombol hapus kategori
+        
         // --- 5. [DELETE] Fungsi Hapus Kategori ---
         function handleDeleteClick(e) {
             const btn = e.currentTarget;
@@ -449,7 +460,8 @@
                 closeDeleteModal();
             });
         }
-
+// Kode fungsi menutup modal konfirmasi hapus
+        
         // --- 4. Helper Tutup Modal Hapus ---
         function closeDeleteModal() {
             const deleteModalOverlay = document.getElementById('delete-modal-overlay');
@@ -459,6 +471,7 @@
             categoryIdToDelete = null; // Reset ID
         }
 
+        // Kode fungsi simpan kategori (Tambah/Edit)
         // --- 6. [CREATE/UPDATE] Fungsi Submit Form ---
         // --- 6. [CREATE/UPDATE] Fungsi Submit Form (FIXED) ---
         async function handleFormSubmit(e) {
@@ -510,9 +523,12 @@
                 modalMessage.textContent = 'Gagal terhubung ke server.';
             }
         }
-
-        // --- 7. Helper Modal (Tutup & Ganti Tab) ---
+// Kode fungsi menutup modal kategori
         function closeModal() {
+            modalOverlay.style.display = 'none';
+        }
+        // Kode fungsi mengatur tab aktif (Pemasukan/Pengeluaran)
+        function closeModal(){
             modalOverlay.style.display = 'none';
         }
         function setActiveTab(tipe) {
@@ -523,6 +539,7 @@
                     tab.classList.add('active');
                 } else {
                     tab.classList.remove('active');
+        // Kode fungsi menangani perpindahan kategori via drag and drop
                 }
             });
         }
@@ -607,18 +624,21 @@
         });
 
         // --- [BARU] Inisialisasi SortableJS (Drag-and-Drop) ---
-        Sortable.create(listPemasukan, {
-            group: 'kategori', // Nama grup yang sama
+        // UX Mobile: user harus HOLD (long-press) dulu baru bisa drag,
+        // supaya scroll list kategori tetap nyaman.
+        const sortableCommonOptions = {
+            group: 'kategori',
             animation: 150,
-            onEnd: handleCategoryDrop // Panggil fungsi saat drop selesai
-        });
+            delay: 300,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 8,
+            onEnd: handleCategoryDrop
+        };
 
-        Sortable.create(listPengeluaran, {
-            group: 'kategori', // Nama grup yang sama
-            animation: 150,
-            onEnd: handleCategoryDrop // Panggil fungsi saat drop selesai
-        });
+        Sortable.create(listPemasukan, sortableCommonOptions);
+        Sortable.create(listPengeluaran, sortableCommonOptions);
 
+        // Kode fungsi render grid ikon di modal
         // --- Panggilan Awal ---
         fetchCategories(); // Ambil data saat halaman dimuat
 
@@ -671,6 +691,7 @@
                 scrollTimeout = setTimeout(() => {
                     container.classList.remove('scrolling');
                 }, 1000);
+        // Kode fungsi menangani pemilihan ikon di grid
             });
         }
 

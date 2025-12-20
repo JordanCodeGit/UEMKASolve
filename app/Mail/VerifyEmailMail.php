@@ -39,6 +39,7 @@ class VerifyEmailMail extends Mailable
     /**
      * Get the message envelope.
      */
+    // Kode fungsi mendefinisikan subjek email
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -49,6 +50,7 @@ class VerifyEmailMail extends Mailable
     /**
      * Get the message content definition.
      */
+    // Kode fungsi mendefinisikan konten email
     public function content(): Content
     {
         return new Content(

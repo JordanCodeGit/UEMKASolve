@@ -2,6 +2,7 @@
 <html lang="id">
 
 <head>
+    {{-- // Bagian Head & Meta --}}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -21,6 +22,7 @@
 
 <body class="{{ Request::is('buku-kas') ? 'page-buku-kas' : '' }} {{ Request::is('kategori') ? 'page-kategori' : '' }} {{ Request::is('pengaturan') ? 'page-pengaturan' : '' }}">
 
+    {{-- // Bagian Sidebar Navigasi --}}
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-logo">
             <img src="{{ asset('images/logo_sidebar.png') }}" alt="Logo Uemkas" class="sidebar-logo-img">
@@ -66,6 +68,7 @@
 
     <div class="main-content-wrapper">
         @if (!Request::is('pengaturan'))
+            {{-- // Bagian Header & Top Bar --}}
             <header class="top-bar">
                 <h1 class="page-title">
                     @yield('title')
@@ -121,12 +124,14 @@
             </header>
         @endif
 
+        {{-- // Bagian Konten Utama --}}
         <main class="content-area">
             @yield('content')
         </main>
 
     </div>
 
+    {{-- // Bagian Navigasi Bawah (Mobile) --}}
     <nav class="mobile-bottom-nav" aria-label="Navigasi bawah">
         <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item {{ Request::is('dashboard') ? 'active' : '' }}">
             <i class="fa-solid fa-house-chimney"></i>
@@ -148,6 +153,7 @@
 
     {{-- SCRIPT PENGATURAN TEMA --}}
     <script>
+        // Kode fungsi pengaturan tema
         document.addEventListener('DOMContentLoaded', () => {
             const themeToggle = document.getElementById('theme-toggle');
             if (!themeToggle) return;
@@ -198,6 +204,7 @@
 
             const notifications = [];
 
+            // Kode fungsi deteksi browser & OS
             // ===== UTILITY: DETECT BROWSER & OS =====
             function detectBrowserAndOS() {
                 const ua = navigator.userAgent;
@@ -220,6 +227,7 @@
                 return { browser, os };
             }
 
+            // Kode fungsi simpan & load riwayat login
             // ===== FUNGSI: SIMPAN & LOAD RIWAYAT LOGIN =====
             function saveLoginHistory(loginData) {
                 let history = JSON.parse(localStorage.getItem('login_history')) || [];
@@ -333,6 +341,7 @@
                 }
             }
 
+            // Kode fungsi render notifikasi
             // --- RENDER NOTIFIKASI ---
             function renderNotifications() {
                 if (!notifList) return;
@@ -409,6 +418,7 @@
                 }
             });
 
+            // Kode fungsi logout
             // 3. LOGIKA LOGOUT
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async function(e) {
@@ -438,7 +448,7 @@
             }
         });
     </script>
-    {{-- SCRIPT FETCH DATA PROFIL (Dipisah agar rapi) --}}
+    {{-- // Kode fungsi fetch data profil --}}
     <script>
         (function() {
             const token = localStorage.getItem('auth_token');
@@ -467,7 +477,7 @@
                         }
 
                         if (data.business && data.business.logo_url) {
-                            avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo">`;
+                            avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo" class="profile-avatar-pojok">`;
                         } else if (data.user && data.user.name) {
                             avatarEl.innerHTML = `<div class="default-avatar-pojok">${data.user.name.charAt(0).toUpperCase()}</div>`;
                         }

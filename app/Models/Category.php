@@ -25,6 +25,7 @@ class Category extends Model
 
     // Relasi (Opsional, agar rapi)
     // Kategori milik sebuah Perusahaan
+    // Kode fungsi relasi ke perusahaan
     public function perusahaan()
     {
         // belongsTo(ModelTujuannya, 'nama_foreign_key_di_tabel_ini')
@@ -34,11 +35,13 @@ class Category extends Model
     /**
      * Get the transactions for the category.
      */
+    // Kode fungsi relasi ke transaksi
     public function transactions()
     {
         return $this->hasMany(Transaction::class, 'category_id');
     }
 
+    // Kode fungsi boot model (soft delete cascade)
     protected static function boot()
     {
         parent::boot();

@@ -23,6 +23,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 |
 */
 
+// Bagian Rute Publik (Tamu)
 // Rute '/' (Root/Landing Page)
 Route::get('/', function () {
     // SECURITY: Jika sudah login, redirect ke dashboard
@@ -81,6 +82,7 @@ Route::get('/test-clear-session', function () {
 | Rute Autentikasi Google
 |--------------------------------------------------------------------------
 */
+// Bagian Rute Autentikasi Google
 Route::get('/login/google', [AuthController::class, 'redirectToGoogle'])->name('login.google');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
@@ -94,6 +96,7 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 |
 */
 
+// Bagian Rute Terlindungi (Wajib Login)
 // 2. PERBAIKAN: Semua rute aplikasi dipindahkan ke dalam grup 'auth'
 Route::middleware(['auth'])->group(function () {
 
@@ -138,6 +141,7 @@ Route::middleware(['auth'])->group(function () {
 // Load additional auth-related POST routes (register, login, verification, password actions)
 require __DIR__ . '/auth.php';
 
+// Bagian Rute Diagnosa & Maintenance
 // --- ROUTE DARURAT UNTUK CLEAR CACHE DI HOSTING ---
 Route::get('/fix-config', function () {
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');

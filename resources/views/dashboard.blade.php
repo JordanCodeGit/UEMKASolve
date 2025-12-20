@@ -4,6 +4,7 @@
 
 @section('content')
 
+    {{-- // Bagian Ringkasan (Saldo, Pemasukan, Pengeluaran, Laba) --}}
     <div class="summary-grid">
 
         <div class="summary-card summary-saldo">
@@ -83,6 +84,7 @@
         </div>
     </div>
 
+    {{-- // Bagian Grafik Kas dan Persentase Kas --}}
     <div class="chart-grid">
         <div class="content-card">
             <div class="card-header card-header-grafik-kas">
@@ -164,6 +166,7 @@
         </div>
     </div>
 
+    {{-- // Bagian Transaksi Terakhir --}}
     <div class="card card-transaksi-terakhir">
 
         <div class="card-header">
@@ -188,7 +191,8 @@
             </div>
         </div>
     </div>
-
+{{-- // Modal Setup Usaha (Hanya muncul jika data usaha belum lengkap) --}}
+    
     @if ($needsCompanySetup)
         <div class="company-setup-overlay" id="company-setup-modal">
             <div class="company-setup-modal-content">
@@ -260,8 +264,7 @@
                 pengeluaranHover: '#e58e33',
                 doughnut: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6']
             };
-
-            // --- 2. HELPER FUNCTIONS ---
+            // Kode fungsi format angka ke Rupiah
             function formatRupiah(number) {
                 return new Intl.NumberFormat('id-ID', {
                     style: 'currency',
@@ -270,12 +273,14 @@
                 }).format(number);
             }
 
+            // Kode fungsi untuk mengamankan teks HTML
             function escapeHtml(text) {
                 if (!text) return text;
                 return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g,
                     "&quot;").replace(/'/g, "&#039;");
             }
 
+            // Kode fungsi update UI trend (warna & ikon panah)
             function updateTrendUI(containerId, badgeId, isPositive, isReverse) {
                 const container = document.getElementById(containerId);
                 const badge = document.getElementById(badgeId);
@@ -293,23 +298,26 @@
                 badge.className = `percentage-badge badge-${color}`;
 
                 if (arrow) {
-                    let iconPath = '{{ asset('icons/up.png') }}';
+                    let iconPath = "{{ asset('icons/up.png') }}";
                     if (isReverse) {
-                        iconPath = isPositive ? '{{ asset('icons/up_orange.png') }}' :
-                            '{{ asset('icons/down_orange.png') }}';
+                        iconPath = isPositive ? "{{ asset('icons/up_orange.png') }}" :
+                            "{{ asset('icons/down_orange.png') }}";
                     } else {
-                        iconPath = isPositive ? '{{ asset('icons/up.png') }}' : '{{ asset('icons/down.png') }}';
+                        iconPath = isPositive ? "{{ asset('icons/up.png') }}" : "{{ asset('icons/down.png') }}";
                     }
                     arrow.src = iconPath;
                 }
             }
 
+            // Kode fungsi update teks nominal pada card summary
             function updateSummaryCard(id, value) {
                 const el = document.getElementById(id);
                 if (el) el.textContent = formatRupiah(value);
             }
 
             // --- 3. CHART RENDERING ---
+
+            // Kode fungsi render grafik garis (Pemasukan & Pengeluaran)            // --- 3. CHART RENDERING ---
 
             // [FIX: GRAFIK GRADASI HALUS]
             function renderLineChart(chartData) {
@@ -323,6 +331,7 @@
                 let chartLabels, pemasukanData, pengeluaranData;
 
                 if (isBulananMode) {
+                    // Mode Bulanan (Rekap per bulan)
                     chartLabels = chartData.labels || [];
                     pemasukanData = chartData.datasets[0]?.data || [];
                     pengeluaranData = chartData.datasets[1]?.data || [];
@@ -436,8 +445,7 @@
                                         return context.dataset.label + ': ' + formatRupiah(value);
                                     },
                                     title: function(context) {
-                                        return isBulananMode ? context[0].label : 'Tanggal ' + context[
-                                            0].label;
+                                        return isBulananMode ? context[0].label : 'Tanggal ' + context[0].label;
                                     }
                                 }
                             }
@@ -470,6 +478,11 @@
                                     display: false
                                 },
                                 ticks: {
+                                    callback: function(value) {
+                                        const label = this.getLabelForValue(value);
+                                        if (isBulananMode) return label;
+                                        return String(label || '').split(' ')[0];
+                                    },
                                     font: {
                                         size: 11
                                     },
@@ -480,6 +493,7 @@
                                 }
                             }
                         }
+            // Kode fungsi render grafik donat (Persentase Kas)
                     }
                 });
             }
@@ -588,6 +602,7 @@
                 createLegend(topLabels, topColors);
             }
 
+            // Kode fungsi mengambil data dashboard dari API
             // --- 4. DATA LOADING ---
             async function loadDashboardData(searchQuery = '') {
                 const token = localStorage.getItem('auth_token');
@@ -596,7 +611,7 @@
                     return;
                 }
 
-                const url = new URL('{{ url('/api/dashboard') }}');
+                const url = new URL("{{ url('/api/dashboard') }}");
                 if (searchQuery) url.searchParams.append('search', searchQuery);
 
                 const dSelect = document.getElementById('doughnut-type-filter');
@@ -606,7 +621,10 @@
                 const fmt = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
                     String(d.getDate()).padStart(2, '0');
 
-                if (dashboardCurrentFilter === 'bulan_ini') {
+                if (dashboardCurrentFilter === 'semua') {
+                    url.searchParams.append('mode', 'monthly');
+                    url.searchParams.append('all_time', '1');
+                } else if (dashboardCurrentFilter === 'bulan_ini') {
                     url.searchParams.append('start_date', fmt(new Date(now.getFullYear(), now.getMonth(), 1)));
                     url.searchParams.append('end_date', fmt(new Date(now.getFullYear(), now.getMonth() + 1,
                         0)));
@@ -654,13 +672,13 @@
 
                             let iconSrc;
                             if (type === 'pengeluaran') {
-                                iconSrc = isPositive ? '{{ asset('icons/upp_orange.png') }}' :
-                                    '{{ asset('icons/down_green.png') }}';
+                                iconSrc = isPositive ? "{{ asset('icons/upp_orange.png') }}" :
+                                    "{{ asset('icons/down_green.png') }}";
                                 updateTrendUI(`summary-${type}-trend`, `summary-${type}-pct`, true,
                                     true);
                             } else {
-                                iconSrc = isPositive ? '{{ asset('icons/upp_green.png') }}' :
-                                    '{{ asset('icons/down_orange.png') }}';
+                                iconSrc = isPositive ? "{{ asset('icons/upp_green.png') }}" :
+                                    "{{ asset('icons/down_orange.png') }}";
                                 updateTrendUI(`summary-${type}-trend`, `summary-${type}-pct`,
                                     isPositive, false);
                             }
@@ -873,7 +891,7 @@
             setInterval(() => {
                 const token = localStorage.getItem('auth_token');
                 if (token) {
-                    fetch('{{ url('/api/update-activity') }}', {
+                    fetch("{{ url('/api/update-activity') }}", {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,

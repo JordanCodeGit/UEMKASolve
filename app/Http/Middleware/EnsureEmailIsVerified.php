@@ -14,6 +14,7 @@ class EnsureEmailIsVerified
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
+    // Kode fungsi memastikan email sudah diverifikasi
     public function handle(Request $request, Closure $next): Response
     {
         if (

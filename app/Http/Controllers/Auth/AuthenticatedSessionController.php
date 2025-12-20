@@ -14,6 +14,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
+    // Kode fungsi menyimpan sesi login
     public function store(LoginRequest $request): Response
     {
         $request->authenticate();
@@ -26,6 +27,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
+    // Kode fungsi menghapus sesi login
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
