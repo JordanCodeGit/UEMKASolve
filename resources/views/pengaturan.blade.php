@@ -76,6 +76,7 @@
             .tabs-nav-container {
                 padding: 10px 16px 0 16px;
             }
+
             .tabs-nav.full-width {
                 border-radius: 16px;
             }
