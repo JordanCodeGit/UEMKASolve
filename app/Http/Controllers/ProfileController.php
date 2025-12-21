@@ -88,10 +88,17 @@ class ProfileController extends Controller
         // 2. LOGIKA PASSWORD
         if ($request->filled('password')) {
 
+            // Akun yang login via Google tidak boleh mengubah/membuat password dari halaman ini
+            if (!empty($user->google_id)) {
+                throw ValidationException::withMessages([
+                    'password' => 'Akun Google tidak dapat mengubah password.',
+                ]);
+            }
+
             // Rule dasar password baru
             $rules['password'] = ['confirmed', \Illuminate\Validation\Rules\Password::defaults()];
 
-            // Validasi Password Lama (Hanya jika user bukan Google User / punya password)
+            // Validasi Password Lama (Hanya jika user sudah punya password)
             if ($user->password !== null) {
                 $rules['current_password'] = ['required', 'current_password'];
             }

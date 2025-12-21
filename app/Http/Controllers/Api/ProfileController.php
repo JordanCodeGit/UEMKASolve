@@ -69,6 +69,12 @@ class ProfileController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        if (!empty($user->google_id)) {
+            return response()->json([
+                'message' => 'Akun Google tidak dapat mengubah password.'
+            ], 403);
+        }
+
         $request->validate([
             'current_password' => 'required|current_password',
             'password' => ['required', 'confirmed', Password::defaults()],

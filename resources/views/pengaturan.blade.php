@@ -76,7 +76,6 @@
             .tabs-nav-container {
                 padding: 10px 16px 0 16px;
             }
-
             .tabs-nav.full-width {
                 border-radius: 16px;
             }
@@ -283,53 +282,44 @@
                     </div>
                 </div>
 
-                <h3 class="form-section-title" style="margin-top: 30px;">Ubah Password</h3>
+                {{-- Ubah Password hanya untuk user NON-Google --}}
+                @if (empty(Auth::user()->google_id))
+                    <h3 class="form-section-title" style="margin-top: 30px;">Ubah Password</h3>
 
-                {{-- LOGIKA TAMPILAN: Cek User Biasa vs Google --}}
-                @if (Auth::user()->password !== null)
-                    {{-- CASE: USER BIASA (Wajib isi password lama) --}}
+                    {{-- User yang sudah punya password wajib isi password lama --}}
+                    @if (Auth::user()->password !== null)
+                        <div class="form-group-row">
+                            <label for="current_password">Password Saat Ini <span style="color:red">*</span></label>
+                            <div class="password-wrapper-settings">
+                                <input type="password" id="current_password" name="current_password" placeholder="••••••••">
+                                <i class="fa-solid fa-eye password-toggle-icon"></i>
+                            </div>
+                            @error('current_password')
+                                <small class="text-error">{{ $message }}</small>
+                            @enderror
+                        </div>
+                    @endif
+
                     <div class="form-group-row">
-                        <label for="current_password">Password Saat Ini <span style="color:red">*</span></label>
+                        <label for="password">Password Baru</label>
                         <div class="password-wrapper-settings">
-                            <input type="password" id="current_password" name="current_password" placeholder="••••••••">
+                            <input type="password" id="password" name="password" placeholder="••••••••">
                             <i class="fa-solid fa-eye password-toggle-icon"></i>
                         </div>
-                        @error('current_password')
+                        @error('password')
                             <small class="text-error">{{ $message }}</small>
                         @enderror
                     </div>
-                @else
-                    {{-- CASE: USER GOOGLE (Info saja) --}}
-                    <div
-                        style="background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 12px;">
-                        <i class="fa-brands fa-google" style="font-size: 1.2rem;"></i>
-                        <div>
-                            <strong>Anda login menggunakan Google.</strong><br>
-                            Anda belum memiliki password. Silakan buat password baru di bawah ini agar bisa login secara
-                            manual.
+
+                    <div class="form-group-row">
+                        <label for="password_confirmation">Konfirmasi Password Baru</label>
+                        <div class="password-wrapper-settings">
+                            <input type="password" id="password_confirmation" name="password_confirmation"
+                                placeholder="••••••••">
+                            <i class="fa-solid fa-eye password-toggle-icon"></i>
                         </div>
                     </div>
                 @endif
-
-                <div class="form-group-row">
-                    <label for="password">Password Baru</label>
-                    <div class="password-wrapper-settings">
-                        <input type="password" id="password" name="password" placeholder="••••••••">
-                        <i class="fa-solid fa-eye password-toggle-icon"></i>
-                    </div>
-                    @error('password')
-                        <small class="text-error">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div class="form-group-row">
-                    <label for="password_confirmation">Konfirmasi Password Baru</label>
-                    <div class="password-wrapper-settings">
-                        <input type="password" id="password_confirmation" name="password_confirmation"
-                            placeholder="••••••••">
-                        <i class="fa-solid fa-eye password-toggle-icon"></i>
-                    </div>
-                </div>
 
                 <div class="form-footer">
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
@@ -372,7 +362,7 @@
                 selectedBtn.classList.add('active');
             }
         }
-// Kode inisialisasi saat halaman dimuat
+        // Kode inisialisasi saat halaman dimuat
 
         document.addEventListener("DOMContentLoaded", function() {
             const tabToActivate = document.querySelector('.content-card.settings-card')?.dataset?.activeTab;
