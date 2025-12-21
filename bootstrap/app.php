@@ -8,38 +8,36 @@ use Illuminate\Support\Facades\Route;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        // Hapus 'api: ...' dari sini jika menggunakan closure 'using:' di bawah
-        // api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
 
-        // Gunakan closure 'using:' untuk kontrol penuh atas routing API
+        // Konfigurasi Routing
         using: function () {
-            // Daftarkan route API dengan middleware 'api' dan prefix 'api'
             Route::middleware('api')
                  ->prefix('api')
                  ->group(base_path('routes/api.php'));
 
-            // Daftarkan route web
             Route::middleware('web')
                  ->group(base_path('routes/web.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // --- DAFTARKAN SECURITY HEADERS DISINI ---
 
+        // [PERBAIKAN DISINI]
+        // 1. Daftarkan SecurityHeaders secara GLOBAL.
+        //    Ini agar header keamanan (X-Frame, HSTS, dll) muncul di SEMUA response,
+        //    baik itu halaman web, API, atau response error.
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // 2. Middleware khusus grup 'web' tetap disini
         $middleware->web(append: [
-            // Middleware keamanan yang baru kita buat (ZAP Fix)
-            \App\Http\Middleware\SecurityHeaders::class,
-
-            // Middleware Anda sebelumnya
             \App\Http\Middleware\CheckCompanySetup::class,
             // \App\Http\Middleware\CheckUserActivity::class, // TEMPORARILY DISABLED
         ]);
 
-        // Opsional: Pastikan proxy dipercaya jika di belakang Cloudflare/Load Balancer
+        // Opsional: Trust Proxies (Penting jika pakai Cloudflare/Load Balancer)
         // $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // Konfigurasi penanganan exception (jika perlu)
+        // Konfigurasi exception
     })->create();
