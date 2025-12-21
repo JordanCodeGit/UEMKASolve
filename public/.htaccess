@@ -1,3 +1,33 @@
+# ----------------------------------------------------------------------
+# SECURITY HEADERS (ZAP FIX)
+# Bagian ini menangani alert HSTS, X-Powered-By, Clickjacking, dll.
+# bahkan untuk file statis (CSS/JS/Gambar).
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # 1. Menghapus Header X-Powered-By (Menyembunyikan versi PHP)
+    # Solusi untuk alert: Server Leaks Information via "X-Powered-By"
+    Header unset X-Powered-By
+
+    # 2. Strict-Transport-Security (HSTS)
+    # Memaksa browser menggunakan HTTPS.
+    # Solusi untuk alert: Strict-Transport-Security Header Not Set
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # 3. X-Frame-Options (Anti-Clickjacking)
+    # Mencegah website di-iframe oleh situs lain.
+    Header set X-Frame-Options "SAMEORIGIN"
+
+    # 4. X-Content-Type-Options (Anti-MIME Sniffing)
+    # Mencegah browser menebak tipe file (misal: file gambar yang disisipi script).
+    Header set X-Content-Type-Options "nosniff"
+
+    # 5. X-XSS-Protection (Tambahan keamanan untuk browser lama)
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# LARAVEL DEFAULT SETTINGS
+# ----------------------------------------------------------------------
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
