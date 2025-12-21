@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Route; // Pastikan facade Route di-import
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,19 +26,19 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Daftarkan middleware global Anda di sini (jika ada)
-        // Contoh:
-        // $middleware->web(append: [
-        //     \App\Http\Middleware\ExampleMiddleware::class,
-        // ]);
+        // --- DAFTARKAN SECURITY HEADERS DISINI ---
 
         $middleware->web(append: [
+            // Middleware keamanan yang baru kita buat (ZAP Fix)
+            \App\Http\Middleware\SecurityHeaders::class,
+
+            // Middleware Anda sebelumnya
             \App\Http\Middleware\CheckCompanySetup::class,
-            // \App\Http\Middleware\CheckUserActivity::class, // TEMPORARILY DISABLED - Testing session persistence
+            // \App\Http\Middleware\CheckUserActivity::class, // TEMPORARILY DISABLED
         ]);
 
-        // Middleware API (seperti throttle) biasanya sudah diatur di $middleware->api(...)
-        // di kernel atau langsung di route group 'api' Laravel.
+        // Opsional: Pastikan proxy dipercaya jika di belakang Cloudflare/Load Balancer
+        // $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Konfigurasi penanganan exception (jika perlu)
