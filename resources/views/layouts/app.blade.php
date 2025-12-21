@@ -67,34 +67,38 @@
     </aside>
 
     <div class="main-content-wrapper">
-        @if (!Request::is('pengaturan'))
-            {{-- // Bagian Header & Top Bar --}}
-            <header class="top-bar">
-                <h1 class="page-title">
-                    @yield('title')
-                </h1>
 
-                <div class="top-bar-right">
-                    <div class="notification-wrapper" style="position: relative;">
-                        <button class="notification-bell" id="notif-btn">
-                            <i class="fa-regular fa-bell"></i>
-                            <span class="notif-badge" id="notif-badge" style="display: none;"></span>
-                        </button>
+        {{--
+            PERBAIKAN:
+            Kondisi @if (!Request::is('pengaturan')) TELAH DIHAPUS.
+            Sekarang Header ini akan muncul di SEMUA halaman.
+        --}}
+        <header class="top-bar">
+            <h1 class="page-title">
+                @yield('title')
+            </h1>
 
-                        <div class="notif-dropdown" id="notif-menu">
-                            <div class="notif-header">
-                                <h3>Notifikasi</h3>
-                                <span class="mark-read" onclick="clearNotifications()">Tandai semua sudah dibaca</span>
-                            </div>
-                            <div class="notif-list" id="notif-list">
-                            </div>
+            <div class="top-bar-right">
+                <div class="notification-wrapper" style="position: relative;">
+                    <button class="notification-bell" id="notif-btn">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="notif-badge" id="notif-badge" style="display: none;"></span>
+                    </button>
+
+                    <div class="notif-dropdown" id="notif-menu">
+                        <div class="notif-header">
+                            <h3>Notifikasi</h3>
+                            <span class="mark-read" onclick="clearNotifications()">Tandai semua sudah dibaca</span>
+                        </div>
+                        <div class="notif-list" id="notif-list">
                         </div>
                     </div>
+                </div>
 
-                    <div class="user-profile-dropdown" id="profileTriggerBtn">
-                        {{-- LOGO / AVATAR --}}
-                        <span id="global-header-avatar" style="display: flex; align-items: center;">
-                             @if (optional($globalUser->business)->logo_path)
+                <div class="user-profile-dropdown" id="profileTriggerBtn">
+                    {{-- LOGO / AVATAR --}}
+                    <span id="global-header-avatar" style="display: flex; align-items: center;">
+                            @if (optional($globalUser->business)->logo_path)
                                 <img src="{{ asset('storage/' . $globalUser->business->logo_path) }}" alt="Logo" class="profile-avatar-pojok" style="object-fit: cover;">
                             @else
                                 <div class="default-avatar-pojok">
@@ -104,25 +108,24 @@
                                     {{ substr($displayName, 0, 1) }}
                                 </div>
                             @endif
-                        </span>
+                    </span>
 
-                        {{-- NAMA --}}
-                        <span class="profile-name" id="global-header-business-name">
-                            {{ optional($globalUser->business)->nama_usaha ?? $globalUser->name }}
-                        </span>
+                    {{-- NAMA --}}
+                    <span class="profile-name" id="global-header-business-name">
+                        {{ optional($globalUser->business)->nama_usaha ?? $globalUser->name }}
+                    </span>
 
-                        <i class="fa-solid fa-chevron-down" style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
+                    <i class="fa-solid fa-chevron-down" style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
 
-                        <div class="header-dropdown-menu" id="headerDropdownMenu">
-                            <a href="#" class="header-menu-item text-red" id="headerLogoutBtn">
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                                <span>Keluar</span>
-                            </a>
-                        </div>
+                    <div class="header-dropdown-menu" id="headerDropdownMenu">
+                        <a href="#" class="header-menu-item text-red" id="headerLogoutBtn">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Keluar</span>
+                        </a>
                     </div>
                 </div>
-            </header>
-        @endif
+            </div>
+        </header>
 
         {{-- // Bagian Konten Utama --}}
         <main class="content-area">

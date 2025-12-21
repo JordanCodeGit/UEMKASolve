@@ -248,11 +248,11 @@
                         <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                     </div>
 
-                    <div class="settings-mobile-logout">
+                    {{-- <div class="settings-mobile-logout">
                         <button type="button" class="settings-logout-btn" data-settings-logout>
                             <i class="fa-solid fa-right-from-bracket"></i> Keluar
                         </button>
-                    </div>
+                    </div> --}}
                 </form>
             </div>
 
@@ -373,7 +373,7 @@
             }
         }
 // Kode inisialisasi saat halaman dimuat
-        
+
         document.addEventListener("DOMContentLoaded", function() {
             const tabToActivate = document.querySelector('.content-card.settings-card')?.dataset?.activeTab;
             if (tabToActivate) switchTab(null, tabToActivate);
