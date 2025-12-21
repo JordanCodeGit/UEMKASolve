@@ -1,47 +1,43 @@
 <?php
 
-// -------------------------------------------------------------------------
-// [START] SECURITY HEADERS INJECTION
-// -------------------------------------------------------------------------
-// Bagian ini memaksa server mengirim header keamanan
-// untuk mem-bypass konfigurasi server/hosting yang memblokir .htaccess
+// [START] SECURITY HEADERS - BRUTE FORCE MODE
+// Memaksa header keamanan dikirim sepagi mungkin
+// untuk melawan konfigurasi default server hosting.
 
-// 1. Sembunyikan versi PHP (X-Powered-By)
-if (function_exists('header_remove')) {
-    header_remove('X-Powered-By');
+if (!headers_sent()) {
+    // 1. Anti-Clickjacking (Agar tidak bisa di-iframe)
+    header('X-Frame-Options: SAMEORIGIN');
+
+    // 2. Anti-MIME Sniffing
+    header('X-Content-Type-Options: nosniff');
+
+    // 3. XSS Protection
+    header('X-XSS-Protection: 1; mode=block');
+
+    // 4. HSTS (Paksa HTTPS)
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+
+    // 5. Coba hapus jejak PHP
+    if (function_exists('header_remove')) {
+        header_remove('X-Powered-By');
+    }
 }
-
-// 2. Anti-Clickjacking (Mencegah web di-iframe orang lain)
-header('X-Frame-Options: SAMEORIGIN');
-
-// 3. Anti-MIME Sniffing (Mencegah browser menebak tipe file)
-header('X-Content-Type-Options: nosniff');
-
-// 4. Strict Transport Security (HSTS) - Memaksa HTTPS
-// (Hanya aktif jika akses saat ini sudah HTTPS)
-if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-}
-
-// 5. XSS Protection (Keamanan tambahan untuk browser lama)
-header('X-XSS-Protection: 1; mode=block');
-
-// -------------------------------------------------------------------------
-// [END] SECURITY HEADERS INJECTION
-// -------------------------------------------------------------------------
+// [END] SECURITY HEADERS
 
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Determine if the application is in maintenance mode...
+// Cek mode maintenance
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
-// Register the Composer autoloader...
+// Load Composer
 require __DIR__.'/../vendor/autoload.php';
 
-// Bootstrap Laravel and handle the request...
+// Jalankan Laravel
 (require_once __DIR__.'/../bootstrap/app.php')
     ->handleRequest(Request::capture());
