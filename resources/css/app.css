@@ -2658,7 +2658,11 @@ textarea.form-input-modal {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 37px;
+}
 
+/* Buku Kas: jarak header ke toolbar dipersempit */
+.page-buku-kas .bukukas-header {
+    margin-bottom: 12px;
 }
 
 /* 2. Style Saldo (Ikon lebih besar) */
@@ -6730,8 +6734,10 @@ textarea.form-input-modal {
     }
 
     .saldo-display-lg {
+        flex-direction: column;
+        align-items: flex-start;
         gap: 12px;
-        margin-left: 6px;
+        margin-left: 0;
     }
 
     .saldo-display-lg i {
@@ -6740,12 +6746,15 @@ textarea.form-input-modal {
 
     .saldo-display-lg h3 {
         font-size: 24px;
+        line-height: 1.1;
+        text-align: left;
     }
 
     .header-actions {
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 10px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
         margin-right: 0;
     }
 
@@ -6753,6 +6762,33 @@ textarea.form-input-modal {
         height: 44px;
         padding: 0 14px;
         border-radius: 12px;
+    }
+
+    /* Buku Kas header: month filter jadi icon kalender saja */
+    #month-filter-wrapper {
+        width: 50px;
+        height: 35px;
+        padding: 0 !important;
+        border-radius: 8px;
+        justify-content: center;
+        position: relative;
+    }
+
+    #month-filter-wrapper>i.fa-calendar-days {
+        font-size: 16px;
+        margin-right: 0;
+    }
+
+    /* tetap bisa diklik (JS) tapi tampil icon-only */
+    #month-filter-btn {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+    }
+
+    #month-filter-btn .btn-label,
+    #month-filter-btn .fa-chevron-down {
+        display: none;
     }
 
     .btn.btn-gradient {
@@ -6763,10 +6799,30 @@ textarea.form-input-modal {
         white-space: nowrap;
     }
 
+    /* Buku Kas header: tombol cetak jadi icon print saja */
+    #btn-cetak-laporan {
+        width: 50px;
+        height: 35px;
+        padding: 0 !important;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+
+    #btn-cetak-laporan i {
+        font-size: 16px;
+    }
+
+    #btn-cetak-laporan .btn-label {
+        display: none;
+    }
+
     .bukukas-toolbar {
         flex-wrap: nowrap;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: -2px;
     }
 
     .toolbar-left {

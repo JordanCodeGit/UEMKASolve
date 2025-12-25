@@ -15,7 +15,7 @@
                 <i class="fa-solid fa-calendar-days"></i>
 
                 <div id="month-filter-btn" class="dropdown-btn-custom">
-                    <span>Bulan Ini</span>
+                    <span class="btn-label">Bulan Ini</span>
                     <i class="fa-solid fa-chevron-down" style="font-size: 12px; margin-left: 5px;"></i>
                 </div>
 
@@ -33,7 +33,8 @@
                 </div>
             </div>
             <button class="btn btn-gradient" id="btn-cetak-laporan">
-                <i class="fa-solid fa-print"></i> Cetak Buku Kas
+                <i class="fa-solid fa-print"></i>
+                <span class="btn-label">Cetak Buku Kas</span>
             </button>
         </div>
     </div>
