@@ -470,30 +470,13 @@
                 'Cache-Control': 'no-cache'
             };
 
-            // --- UTILITY FUNCTION: Format Nominal dengan Comma & Dot ---
+            // --- UTILITY FUNCTION: Format Nominal Rupiah (integer, ribuan dengan '.') ---
+            // Catatan: Jangan interpretasikan '.' sebagai desimal, supaya input seperti "900.000" tidak berubah jadi "900,00".
             function formatNominal(value) {
-                value = String(value);
-                if (value.includes(',')) {
-                    value = value.replace(/[^0-9,]/g, '');
-                } else {
-                    let lastDot = value.lastIndexOf('.');
-                    if (lastDot !== -1 && value.length - lastDot - 1 === 2) {
-                        value = value.substring(0, lastDot) + ',' + value.substring(lastDot + 1);
-                    }
-                    value = value.replace(/[^0-9,]/g, '');
-                }
-                let parts = value.split(',');
-                if (parts[0].length > 15) {
-                    parts[0] = parts[0].slice(0, 15);
-                }
-                if (parts.length > 2) {
-                    parts = [parts[0], parts.slice(1).join('')];
-                }
-                if (parts[1]) {
-                    parts[1] = parts[1].slice(0, 2);
-                }
-                let formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                return parts.length > 1 && parts[1] ? formatted + ',' + parts[1] : formatted;
+                const digitsOnly = String(value || '').replace(/\D/g, '');
+                const limited = digitsOnly.slice(0, 15);
+                if (!limited) return '';
+                return limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
             // Kode fungsi menampilkan dialog konfirmasi/notifikasi
@@ -1307,7 +1290,7 @@
 
                     <div class="cell-kategori">
                         <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
-                        ${safeNamaKategori}
+                        <span class="cell-kategori-text">${safeNamaKategori}</span>
                     </div>
 
                     <div class="cell-tanggal">${displayDate}</div>
@@ -1435,8 +1418,8 @@
 
                 const formData = new FormData(txForm);
                 const data = Object.fromEntries(formData.entries());
-                const cleanJumlah = data.jumlah.replace(/\./g, '').replace(',', '.');
-                const jumlah = parseFloat(cleanJumlah);
+                const cleanJumlah = String(data.jumlah || '').replace(/\D/g, '');
+                const jumlah = cleanJumlah ? Number(cleanJumlah) : NaN;
 
                 if (isNaN(jumlah) || jumlah < 0 || jumlah > 999999999999999) {
                     txMessage.textContent =

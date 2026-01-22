@@ -13,7 +13,18 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'UemkaSolve'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Tagline
+    |--------------------------------------------------------------------------
+    |
+    | A short tagline used for SEO titles and marketing copy.
+    |
+    */
+
+    'tagline' => env('APP_TAGLINE', 'Solusi UMKM'),
 
     /*
     |--------------------------------------------------------------------------

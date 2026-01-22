@@ -208,7 +208,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="logo_usaha">Logo Usaha (Opsional)</label>
+                        <label for="logo_usaha">Logo Usaha (Opsional) *max 2Mb</label>
                         <input type="file" id="logo_usaha" name="logo" accept="image/*">
                     </div>
 
@@ -516,7 +516,7 @@
                     labels.slice(0, 5).forEach((label, i) => {
                         const li = document.createElement('li');
                         li.innerHTML =
-                            `<span class="legend-color" style="background-color: ${colors[i % colors.length]};"></span> ${escapeHtml(label)}`;
+                            `<span class="legend-color" style="background-color: ${colors[i % colors.length]};"></span><span class="legend-label">${escapeHtml(label)}</span>`;
                         legendList.appendChild(li);
                     });
                 };

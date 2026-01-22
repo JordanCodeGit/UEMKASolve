@@ -6,7 +6,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') - Uemkas</title>
+    @php
+        $siteName = config('app.name', 'UemkaSolve');
+        $siteTagline = config('app.tagline', 'Solusi UMKM');
+
+        $pageTitle = trim($__env->yieldContent('title', ''));
+        $seoTitle = $pageTitle ? ($pageTitle . ' - ' . $siteName) : ($siteName . ' - ' . $siteTagline);
+
+        // You can override per-page via: @section('meta_description', '...')
+        $seoDescription = trim($__env->yieldContent(
+            'meta_description',
+            $siteName . ' membantu UMKM mencatat transaksi, memantau arus kas, dan menyusun laporan keuangan secara cepat.'
+        ));
+
+        $currentUrl = url()->current();
+    @endphp
+
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="application-name" content="{{ $siteName }}">
+    <link rel="canonical" href="{{ $currentUrl }}">
+
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $currentUrl }}">
+    <meta property="og:type" content="website">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => $siteName,
+            'url' => config('app.url'),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
     <link rel="icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,8 +63,8 @@
     {{-- // Bagian Sidebar Navigasi --}}
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-logo">
-            <img src="{{ asset('images/logo_sidebar.png') }}" alt="Logo Uemkas" class="sidebar-logo-img">
-            <span>Uemkas</span>
+            <img src="{{ asset('images/logo_sidebar.png') }}" alt="Logo {{ $siteName }}" class="sidebar-logo-img">
+            <span>{{ $siteName }}</span>
         </a>
 
         <nav class="sidebar-nav">

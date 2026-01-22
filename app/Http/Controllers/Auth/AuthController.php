@@ -162,6 +162,17 @@ class AuthController extends Controller
     public function handleGoogleCallback()
     {
         try {
+            // Jika user cancel / Google kirim error, jangan lanjut tukar code -> token
+            if (request()->has('error')) {
+                Log::warning('Google OAuth returned an error', [
+                    'error' => request()->get('error'),
+                    'error_description' => request()->get('error_description'),
+                    'url' => request()->fullUrl(),
+                ]);
+
+                return redirect('/login?error=google_cancelled');
+            }
+
             /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
             $driver = Socialite::driver('google');
             $googleUser = $driver->stateless()->user();
@@ -199,8 +210,30 @@ class AuthController extends Controller
 
             // Redirect ke Frontend
             return redirect('/auth/google-success?token=' . $token);
-        } catch (\Exception $e) {
-            return redirect('/login?error=google_failed');
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+
+            Log::error('Google OAuth callback failed', [
+                'message' => $message,
+                'exception' => $e,
+                'url' => request()->fullUrl(),
+                'has_code' => request()->has('code'),
+                'has_state' => request()->has('state'),
+                'google_error' => request()->get('error'),
+                'google_error_description' => request()->get('error_description'),
+            ]);
+
+            // Beri kode error yang lebih spesifik untuk memudahkan troubleshooting
+            $errorCode = 'google_failed';
+            if (is_string($message) && str_contains($message, 'cURL error 60')) {
+                $errorCode = 'google_ssl';
+            } elseif (is_string($message) && (str_contains($message, 'Invalid state') || str_contains($message, 'invalid state'))) {
+                $errorCode = 'google_state';
+            } elseif (!request()->has('code')) {
+                $errorCode = 'google_no_code';
+            }
+
+            return redirect('/login?error=' . $errorCode);
         }
     }
 

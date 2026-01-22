@@ -5,7 +5,45 @@
     {{-- // Bagian Head & Style --}}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title') - Uemkas</title>
+    @php
+        $siteName = config('app.name', 'UemkaSolve');
+        $siteTagline = config('app.tagline', 'Solusi UMKM');
+
+        // Auth pages should use a single marketing-focused title (per SEO/snippet needs)
+        $seoTitle = $siteName . ' - ' . $siteTagline;
+
+        // You can override per-page via: @section('meta_description', '...')
+        $seoDescription = trim($__env->yieldContent(
+            'meta_description',
+            $siteName . ' adalah solusi UMKM untuk membantu pencatatan transaksi dan pengelolaan keuangan usaha secara lebih rapi dan mudah.'
+        ));
+
+        $currentUrl = url()->current();
+    @endphp
+
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="application-name" content="{{ $siteName }}">
+    <link rel="canonical" href="{{ $currentUrl }}">
+
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $currentUrl }}">
+    <meta property="og:type" content="website">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => $siteName,
+            'url' => config('app.url'),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
     <link rel="icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">

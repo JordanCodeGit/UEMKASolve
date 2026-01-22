@@ -2176,14 +2176,14 @@ body.dark-mode .btn-primary-light {
 }
 
 .bukukas-transaction-card .tx-day-group {
-    padding: 0 14px 14px 14px;
+    padding: 0 16px 18px 16px;
 }
 
 .bukukas-transaction-card .tx-day-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 2px 10px 2px;
+    padding: 14px 2px 12px 2px;
 }
 
 .bukukas-transaction-card .tx-day-pill {
@@ -2222,11 +2222,11 @@ body.dark-mode .btn-primary-light {
     width: 100%;
     background: transparent;
     border: none;
-    padding: 14px 14px;
+    padding: 16px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
     cursor: pointer;
     text-align: left;
 }
@@ -2533,18 +2533,29 @@ textarea.form-input-modal {
 
 .cell-kategori {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 15px;
     font-weight: 400;
     color: #1e293b;
     /* [PERBAIKAN] Tambahkan padding kiri agar tidak mepet checkbox */
     padding-left: 2px;
     font-size: 18px;
+    min-width: 0;
+}
+
+.cell-kategori-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.25;
 }
 
 .transaction-row.header .cell-kategori {
     font-weight: 500;
     /* Hapus padding di header */
+    align-items: center;
 }
 
 .cell-tanggal {
@@ -3219,6 +3230,12 @@ textarea.form-input-modal {
 }
 
 @media (max-width: 768px) {
+
+    /* Buku Kas (mobile): pagination tidak diperlukan */
+    .page-buku-kas #pagination-links {
+        display: none !important;
+    }
+
     .page-kategori .content-card-category {
         margin-bottom: 18px;
     }
@@ -3309,9 +3326,23 @@ textarea.form-input-modal {
     }
 
     .page-kategori .category-item-large {
+        width: 100%;
+        min-width: 0;
         padding: 12px;
         border-radius: 14px;
         box-shadow: -1px 6px 14px -2px rgba(66, 156, 255, 0.35);
+    }
+
+    /* Mobile Kategori: truncate long names with ellipsis (no horizontal scroll) */
+    .page-kategori .category-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .page-kategori .category-actions {
+        flex-shrink: 0;
     }
 
     .page-kategori .category-item-large:hover {
@@ -3386,6 +3417,69 @@ textarea.form-input-modal {
     flex-direction: column;
     scrollbar-color: transparent transparent;
     /* Sembunyikan scrollbar */
+}
+
+/* =========================================
+   DESKTOP (ZOOM) FIXES
+   - Only affects >= 769px (do not change mobile behavior)
+   ========================================= */
+
+@media (min-width: 769px) {
+
+    /* Make all generic modals fit viewport at zoom levels */
+    .modal-overlay {
+        padding: 20px;
+        overflow: auto;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-box {
+        max-height: calc(100vh - 48px);
+    }
+
+    /* Many modals wrap body+footer inside a <form>; make it scrollable */
+    .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1700px) {
+
+    /* Desktop zoom (>=125%) / narrower desktops: make modals more compact */
+    .modal-overlay {
+        padding: 16px;
+    }
+
+    .modal-box {
+        max-width: 460px;
+    }
+
+    .modal-header {
+        padding: 12px 18px;
+    }
+
+    .modal-header h2 {
+        font-size: 16px;
+    }
+
+    .modal-body {
+        padding: 18px;
+        gap: 14px;
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
+    }
 }
 
 /* 3. Modal Header */
@@ -5166,6 +5260,190 @@ textarea.form-input-modal {
     z-index: 9999;
 }
 
+@media (min-width: 769px) {
+
+    /* Company setup popup should never be cut off on desktop zoom */
+    .company-setup-overlay {
+        padding: 24px;
+        overflow: auto;
+    }
+
+    .company-setup-modal-content {
+        max-height: calc(100vh - 48px);
+        overflow: auto;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1700px) {
+
+    /* Dashboard cards: switch to 2x2 for readability at narrower desktop widths/zoom */
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .summary-card .card-header p {
+        font-size: clamp(16px, 1.6vw, 20px);
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .summary-card .card-content h3 {
+        font-size: clamp(20px, 2.2vw, 26px);
+    }
+
+    /* Stack charts: row 1 Grafik Kas, row 2 Persentase Kas */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    /* Persentase Kas card (desktop zoom): keep doughnut centered in the card, legend stays right */
+    .chart-container-horizontal {
+        position: relative;
+        display: block;
+        min-height: 280px;
+    }
+
+    .chart-wrapper {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: none;
+    }
+
+    #doughnutChart {
+        max-width: 240px !important;
+        max-height: 240px !important;
+    }
+
+    .doughnut-legend {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 260px;
+        max-width: 260px;
+        max-height: none;
+        overflow: visible;
+        min-width: 0;
+    }
+
+    .doughnut-legend li {
+        min-width: 0;
+        align-items: flex-start;
+    }
+
+    .doughnut-legend .legend-label {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.25;
+    }
+
+    /* Dashboard: Recent transactions - prevent long category names from colliding */
+    .transaction-details,
+    .transaction-note {
+        min-width: 0;
+    }
+
+    .transaction-details strong {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* Dashboard: Recent transactions - add comfortable gap between columns at zoom */
+    .transaction-item {
+        display: grid;
+        grid-template-columns: 70px minmax(220px, 1.15fr) minmax(180px, 0.85fr) minmax(220px, 1.4fr) minmax(160px, 0.8fr);
+        align-items: center;
+        column-gap: 32px;
+        justify-content: unset;
+        padding: 22px 24px;
+    }
+
+    .transaction-item .icon-circle {
+        margin: 0;
+        justify-self: center;
+    }
+
+    .transaction-item .transaction-datetime {
+        margin-right: 0;
+        min-width: 0;
+    }
+
+    .transaction-item .transaction-note {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .transaction-item .transaction-amount {
+        margin-right: 0;
+        min-width: 0;
+        justify-self: end;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+
+    /* If space is too tight, avoid overlap by stacking legend under the chart */
+    .chart-container-horizontal {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        min-height: unset;
+    }
+
+    .chart-wrapper {
+        position: static;
+        transform: none;
+        width: 280px;
+    }
+
+    .doughnut-legend {
+        position: static;
+        transform: none;
+        width: 100%;
+        max-height: unset;
+        overflow: visible;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1700px) {
+
+    /* Company setup modal: make it more minimal at zoom */
+    .company-setup-modal-content {
+        padding: 1.75rem;
+        max-width: 420px;
+    }
+
+    .company-setup-modal-content h2 {
+        font-size: 1.25rem;
+    }
+}
+
+@media (min-width: 769px) {
+
+    /* Sidebar brand spacing: prevent text from feeling cramped */
+    .sidebar-logo {
+        margin-left: 0;
+        padding-right: 12px;
+    }
+
+    .sidebar-logo span {
+        font-size: 22px;
+        line-height: 1.1;
+    }
+}
+
 .company-setup-modal-content h2 {
     margin-top: 0;
     font-size: 1.5rem;
@@ -5541,6 +5819,42 @@ textarea.form-input-modal {
     height: 16px;
     border-radius: 12px;
     flex-shrink: 0;
+}
+
+@media (min-width: 769px) {
+
+    /* Persentase Kas (desktop): force legend to wrap downward like Buku Kas */
+    .doughnut-legend {
+        flex: 0 0 260px;
+        width: 260px;
+        max-width: 260px;
+        min-width: 0;
+    }
+
+    .doughnut-legend li {
+        min-width: 0;
+        align-items: flex-start;
+    }
+
+    .doughnut-legend .legend-label {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.25;
+    }
+
+    /* Dashboard: Recent Transactions (desktop): long category names should wrap, not collide */
+    .transaction-details,
+    .transaction-note {
+        min-width: 0;
+    }
+
+    .transaction-details strong {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
 }
 
 /* Responsive - untuk layar kecil */

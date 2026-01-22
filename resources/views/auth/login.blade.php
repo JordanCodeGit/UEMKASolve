@@ -52,6 +52,24 @@
         // Kode inisialisasi dan penanganan login
         document.addEventListener('DOMContentLoaded', function() {
 
+            // 0. TAMPILKAN ERROR DARI GOOGLE LOGIN (jika ada)
+            const params = new URLSearchParams(window.location.search);
+            const errorParam = params.get('error');
+            const messageDiv = document.getElementById('form-message');
+
+            if (errorParam && messageDiv) {
+                const messages = {
+                    google_cancelled: 'Login Google dibatalkan atau ditolak. Silakan coba lagi.',
+                    google_no_code: 'Google tidak mengirim kode autentikasi. Silakan coba lagi.',
+                    google_state: 'Sesi login Google tidak valid. Silakan coba lagi.',
+                    google_ssl: 'Gagal terhubung ke Google (SSL/cURL). Cek konfigurasi SSL PHP (cacert).',
+                    google_failed: 'Login Google gagal. Silakan coba lagi.'
+                };
+
+                messageDiv.textContent = messages[errorParam] || ('Login gagal: ' + errorParam);
+                messageDiv.style.color = 'red';
+            }
+
             // 1. BERSIH-BERSIH SESSION LAMA (PENTING)
             // Hapus token lama setiap kali buka halaman login agar tidak bentrok
             localStorage.removeItem('auth_token');
@@ -60,7 +78,6 @@
 
             // 2. SETUP VARIABEL
             const loginForm = document.getElementById('login-form');
-            const messageDiv = document.getElementById('form-message');
             // Ambil tombol submit agar bisa di-disable saat loading
             const submitBtn = loginForm.querySelector('button[type="submit"]');
 
