@@ -10,44 +10,42 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
-use Illuminate\Database\Eloquent\Builder;
 
 class TransactionController extends Controller
 {
-    // Kode fungsi mengambil ID perusahaan
+    /**
+     * Helper untuk mendapatkan Business ID User
+     */
     private function getPerusahaanId()
     {
-        /** @var \App\Models\User $user */
         $user = Auth::user();
         if (!$user) return null;
 
-        // Cek relasi 'business' (Standard)
+        // Cek relasi business (Standard)
         if ($user->relationLoaded('business') || $user->business) {
             return $user->business->id;
-        }
-
-        // Cek relasi 'perusahaan' (Sesuai AuthController Anda)
-        if ($user->relationLoaded('perusahaan') || $user->perusahaan) {
-            return $user->perusahaan->id;
         }
 
         return null;
     }
 
-    // Kode fungsi mengambil daftar transaksi
+    /**
+     * Mengambil daftar transaksi dengan perhitungan Saldo & Laba yang Akurat
+     */
     public function index(Request $request): JsonResponse
     {
         $idPerusahaan = $this->getPerusahaanId();
 
         if (!$idPerusahaan) {
-            return response()->json([], 200);
+            return response()->json(['message' => 'Business not found'], 400);
         }
 
+        // 1. Base Query (Filter Dasar)
         $queryFiltered = Transaction::where('business_id', $idPerusahaan)
             ->with('category:id,nama_kategori,tipe,ikon');
 
-        // Filter Search
-        if ($request->filled('search') && is_string($request->search)) {
+        // Filter: Search (Catatan / Nama Kategori)
+        if ($request->filled('search')) {
             $search = $request->search;
             $queryFiltered->where(function ($q) use ($search) {
                 $q->where('catatan', 'like', '%' . $search . '%')
@@ -57,7 +55,7 @@ class TransactionController extends Controller
             });
         }
 
-        // Filter Tanggal
+        // Filter: Tanggal (Untuk Summary Laba/Rugi & Tabel)
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $queryFiltered->whereBetween('tanggal_transaksi', [
                 $request->start_date . ' 00:00:00',
@@ -65,26 +63,33 @@ class TransactionController extends Controller
             ]);
         }
 
-        // Filter Tipe
+        // Filter: Tipe (Pemasukan/Pengeluaran)
         if ($request->filled('tipe')) {
             $tipe = $request->tipe;
             $queryFiltered->whereHas('category', fn($q) => $q->where('tipe', $tipe));
         }
 
-        // Filter Nominal
-        if ($request->filled('min_nominal')) $queryFiltered->where('jumlah', '>=', $request->min_nominal);
-        if ($request->filled('max_nominal')) $queryFiltered->where('jumlah', '<=', $request->max_nominal);
+        // Filter: Nominal
+        if ($request->filled('min_nominal')) {
+            $queryFiltered->where('jumlah', '>=', $request->min_nominal);
+        }
+        if ($request->filled('max_nominal')) {
+            $queryFiltered->where('jumlah', '<=', $request->max_nominal);
+        }
 
-        // Hitung Summary
-        $summaryQuery = clone $queryFiltered;
-        $pemasukan = (clone $summaryQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $pengeluaran = (clone $summaryQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        // 2. Hitung Summary (Berdasarkan Filter di atas)
+        // Kita clone query agar tidak mengganggu pagination
+        $summaryPemasukan = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $summaryPengeluaran = (clone $queryFiltered)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
-        // Saldo Real (All Time)
+        // 3. Hitung Saldo Real (ALL TIME / Dompet)
+        // Saldo dompet TIDAK boleh terpengaruh filter tanggal/search, harus selalu total uang saat ini.
         $allTimeQuery = Transaction::where('business_id', $idPerusahaan);
-        $totalMasuk = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $totalKeluar = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
+        $saldoMasuk = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $saldoKeluar = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+
+        // 4. Ambil Data Transaksi (Pagination)
         $transactions = $queryFiltered->latest('tanggal_transaksi')
             ->paginate($request->input('per_page', 10))
             ->withQueryString();
@@ -92,24 +97,23 @@ class TransactionController extends Controller
         return response()->json([
             'pagination' => $transactions,
             'summary' => [
-                'total_pemasukan' => $pemasukan,
-                'total_pengeluaran' => $pengeluaran,
-                'laba' => $pemasukan - $pengeluaran,
-                'saldo_real' => $totalMasuk - $totalKeluar
+                'total_pemasukan' => $summaryPemasukan,      // Sesuai Filter (misal: Bulan Ini)
+                'total_pengeluaran' => $summaryPengeluaran,  // Sesuai Filter (misal: Bulan Ini)
+                'laba' => $summaryPemasukan - $summaryPengeluaran, // Laba Periode Ini
+                'saldo_real' => $saldoMasuk - $saldoKeluar   // Saldo Dompet (Total Uang Fisik)
             ]
         ], 200);
     }
 
     /**
-     * Simpan transaksi
+     * Simpan transaksi baru
      */
-    // Kode fungsi menyimpan transaksi baru
     public function store(StoreTransactionRequest $request): JsonResponse
     {
         $idPerusahaan = $this->getPerusahaanId();
         if (!$idPerusahaan) return response()->json(['message' => 'Profil usaha belum diset.'], 400);
 
-        // Validasi Kategori Milik Bisnis Ini
+        // Validasi tambahan: Pastikan category_id milik perusahaan ini
         $request->validate([
             'category_id' => [
                 'required',
@@ -122,47 +126,44 @@ class TransactionController extends Controller
             'category_id'       => $request->category_id,
             'jumlah'            => $request->jumlah,
             'tanggal_transaksi' => $request->tanggal_transaksi,
-            'catatan'           => $request->catatan,
+            'catatan'           => strip_tags($request->catatan ?? ''),
         ]);
 
         return response()->json($transaction->load('category'), 201);
     }
 
     /**
-     * Show transaksi
-    // Kode fungsi menampilkan detail transaksi
+     * Detail transaksi
      */
     public function show($id): JsonResponse
     {
         $transaction = Transaction::find($id);
+        $myBusinessId = $this->getPerusahaanId();
 
-        // [FIX] Gunakan != (Loose comparison)
-        if (!$transaction || $transaction->business_id != $this->getPerusahaanId()) {
+        if (!$transaction || $transaction->business_id != $myBusinessId) {
             return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
         return response()->json($transaction, 200);
     }
 
     /**
-     * Update transaksi (FIXED: Soft Delete & Type Mismatch)
-    // Kode fungsi memperbarui data transaksi
+     * Update transaksi
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
         $transaction = Transaction::withTrashed()->find($id);
         $myBusinessId = $this->getPerusahaanId();
 
-        // 1. Cek Data & Kepemilikan (Gunakan != bukan !==)
+        // Security Check
         if (!$transaction || $transaction->business_id != $myBusinessId) {
-            return response()->json(['message' => 'Data tidak ditemukan.'], 404);
+            return response()->json(['message' => 'Data tidak ditemukan atau bukan milik Anda.'], 404);
         }
 
-        // 2. Cek Soft Delete
         if ($transaction->trashed()) {
-            return response()->json(['message' => 'Data ini sudah dihapus. Refresh halaman.'], 410);
+            return response()->json(['message' => 'Data ini sudah dihapus.'], 410);
         }
 
-        // Validasi Kategori
+        // Validasi Kategori Milik Sendiri
         $request->validate([
             'category_id' => [
                 'required',
@@ -181,15 +182,14 @@ class TransactionController extends Controller
     }
 
     /**
-     * Hapus transaksi (FIXED: Soft Delete & Idempotency)
-    // Kode fungsi menghapus transaksi
+     * Hapus transaksi (Soft Delete)
      */
     public function destroy($id): JsonResponse
     {
         $transaction = Transaction::withTrashed()->where('id', $id)->first();
+        $myBusinessId = $this->getPerusahaanId();
 
-        // [FIX] Gunakan != (Loose comparison)
-        if (!$transaction || $transaction->business_id != $this->getPerusahaanId()) {
+        if (!$transaction || $transaction->business_id != $myBusinessId) {
             return response()->json(['message' => 'Data tidak ditemukan.'], 404);
         }
 
