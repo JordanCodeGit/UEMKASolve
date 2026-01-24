@@ -123,6 +123,22 @@
 
                     <div id="transaksi-modal-message"></div>
 
+                    {{-- [MODIFIKASI OCR START] --}}
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border: 1px dashed #007bff; border-radius: 8px; text-align: center;">
+                        <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
+
+                        <button type="button" id="btn-scan-ocr" class="btn" style="background: #fff; color: #007bff; border: 1px solid #007bff; font-weight: 600; padding: 8px 20px; border-radius: 50px; cursor: pointer; transition: all 0.2s;">
+                            <i class="fa-solid fa-camera" style="margin-right: 8px;"></i> Scan Struk Otomatis (AI)
+                        </button>
+                        <p id="ocr-loading-text" style="display: none; margin: 10px 0 0 0; font-size: 12px; color: #666;">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i> Sedang menganalisis struk...
+                        </p>
+                        <p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">
+                            Upload foto struk, data akan terisi otomatis.
+                        </p>
+                    </div>
+                    {{-- [MODIFIKASI OCR END] --}}
+
                     <div class="modal-tabs">
                         <button type="button" class="modal-tab-item active"
                             data-tx-tab-type="pengeluaran">Pengeluaran</button>
@@ -302,15 +318,12 @@
 
     {{-- // Kode Modal Preview Laporan + Download PDF --}}
     <div class="modal-overlay" id="print-laporan-overlay" style="display: none;">
-        {{-- // UBAH 1: Tambahkan display:flex, flex-column, dan padding:0 pada modal-box --}}
-        {{-- // Hapus overflow-y: auto dari sini --}}
         <div class="modal-box"
             style="max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
 
-            {{-- // UBAH 2: Header diberi padding manual (karena padding parent dihapus) --}}
             <div class="modal-header" style="padding: 20px; flex-shrink: 0; border-bottom: 1px solid #eee;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="{{ asset('icons/print_icon.png') }}" alt="Print" style="width: 24px; height: 24px;">
+                    {{-- <img src="{{ asset('icons/print_icon.png') }}" alt="Print" style="width: 24px; height: 24px;"> --}}
                     <h2 style="margin:0; font-size: 1.25rem;">Preview Laporan Keuangan</h2>
                 </div>
                 <button class="modal-close-btn" data-close-modal="print-laporan-overlay">
@@ -318,7 +331,6 @@
                 </button>
             </div>
 
-            {{-- // UBAH 3: Body diberi flex: 1 dan overflow-y: auto (SCROLL DISINI) --}}
             <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
 
                 <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
@@ -351,7 +363,6 @@
 
             </div>
 
-            {{-- // UBAH 4: Footer diberi background putih & border atas agar terpisah visualnya saat discroll --}}
             <div class="modal-footer"
                 style="padding: 20px; flex-shrink: 0; border-top: 1px solid #eee; background: #fff;">
                 <button type="button" class="btn btn-secondary-modal"
@@ -471,7 +482,6 @@
             };
 
             // --- UTILITY FUNCTION: Format Nominal Rupiah (integer, ribuan dengan '.') ---
-            // Catatan: Jangan interpretasikan '.' sebagai desimal, supaya input seperti "900.000" tidak berubah jadi "900,00".
             function formatNominal(value) {
                 const digitsOnly = String(value || '').replace(/\D/g, '');
                 const limited = digitsOnly.slice(0, 15);
@@ -479,7 +489,6 @@
                 return limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
-            // Kode fungsi menampilkan dialog konfirmasi/notifikasi
             // --- UTILITY FUNCTION: Dialog Minimalis untuk Konfirmasi & Notifikasi ---
             function showDialog(message, icon = 'info', isConfirm = false) {
                 return new Promise((resolve) => {
@@ -525,12 +534,9 @@
                         resolve(false);
                     };
 
-                    // Klik OK/Confirm tidak langsung tutup overlay jika ini adalah konfirmasi
-                    // Biarkan pemanggil (caller) yang menutup atau mengubah status dialog
                     const cleanup = () => {
                         btnConfirm.removeEventListener('click', handleConfirm);
                         btnCancel.removeEventListener('click', handleCancel);
-                        // Jika bukan confirm, tutup langsung
                         if (!isConfirm) overlay.style.display = 'none';
                     };
 
@@ -539,7 +545,6 @@
                 });
             }
 
-            // Kode fungsi render grid ikon kategori
             // --- UTILITY FUNCTION: Render Icon Grid untuk Kategori Modal ---
             function renderIconGrid(type = 'pengeluaran') {
                 const container = document.getElementById('icon-grid-container-kat');
@@ -548,7 +553,6 @@
                 // Set class berdasarkan tipe untuk CSS selector
                 container.className = `icon-picker-container grid-${type}`;
 
-                // Nama icon: Button.png, Button-1.png, Button-2.png, ... Button-47.png
                 const icons = ['Button.png'];
                 for (let i = 1; i <= 47; i++) {
                     icons.push(`Button-${i}.png`);
@@ -568,7 +572,6 @@
 
             // --- UTILITY FUNCTION: Select Icon untuk Kategori Modal ---
             window.selectIconKat = function(element, iconValue) {
-                // Hapus class active dari semua
                 document.querySelectorAll('#icon-grid-container-kat .icon-option').forEach(el => {
                     const typeIcon = el.querySelector('.icon-type');
                     const neutralIcon = el.querySelector('.icon-neutral');
@@ -576,7 +579,6 @@
                     if (neutralIcon) neutralIcon.style.display = 'none';
                     el.classList.remove('active');
                 });
-                // Tambah class active ke yang dipilih
                 element.classList.add('active');
                 const typeIcon = element.querySelector('.icon-type');
                 const neutralIcon = element.querySelector('.icon-neutral');
@@ -600,8 +602,7 @@
                 await loadPrintData();
                 updatePrintPreview();
             });
-// Kode fungsi memuat data untuk cetak laporan
-            
+
             async function loadPrintData() {
                 try {
                     const response = await fetch('/api/dashboard-data', {
@@ -614,8 +615,7 @@
                     currentPrintData = {};
                 }
             }
-// Kode fungsi update preview cetak laporan
-            
+
             function updatePrintPreview() {
                 previewContainer.innerHTML = '';
                 if (checkboxRingkasan.checked && currentPrintData) {
@@ -631,7 +631,6 @@
                     previewContainer.innerHTML =
                         '<p style="color: #999; text-align: center; padding: 40px;">Pilih minimal satu opsi untuk ditampilkan</p>';
                 }
-            // Kode fungsi render HTML ringkasan keuangan untuk cetak
             }
 
             function renderRingkasanKeuangan() {
@@ -659,7 +658,6 @@
                     </div>
                 </div>
             `;
-            // Kode fungsi render HTML grafik kas untuk cetak
             }
 
             function renderGrafikKas() {
@@ -669,7 +667,6 @@
                     <p style="color: #999; font-size: 13px; text-align: center; padding: 30px 0;">Grafik akan ditampilkan dalam PDF</p>
                 </div>
             `;
-            // Kode fungsi render HTML rincian transaksi untuk cetak
             }
 
             function renderRincianTransaksi() {
@@ -903,7 +900,6 @@
                     closeMonthMenu();
                     fetchTransactions();
                 }
-            // Kode fungsi mengambil data transaksi dari API
             });
 
             async function fetchTransactions(url = null) {
@@ -1054,7 +1050,6 @@
                     if (e.target.classList.contains('check-item')) {
                         updateBulkDeleteButton();
                     }
-            // Kode fungsi update status tombol hapus massal
                 });
             }
 
@@ -1107,12 +1102,8 @@
                             headers: API_HEADERS
                         });
 
-                        // [CRITICAL FIX] Cek apakah server merespons OK (Status 200-299)
-                        // Pastikan Backend (TransactionController) juga sudah diperbaiki
-                        // agar me-return 200 meskipun data sudah soft-deleted (withTrashed)
                         if (response.ok) {
                             successCount++;
-                            // Hapus elemen UI (table row / mobile card) secara langsung agar UI responsif
                             document.querySelectorAll(`.check-item[data-id="${id}"]`).forEach((checkbox) => {
                                 const row = checkbox.closest('.transaction-row');
                                 if (row) row.remove();
@@ -1146,7 +1137,6 @@
                 document.getElementById('check-all-transactions').checked = false;
             });
 
-            // Kode fungsi membuka modal edit transaksi
             window.openEditModal = function(tx) {
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
@@ -1156,25 +1146,16 @@
                 document.getElementById('modal-tx-catatan').value = tx.catatan || '';
 
                 if (tx.tanggal_transaksi) {
-                    // [FIX] Pastikan format YYYY-MM-DD HH:mm:ss diubah ke YYYY-MM-DDTHH:mm
-                    // Kita ambil 16 karakter pertama: "2025-12-09 05:57" -> "2025-12-09T05:57"
                     let rawDate = tx.tanggal_transaksi;
-
-                    // Cek apakah formatnya ISO string (ada huruf T dan Z)?
-                    // Kalau iya, kita harus convert ke waktu lokal manual
                     if (rawDate.includes('T') && rawDate.endsWith('Z')) {
                         const dateObj = new Date(rawDate);
-                        // Ambil waktu lokal browser (WIB)
                         const year = dateObj.getFullYear();
                         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                         const day = String(dateObj.getDate()).padStart(2, '0');
                         const hours = String(dateObj.getHours()).padStart(2, '0');
                         const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-
                         rawDate = `${year}-${month}-${day} ${hours}:${minutes}`;
                     }
-
-                    // Format akhir untuk input datetime-local: "YYYY-MM-DDTHH:mm"
                     const dateVal = rawDate.replace(' ', 'T').substring(0, 16);
                     document.getElementById('modal-tx-tanggal').value = dateVal;
                 }
@@ -1202,7 +1183,6 @@
                 txModalOverlay.style.display = 'flex';
             });
 
-            // Kode fungsi render baris transaksi ke tabel/card
             function renderTransactionRows(transactions) {
                 const container = document.getElementById('transaction-list-container');
                 container.innerHTML = '';
@@ -1274,9 +1254,16 @@
                         if (dayKey !== currentDayKey) {
                             currentDayKey = dayKey;
 
-                            const dayNum = dateObj.toLocaleDateString('id-ID', { day: '2-digit' });
-                            const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
-                            const monthYear = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                            const dayNum = dateObj.toLocaleDateString('id-ID', {
+                                day: '2-digit'
+                            });
+                            const dayName = dateObj.toLocaleDateString('id-ID', {
+                                weekday: 'long'
+                            });
+                            const monthYear = dateObj.toLocaleDateString('id-ID', {
+                                month: 'long',
+                                year: 'numeric'
+                            });
 
                             const groupEl = document.createElement('div');
                             groupEl.className = 'tx-day-group';
@@ -1313,12 +1300,14 @@
                         `;
 
                         itemEl.addEventListener('click', (e) => {
-                            if (e.target && e.target.closest && e.target.closest('.tx-item-check')) return;
+                            if (e.target && e.target.closest && e.target.closest('.tx-item-check'))
+                                return;
                             openEditModal(tx);
                         });
                         itemEl.addEventListener('keydown', (e) => {
                             if (e.key !== 'Enter' && e.key !== ' ') return;
-                            if (e.target && e.target.closest && e.target.closest('.tx-item-check')) return;
+                            if (e.target && e.target.closest && e.target.closest('.tx-item-check'))
+                                return;
                             e.preventDefault();
                             openEditModal(tx);
                         });
@@ -1385,7 +1374,6 @@
                 });
             }
 
-            // Kode fungsi render link pagination
             function renderPaginationLinks(links) {
                 paginationLinksContainer.innerHTML = '';
                 links.forEach(link => {
@@ -1405,7 +1393,6 @@
                 });
             }
 
-            // Kode fungsi memuat daftar kategori ke dropdown
             async function populateCategoryDropdown(selectedTipe = 'pengeluaran', selectId = null) {
                 const listContainer = document.getElementById('category-list-container');
                 const triggerText = document.getElementById('selected-category-text');
@@ -1490,7 +1477,6 @@
                 txModalOverlay.style.display = 'flex';
             });
 
-            // Kode fungsi simpan transaksi (Tambah/Edit)
             txForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 txMessage.textContent = 'Menyimpan...';
@@ -1509,21 +1495,19 @@
                 data.jumlah = cleanJumlah;
                 const id = document.getElementById('modal-tx-id').value;
                 let url = API_TRANSACTIONS;
-                let method = 'POST'; // Default untuk Tambah Baru
+                let method = 'POST';
 
                 if (id) {
                     url = `${API_TRANSACTIONS}/${id}`;
-                    method = 'POST'; // [UBAH] Edit pun tetap pakai POST biar aman di hosting
-                    data._method =
-                        'PUT'; // [TAMBAH] Kita "titip pesan" ke Laravel kalau ini sebenarnya PUT
+                    method = 'POST';
+                    data._method = 'PUT';
                 }
 
                 try {
                     const response = await fetch(url, {
-                        method: method, // Browser akan mengirim POST (Hosting Senang)
+                        method: method,
                         headers: API_HEADERS,
-                        body: JSON.stringify(
-                            data) // Laravel akan membaca _method: 'PUT' di dalam sini
+                        body: JSON.stringify(data)
                     });
                     const result = await response.json();
 
@@ -1557,7 +1541,6 @@
                 katModalOverlay.style.display = 'flex';
             });
 
-            // Kode fungsi simpan kategori baru
             katForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 katMessage.textContent = 'Menyimpan...';
@@ -1588,12 +1571,10 @@
                 }
             });
 
-            // Kode fungsi menutup modal
             function closeModal(modal) {
                 if (modal) modal.style.display = 'none';
             }
 
-            // Kode fungsi mengatur tab aktif (Pemasukan/Pengeluaran)
             function setActiveTab(tabs, hiddenInput, tipe) {
                 hiddenInput.value = tipe;
                 tabs.forEach(tab => {
@@ -1649,6 +1630,123 @@
             }
 
             fetchTransactions(initialUrl.toString());
+
+            // --- OCR LOGIC START ---
+            const btnScanOcr = document.getElementById('btn-scan-ocr');
+            const ocrFileInput = document.getElementById('ocr-file-input');
+            const ocrLoadingText = document.getElementById('ocr-loading-text');
+
+            if (btnScanOcr) {
+                btnScanOcr.addEventListener('click', function() {
+                    ocrFileInput.click();
+                });
+            }
+
+            if (ocrFileInput) {
+                ocrFileInput.addEventListener('change', async function() {
+                    if (this.files.length === 0) return;
+
+                    const file = this.files[0];
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    // Tampilkan loading
+                    btnScanOcr.disabled = true;
+                    btnScanOcr.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Memproses...';
+                    ocrLoadingText.style.display = 'block';
+
+                    // Bersihkan pesan error sebelumnya
+                    const txMessage = document.getElementById('transaksi-modal-message');
+                    if (txMessage) txMessage.textContent = '';
+
+                    try {
+                        const response = await fetch('/api/ocr/scan', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    ?.getAttribute('content')
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            const data = result.data; // JSON hasil ekstraksi Gemini
+
+                            // --- AUTO FILL FORM ---
+
+                            // 1. Nominal (Total Transaksi)
+                            if (data.total_transaksi) {
+                                const nominalInput = document.getElementById('modal-tx-jumlah');
+                                nominalInput.value = formatNominal(data.total_transaksi.toString());
+                                // Trigger animasi/format jika ada
+                                nominalInput.dispatchEvent(new Event('input'));
+                            }
+
+                            // 2. Tanggal Transaksi
+                            if (data.tanggal) {
+                                const dateInput = document.getElementById('modal-tx-tanggal');
+                                let isoDate = data.tanggal.replace(' ', 'T');
+                                if (isoDate.length > 16) isoDate = isoDate.substring(0, 16);
+                                dateInput.value = isoDate;
+                            }
+
+                            // 3. Catatan (Nama Toko + Detail Barang)
+                            const catatanInput = document.getElementById('modal-tx-catatan');
+                            let catatanText = '';
+
+                            if (data.nama_toko) {
+                                catatanText += `Belanja di ${data.nama_toko}.\n`;
+                            }
+
+                            if (data.items && data.items.length > 0) {
+                                catatanText += 'Items: ';
+                                const itemsStr = data.items.map(item =>
+                                    `${item.nama_barang} (${item.qty}x)`
+                                ).join(', ');
+                                catatanText += itemsStr;
+                            }
+
+                            catatanInput.value = catatanText;
+
+                            // 4. Tab Pengeluaran (Default)
+                            const txModalTabs = document.querySelectorAll(
+                                '#transaksi-modal-overlay .modal-tab-item');
+                            const txTipeHidden = document.getElementById('modal-tx-tipe');
+                            setActiveTab(txModalTabs, txTipeHidden, 'pengeluaran');
+                            populateCategoryDropdown('pengeluaran');
+
+                            if (txMessage) {
+                                txMessage.style.color = 'green';
+                                txMessage.textContent =
+                                    'Berhasil membaca struk! Silakan cek data sebelum simpan.';
+                            }
+
+                        } else {
+                            throw new Error(result.message || 'Gagal membaca gambar');
+                        }
+
+                    } catch (error) {
+                        console.error('OCR Error:', error);
+                        if (txMessage) {
+                            txMessage.style.color = 'red';
+                            txMessage.textContent = 'Gagal scan: ' + error.message;
+                        }
+                    } finally {
+                        // Reset Loading
+                        btnScanOcr.disabled = false;
+                        btnScanOcr.innerHTML =
+                            '<i class="fa-solid fa-camera" style="margin-right: 8px;"></i> Scan Struk Otomatis (AI)';
+                        ocrLoadingText.style.display = 'none';
+                        ocrFileInput.value = '';
+                    }
+                });
+            }
+            // --- OCR LOGIC END ---
+
         });
 
         // Kode fungsi update ringkasan total di footer

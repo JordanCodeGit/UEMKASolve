@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SetupController;
+use App\Http\Controllers\Api\OcrController;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,4 +79,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 9. Report
     Route::get('/report/download', [ReportController::class, 'downloadReport']);
+
+    // 10. OCR dengan Gemini AI
+    Route::post('/ocr/scan', [OcrController::class, 'scan'])->middleware('auth:sanctum');
 });
