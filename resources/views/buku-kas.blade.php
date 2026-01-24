@@ -780,31 +780,110 @@
 
             // --- A. LOGIKA INTERAKSI DROPDOWN ---
             const monthBtn = document.getElementById('month-filter-btn');
+            const monthWrapper = document.getElementById('month-filter-wrapper');
             const monthMenu = document.getElementById('month-filter-menu');
             const monthPicker = document.getElementById('custom-month-picker');
             const btnSpan = monthBtn.querySelector('span');
 
+            let isMonthMenuOpen = false;
+            let monthMenuRaf = null;
+
+            const isMobileViewport = () => window.matchMedia('(max-width: 768px)').matches;
+
+            const positionMonthMenu = () => {
+                if (!isMonthMenuOpen) return;
+                if (!monthWrapper || !monthMenu) return;
+
+                if (monthMenuRaf) cancelAnimationFrame(monthMenuRaf);
+                monthMenuRaf = requestAnimationFrame(() => {
+                    const gap = 8;
+                    const padding = 8;
+
+                    const anchorRect = monthWrapper.getBoundingClientRect();
+                    const menuRect = monthMenu.getBoundingClientRect();
+
+                    const viewportW = window.innerWidth;
+                    const viewportH = window.innerHeight;
+
+                    // Default: attach under the trigger, align right edges
+                    let top = anchorRect.bottom + gap;
+                    let left = anchorRect.right - menuRect.width;
+
+                    // Clamp horizontally
+                    const minLeft = padding;
+                    const maxLeft = viewportW - menuRect.width - padding;
+                    left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
+
+                    // If not enough room below, flip above
+                    const maxTop = viewportH - menuRect.height - padding;
+                    if (top > maxTop) {
+                        top = anchorRect.top - gap - menuRect.height;
+                    }
+
+                    // Clamp vertically
+                    const minTop = padding;
+                    top = Math.min(Math.max(top, minTop), Math.max(minTop, maxTop));
+
+                    monthMenu.style.setProperty('--month-menu-top', `${Math.round(top)}px`);
+                    monthMenu.style.setProperty('--month-menu-left', `${Math.round(left)}px`);
+                });
+            };
+
+            const openMonthMenu = () => {
+                monthMenu.style.display = 'flex';
+                isMonthMenuOpen = true;
+
+                if (isMobileViewport()) {
+                    // On mobile, menu is fixed; compute an anchored position.
+                    monthMenu.style.visibility = 'hidden';
+                    monthMenu.style.setProperty('--month-menu-top', '0px');
+                    monthMenu.style.setProperty('--month-menu-left', '0px');
+
+                    requestAnimationFrame(() => {
+                        positionMonthMenu();
+                        monthMenu.style.visibility = 'visible';
+                    });
+
+                    window.addEventListener('resize', positionMonthMenu);
+                    window.addEventListener('scroll', positionMonthMenu, true);
+                }
+            };
+
+            const closeMonthMenu = () => {
+                isMonthMenuOpen = false;
+                monthMenu.style.display = 'none';
+                monthMenu.style.visibility = '';
+                monthMenu.style.removeProperty('--month-menu-top');
+                monthMenu.style.removeProperty('--month-menu-left');
+                window.removeEventListener('resize', positionMonthMenu);
+                window.removeEventListener('scroll', positionMonthMenu, true);
+            };
+
             monthBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                monthMenu.style.display = monthMenu.style.display === 'flex' ? 'none' : 'flex';
+                if (isMonthMenuOpen || monthMenu.style.display === 'flex') {
+                    closeMonthMenu();
+                } else {
+                    openMonthMenu();
+                }
             });
 
             document.addEventListener('click', (e) => {
                 if (monthMenu && !monthMenu.contains(e.target) && !monthBtn.contains(e.target)) {
-                    monthMenu.style.display = 'none';
+                    closeMonthMenu();
                 }
             });
 
-            document.querySelectorAll('.dropdown-item').forEach(item => {
+            monthMenu.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove(
+                    monthMenu.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove(
                         'active'));
                     item.classList.add('active');
                     monthPicker.value = '';
 
                     btnSpan.textContent = item.textContent;
                     currentMonthFilter = item.dataset.value;
-                    monthMenu.style.display = 'none';
+                    closeMonthMenu();
                     fetchTransactions();
                 });
             });
@@ -821,7 +900,7 @@
                     });
                     btnSpan.textContent = monthName;
                     currentMonthFilter = selectedValue;
-                    monthMenu.style.display = 'none';
+                    closeMonthMenu();
                     fetchTransactions();
                 }
             // Kode fungsi mengambil data transaksi dari API

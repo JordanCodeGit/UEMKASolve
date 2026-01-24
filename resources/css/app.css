@@ -2700,6 +2700,19 @@ textarea.form-input-modal {
     /* Samakan tinggi */
 }
 
+/* Buku Kas: anchor month dropdown to the trigger (avoid detached menu) */
+.page-buku-kas #month-filter-wrapper {
+    position: relative;
+    overflow: visible;
+}
+
+.page-buku-kas #month-filter-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+}
+
 .dropdown-with-icon i {
     color: var(--text-secondary);
     margin-right: 8px;
@@ -7595,17 +7608,49 @@ textarea.form-input-modal {
         align-items: flex-end;
     }
 
+    .card-header-grafik-kas #dashboard-filter-wrapper {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+    }
+
     .card-header-grafik-kas #dashboard-filter-btn {
         min-width: 0 !important;
-        padding: 8px 10px !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        background: var(--bg-primary) !important;
+        border: 1px solid rgba(15, 23, 42, 0.10) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08) !important;
+        justify-content: center !important;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn:focus-visible {
+        outline: 2px solid rgba(59, 130, 246, 0.45);
+        outline-offset: 2px;
     }
 
     .card-header-grafik-kas #dashboard-filter-btn span {
-        display: block;
-        max-width: 140px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: none !important;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn i {
+        display: none !important;
+    }
+
+    .card-header-grafik-kas #dashboard-filter-btn img {
+        margin-right: 0 !important;
+        width: 18px !important;
+        height: 18px !important;
     }
 
     .card-body-grafik-kas {
@@ -9001,5 +9046,98 @@ textarea.form-input-modal {
 @media (max-width: 480px) {
     .profile-name {
         max-width: 95px;
+    }
+}
+
+/* =========================================
+   BUKU KAS MOBILE: month filter + print icon-only
+   (override generic mobile button rules)
+   ========================================= */
+
+@media (max-width: 768px) {
+    .page-buku-kas .header-actions {
+        gap: 10px;
+    }
+
+    /* Month filter: icon kalender saja (tanpa teks) */
+    .page-buku-kas #month-filter-wrapper {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+
+    /* Prevent large blue tap-highlight overlay on mobile */
+    .page-buku-kas #month-filter-wrapper,
+    .page-buku-kas #month-filter-btn,
+    .page-buku-kas #btn-cetak-laporan {
+        -webkit-tap-highlight-color: transparent;
+        tap-highlight-color: transparent;
+        touch-action: manipulation;
+        user-select: none;
+    }
+
+    .page-buku-kas #month-filter-wrapper>i.fa-calendar-days {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0 !important;
+        font-size: 16px;
+        pointer-events: none;
+    }
+
+    /* Tetap bisa diklik (JS), tapi tampilan ikon-only */
+    .page-buku-kas #month-filter-btn {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        min-width: 0 !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .page-buku-kas #month-filter-btn .btn-label,
+    .page-buku-kas #month-filter-btn .fa-chevron-down {
+        display: none !important;
+    }
+
+    /* Month filter menu (mobile): render as real pop-up outside header */
+    .page-buku-kas #month-filter-menu {
+        position: fixed !important;
+        top: var(--month-menu-top, 0px);
+        left: var(--month-menu-left, 0px);
+        right: auto;
+        width: min(280px, calc(100vw - 32px)) !important;
+        max-height: min(60vh, 420px);
+        overflow: auto;
+        z-index: 10050 !important;
+    }
+
+    /* Print: icon saja (tanpa teks) */
+    .page-buku-kas #btn-cetak-laporan {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+    }
+
+    .page-buku-kas #btn-cetak-laporan .btn-label {
+        display: none !important;
+    }
+
+    .page-buku-kas #btn-cetak-laporan i {
+        font-size: 16px;
     }
 }

@@ -2,6 +2,8 @@
 
 @section('title', 'Masuk')
 
+@section('meta_description', 'Uemkasolve membantu UMKM mengelola keuangan dan inventaris secara digital dengan mudah. Masuk ke akun Anda untuk mulai mengelola bisnis.')
+
 @section('content')
     {{-- // Bagian Form Login --}}
     <div class="auth-form">

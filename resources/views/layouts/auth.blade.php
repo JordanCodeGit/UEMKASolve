@@ -10,12 +10,13 @@
         $siteTagline = config('app.tagline', 'Solusi UMKM');
 
         // Auth pages should use a single marketing-focused title (per SEO/snippet needs)
-        $seoTitle = $siteName . ' - ' . $siteTagline;
+        // Keep it short so Google is less likely to rewrite it.
+        $seoTitle = $siteName;
 
         // You can override per-page via: @section('meta_description', '...')
         $seoDescription = trim($__env->yieldContent(
             'meta_description',
-            $siteName . ' adalah solusi UMKM untuk membantu pencatatan transaksi dan pengelolaan keuangan usaha secara lebih rapi dan mudah.'
+            'Uemkasolve membantu UMKM mengelola keuangan dan inventaris secara digital dengan mudah. Masuk ke akun Anda untuk mulai mengelola bisnis.'
         ));
 
         $currentUrl = url()->current();
@@ -23,6 +24,7 @@
 
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
     <meta name="application-name" content="{{ $siteName }}">
     <link rel="canonical" href="{{ $currentUrl }}">
 

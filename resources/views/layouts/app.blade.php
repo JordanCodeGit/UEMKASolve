@@ -16,7 +16,7 @@
         // You can override per-page via: @section('meta_description', '...')
         $seoDescription = trim($__env->yieldContent(
             'meta_description',
-            $siteName . ' membantu UMKM mencatat transaksi, memantau arus kas, dan menyusun laporan keuangan secara cepat.'
+            'Uemkasolve membantu UMKM mengelola keuangan dan inventaris secara digital dengan mudah.'
         ));
 
         $currentUrl = url()->current();
@@ -24,6 +24,7 @@
 
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
     <meta name="application-name" content="{{ $siteName }}">
     <link rel="canonical" href="{{ $currentUrl }}">
 
@@ -97,9 +98,6 @@
         </nav>
 
         <div class="sidebar-footer">
-            <button class="upgrade-btn">
-                Upgrade Plan
-            </button>
             <small>@2025 UemkaSolve</small>
         </div>
     </aside>

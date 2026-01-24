@@ -99,9 +99,9 @@
                             style="position: relative; display: inline-block;">
 
                             <div id="dashboard-filter-btn" class="dropdown-minimalis-grafik"
-                                style="min-width: 150px; justify-content: space-between; padding: 10px 14px; border: none; border-radius: 8px; background: var(--bg-primary); display: flex; align-items: center; cursor: pointer;">
+                                style="min-width: 150px; justify-content: space-between; border: none; border-radius: 8px; display: flex; align-items: center; cursor: pointer;">
                                 <img src="{{ asset('icons/kalendar.png') }}" alt="calendar"
-                                    style="font-size: 14px; color: var(--text-secondary); margin-right: 6px; width: 16px; height: 16px;">
+                                    style="font-size: 20px; color: var(--text-secondary); margin-right: 6px; width: 24px; height: 24px;">
                                 <span style="font-size: 13px; font-weight: 500;">Bulan Ini</span>
                                 <i class="fa-solid fa-chevron-down"
                                     style="font-size: 12px; color: var(--text-secondary); margin-left: auto;"></i>
