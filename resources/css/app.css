@@ -632,6 +632,11 @@ body {
     flex-direction: column;
 }
 
+/* Dashboard: Persentase Kas card should not clip legend text */
+.content-card-persentase-kas {
+    overflow: visible;
+}
+
 .tabs-nav {
     display: flex;
     width: auto;
@@ -5790,10 +5795,12 @@ textarea.form-input-modal {
     gap: 32px;
     align-items: flex-start;
     justify-content: space-between;
+    min-width: 0;
 }
 
 .chart-wrapper {
-    flex: 0 0 300px;
+    flex: 1 1 300px;
+    min-width: 220px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -5807,7 +5814,8 @@ textarea.form-input-modal {
 
 /* Doughnut legend - positioning di sebelah kanan */
 .doughnut-legend {
-    flex: 1;
+    flex: 1 1 220px;
+    min-width: 160px;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -5816,15 +5824,26 @@ textarea.form-input-modal {
     gap: 12px;
     justify-content: flex-start;
     align-items: flex-start;
+    max-width: 100%;
 }
 
 .doughnut-legend li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     font-size: 13px;
     color: var(--text-primary);
     text-align: left;
+    min-width: 0;
+}
+
+.doughnut-legend .legend-label {
+    min-width: 0;
+    flex: 1 1 auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.25;
 }
 
 .doughnut-legend .legend-color {
@@ -5838,23 +5857,13 @@ textarea.form-input-modal {
 
     /* Persentase Kas (desktop): force legend to wrap downward like Buku Kas */
     .doughnut-legend {
-        flex: 0 0 260px;
-        width: 260px;
+        flex: 1 1 240px;
         max-width: 260px;
-        min-width: 0;
+        min-width: 160px;
     }
 
     .doughnut-legend li {
-        min-width: 0;
         align-items: flex-start;
-    }
-
-    .doughnut-legend .legend-label {
-        min-width: 0;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-        line-height: 1.25;
     }
 
     /* Dashboard: Recent Transactions (desktop): long category names should wrap, not collide */

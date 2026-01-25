@@ -143,7 +143,7 @@
             </div>
         </div>
 
-        <div class="content-card">
+        <div class="content-card content-card-persentase-kas">
             <div class="card-header card-header-persentase-kas">
                 <div class="card-title-with-icon">
                     <img src="{{ asset('icons/transaction_icon.png') }}" alt="Icon" class="custom-title-icon">
@@ -510,7 +510,7 @@
                     if (!legendList) return;
                     legendList.innerHTML = '';
                     if (!labels || labels.length === 0) {
-                        legendList.innerHTML = '<li style="color:#ccc; font-size:0.8rem;">Belum ada data</li>';
+                        legendList.innerHTML = '<li><span class="legend-label" style="color:#94a3b8; font-size:0.85rem;">Belum ada data</span></li>';
                         return;
                     }
                     labels.slice(0, 5).forEach((label, i) => {
