@@ -237,7 +237,7 @@
                     <div class="form-group-row">
                         <label>Logo Usaha</label>
 
-                        <input type="file" name="logo" accept="image/*">
+                        <input type="file" id="logo_usaha_settings" name="logo" accept="image/*" data-max-bytes="2097152">
                         <small>Format: PNG, JPG, max 2MB</small>
                         @error('logo')
                             <small class="text-error">{{ $message }}</small>
@@ -380,6 +380,65 @@
                 }, 4000);
             }
 
+            // ===== LOGO FILE SIZE VALIDATION (2 MB max) =====
+            const logoInput = document.getElementById('logo_usaha_settings');
+            const profilUsahaForm = document.getElementById('form-profil-usaha');
+
+            const getMaxLogoBytes = () => {
+                const attr = logoInput?.getAttribute('data-max-bytes');
+                const parsed = attr ? Number(attr) : NaN;
+                return Number.isFinite(parsed) ? parsed : (2 * 1024 * 1024);
+            };
+
+            const showLogoTooLargeAlert = (maxBytes) => {
+                const maxMb = (maxBytes / (1024 * 1024)).toFixed(0);
+                if (window.Swal) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        }
+                    });
+
+                    Toast.fire({
+                        icon: 'error',
+                        title: `Ukuran foto terlalu besar (maks ${maxMb} MB)`
+                    });
+                    return;
+                }
+                alert(`Ukuran foto terlalu besar (maks ${maxMb} MB)`);
+            };
+
+            const validateLogoFileSize = () => {
+                if (!logoInput || !logoInput.files || logoInput.files.length === 0) return true;
+                const maxBytes = getMaxLogoBytes();
+                const file = logoInput.files[0];
+                if (file && file.size > maxBytes) {
+                    logoInput.value = '';
+                    showLogoTooLargeAlert(maxBytes);
+                    return false;
+                }
+                return true;
+            };
+
+            if (logoInput) {
+                logoInput.addEventListener('change', validateLogoFileSize);
+            }
+
+            if (profilUsahaForm) {
+                profilUsahaForm.addEventListener('submit', (e) => {
+                    if (!validateLogoFileSize()) {
+                        e.preventDefault();
+                        return;
+                    }
+                });
+            }
+
             document.querySelectorAll('.password-toggle-icon').forEach(icon => {
                 icon.addEventListener('click', function() {
                     const input = this.previousElementSibling;
@@ -427,4 +486,7 @@
 
         });
     </script>
+
+    {{-- Tambahkan SweetAlert2 CDN --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endpush
