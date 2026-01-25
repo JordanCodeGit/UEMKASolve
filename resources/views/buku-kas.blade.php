@@ -124,7 +124,7 @@
                     <div id="transaksi-modal-message"></div>
 
                     {{-- [MODIFIKASI OCR START] --}}
-                    <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border: 1px dashed #007bff; border-radius: 8px; text-align: center;">
+                    <div class="ocr-box" style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border: 1px dashed #007bff; border-radius: 8px; text-align: center;">
                         <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
 
                         <button type="button" id="btn-scan-ocr" class="btn" style="background: #fff; color: #007bff; border: 1px solid #007bff; font-weight: 600; padding: 8px 20px; border-radius: 50px; cursor: pointer; transition: all 0.2s;">
@@ -487,6 +487,24 @@
                 const limited = digitsOnly.slice(0, 15);
                 if (!limited) return '';
                 return limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            // --- UTILITY FUNCTION: Normalize jumlah from API to integer rupiah ---
+            // Handles: 1222222, "1222222", "1222222.00", "1222222,00".
+            function normalizeJumlahToInt(value) {
+                if (value === null || value === undefined) return '';
+                const s = String(value).trim();
+                if (!s) return '';
+
+                // Pure numeric with optional decimals
+                if (/^\d+(?:[\.,]\d+)?$/.test(s)) {
+                    const num = Number(s.replace(',', '.'));
+                    return Number.isFinite(num) ? Math.round(num) : '';
+                }
+
+                // Fallback: strip thousand separators/any non-digits
+                const digits = s.replace(/\D/g, '');
+                return digits ? Number(digits) : '';
             }
 
             // --- UTILITY FUNCTION: Dialog Minimalis untuk Konfirmasi & Notifikasi ---
@@ -903,6 +921,8 @@
             });
 
             async function fetchTransactions(url = null) {
+                // Selection is per current pagination; reset on every fetch (page change/search/filter)
+                if (typeof resetSelectionState === 'function') resetSelectionState();
                 let targetUrl;
                 if (url) {
                     targetUrl = new URL(url);
@@ -1006,6 +1026,26 @@
             const filterForm = document.getElementById('filter-form');
             const resetFilterBtn = document.getElementById('btn-reset-filter');
 
+            // ===== Bulk selection is per-pagination (current rendered page only) =====
+            let selectedIdsCurrentPage = new Set();
+
+            function resetSelectionState() {
+                selectedIdsCurrentPage = new Set();
+                const btn = document.getElementById('bulk-delete-btn');
+                const countSpan = document.getElementById('selected-count');
+                const checkAll = document.getElementById('check-all-transactions');
+                if (btn) btn.style.display = 'none';
+                if (btn) btn.dataset.count = '0';
+                if (countSpan) countSpan.textContent = '0';
+                if (checkAll) checkAll.checked = false;
+            }
+
+            function getCurrentPageCheckboxes() {
+                return document.querySelectorAll(
+                    '#transaction-list-container .check-item, #transaction-card-container .check-item'
+                );
+            }
+
             if (filterBtn) {
                 filterBtn.addEventListener('click', () => {
                     filterOverlay.style.display = 'flex';
@@ -1016,6 +1056,7 @@
                 filterForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     closeModal(filterOverlay);
+                    resetSelectionState();
                     fetchTransactions();
                     filterBtn.style.color = '#2563eb';
                     filterBtn.style.borderColor = '#2563eb';
@@ -1026,6 +1067,7 @@
                 resetFilterBtn.addEventListener('click', () => {
                     filterForm.reset();
                     closeModal(filterOverlay);
+                    resetSelectionState();
                     fetchTransactions();
                     filterBtn.style.color = '';
                     filterBtn.style.borderColor = '';
@@ -1034,7 +1076,7 @@
 
             const checkAllBtn = document.getElementById('check-all-transactions');
             checkAllBtn.addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.check-item');
+                const checkboxes = getCurrentPageCheckboxes();
                 checkboxes.forEach(cb => cb.checked = this.checked);
                 updateBulkDeleteButton();
             });
@@ -1054,10 +1096,21 @@
             }
 
             function updateBulkDeleteButton() {
-                const selected = document.querySelectorAll('.check-item:checked');
+                const selected = document.querySelectorAll(
+                    '#transaction-list-container .check-item:checked, #transaction-card-container .check-item:checked'
+                );
                 const selectedIds = new Set(Array.from(selected).map(cb => cb.dataset.id));
+                selectedIdsCurrentPage = selectedIds;
                 const btn = document.getElementById('bulk-delete-btn');
                 const countSpan = document.getElementById('selected-count');
+
+                // Keep header checkbox in sync for the current page
+                const checkAll = document.getElementById('check-all-transactions');
+                const allCbs = getCurrentPageCheckboxes();
+                if (checkAll) {
+                    const allChecked = allCbs.length > 0 && Array.from(allCbs).every(cb => cb.checked);
+                    checkAll.checked = allChecked;
+                }
 
                 if (btn) btn.dataset.count = String(selectedIds.size);
 
@@ -1071,11 +1124,11 @@
 
             // 4. Aksi Klik Tombol Hapus Massal (FIXED LOGIC)
             document.getElementById('bulk-delete-btn').addEventListener('click', async function() {
-                const selected = document.querySelectorAll('.check-item:checked');
-                if (selected.length === 0) return;
+                const ids = Array.from(selectedIdsCurrentPage);
+                if (ids.length === 0) return;
 
                 const confirmed = await showDialog(
-                    `Yakin ingin menghapus ${selected.length} transaksi terpilih?`,
+                    `Yakin ingin menghapus ${ids.length} transaksi terpilih?`,
                     'warning',
                     true
                 );
@@ -1088,8 +1141,6 @@
                 if (dialogMessageEl) dialogMessageEl.textContent = 'Sedang menghapus...';
                 if (dialogOverlay) dialogOverlay.style.display = 'flex';
                 document.querySelector('.dialog-actions').style.display = 'none';
-
-                const ids = Array.from(new Set(Array.from(selected).map(cb => cb.dataset.id)));
 
                 let successCount = 0;
                 let failCount = 0;
@@ -1135,6 +1186,7 @@
                 fetchTransactions(); // Refresh Tabel Total
                 document.getElementById('bulk-delete-btn').style.display = 'none';
                 document.getElementById('check-all-transactions').checked = false;
+                selectedIdsCurrentPage = new Set();
             });
 
             window.openEditModal = function(tx) {
@@ -1142,7 +1194,8 @@
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
                 document.getElementById('transaksi-modal-submit-btn').textContent = 'Simpan Perubahan';
                 document.getElementById('modal-tx-id').value = tx.id;
-                document.getElementById('modal-tx-jumlah').value = formatNominal(tx.jumlah.toString());
+                const jumlahInt = normalizeJumlahToInt(tx.jumlah);
+                document.getElementById('modal-tx-jumlah').value = formatNominal(String(jumlahInt));
                 document.getElementById('modal-tx-catatan').value = tx.catatan || '';
 
                 if (tx.tanggal_transaksi) {

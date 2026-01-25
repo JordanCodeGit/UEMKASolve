@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -40,4 +41,16 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Konfigurasi exception
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+            // Friendly handling when request exceeds PHP/server limits (often seen as 413/403 on hosting)
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Ukuran file terlalu besar. Maksimal 2 MB.'
+                ], 413);
+            }
+
+            return back()
+                ->withInput($request->except(['logo']))
+                ->withErrors(['logo' => 'Ukuran foto terlalu besar. Maksimal 2 MB.']);
+        });
     })->create();

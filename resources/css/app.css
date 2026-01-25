@@ -1889,6 +1889,8 @@ body.dark-mode .dropdown-simple {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 14px;
+    min-width: 0;
     margin-bottom: 20px;
 
     background-color: var(--bg-primary);
@@ -1904,6 +1906,8 @@ body.dark-mode .dropdown-simple {
     align-items: center;
     gap: 26px;
     margin-left: 15px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .saldo-display-lg i {
@@ -1918,6 +1922,14 @@ body.dark-mode .dropdown-simple {
     color: var(--text-primary);
     /* Teks dinamis (dark mode) */
     margin: 0;
+    min-width: 0;
+}
+
+/* Buku Kas: keep big saldo readable and aligned */
+.page-buku-kas #saldo-display {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    letter-spacing: -0.01em;
 }
 
 .header-actions {
@@ -2673,6 +2685,8 @@ textarea.form-input-modal {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 14px;
+    min-width: 0;
     margin-bottom: 37px;
 }
 
@@ -3414,8 +3428,8 @@ textarea.form-input-modal {
     /* Untuk menengahkan modal box */
     align-items: center;
     justify-content: center;
-    z-index: 2000;
-    /* Pastikan di atas segalanya */
+    z-index: 12000;
+    /* Above mobile bottom nav (z-index: 9999) */
 
     /* Awalnya disembunyikan */
     display: none;
@@ -3531,6 +3545,39 @@ textarea.form-input-modal {
     flex-direction: column;
     gap: 20px;
     /* Jarak antar grup form */
+}
+
+/* =========================================
+   DESKTOP MODAL BODY SCROLL (post-base override)
+   - Prevent content clipping when browser zoom reduces viewport height
+   ========================================= */
+
+@media (min-width: 769px) {
+    .modal-box {
+        max-height: calc(100vh - 48px);
+    }
+
+    .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .modal-box>form>.modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Kategori page: ensure icon grid never gets clipped at zoom */
+    #category-modal-overlay #dynamic-icon-grid.icon-picker-container {
+        max-width: 100%;
+        max-height: min(46vh, 420px);
+        grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+        margin: 0;
+    }
 }
 
 /* 5. Tabs (Pengeluaran/Pemasukan) */
@@ -5513,6 +5560,11 @@ textarea.form-input-modal {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* SweetAlert2 should appear above in-app overlays/modals */
+.swal2-container {
+    z-index: 20000 !important;
+}
+
 #toast-notification.show {
     transform: translateX(0);
     /* Muncul */
@@ -7081,9 +7133,17 @@ textarea.form-input-modal {
     }
 
     .saldo-display-lg h3 {
-        font-size: 24px;
+        font-size: 21px;
         line-height: 1.1;
         text-align: left;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        /* Avoid awkward breaks like "-\nRp" */
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: none;
     }
 
     .header-actions {
@@ -8039,6 +8099,16 @@ textarea.form-input-modal {
         border-radius: 10px;
     }
 
+    /* Mobile: allow modal overlay + content to scroll (fix iOS non-scroll modals) */
+    .modal-overlay {
+        height: 100dvh;
+        height: 100svh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* Add Category modal: keep compact on mobile */
     #kategori-modal-overlay.modal-overlay,
     #category-modal-overlay.modal-overlay {
@@ -8048,7 +8118,21 @@ textarea.form-input-modal {
     #kategori-modal-overlay .modal-box,
     #category-modal-overlay .modal-box {
         max-width: 420px;
-        max-height: calc(100vh - 140px);
+        max-height: calc(100dvh - 140px);
+    }
+
+    #kategori-modal-overlay .modal-box>form,
+    #category-modal-overlay .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    #kategori-modal-overlay .modal-body,
+    #category-modal-overlay .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
     #kategori-modal-overlay .modal-header,
@@ -8124,7 +8208,8 @@ textarea.form-input-modal {
 
     /* Add Transaction modal (Buku Kas): keep compact on mobile */
     #transaksi-modal-overlay.modal-overlay {
-        padding: 12px 10px calc(96px + env(safe-area-inset-bottom)) 10px;
+        /* Add a bit more bottom breathing room so it doesn't feel "mentok" */
+        padding: 18px 12px calc(28px + env(safe-area-inset-bottom)) 12px;
     }
 
     /* Filter Transaksi modal (Buku Kas): keep compact on mobile */
@@ -8135,7 +8220,19 @@ textarea.form-input-modal {
     #filter-modal-overlay .modal-box {
         width: 100% !important;
         max-width: 420px !important;
-        max-height: calc(100vh - 160px);
+        max-height: calc(100dvh - 160px);
+    }
+
+    #filter-modal-overlay .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    #filter-modal-overlay .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
     #filter-modal-overlay .modal-header {
@@ -8158,27 +8255,106 @@ textarea.form-input-modal {
     }
 
     #transaksi-modal-overlay .modal-box {
-        max-width: 420px;
-        max-height: calc(100vh - 140px);
+        width: 100% !important;
+        max-width: 360px;
+        max-height: 80svh;
+        border-radius: 12px;
     }
 
-    #transaksi-modal-overlay .modal-header {
-        padding: 12px 14px;
-    }
-
-    #transaksi-modal-overlay .modal-header h2 {
-        font-size: 16px;
+    /* Ensure body area can scroll inside the form (mobile) */
+    #transaksi-modal-overlay .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
     }
 
     #transaksi-modal-overlay .modal-body {
-        padding: 14px;
-        gap: 14px;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    #transaksi-modal-overlay .modal-header {
+        padding: 8px 12px;
+    }
+
+    #transaksi-modal-overlay .modal-header h2 {
+        font-size: 15px;
+    }
+
+    #transaksi-modal-overlay .modal-body {
+        padding: 12px;
+        gap: 12px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
 
+    /* Add Transaction modal: tighten inner form spacing (mobile) */
+    #transaksi-modal-overlay .modal-body {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    #transaksi-modal-overlay .modal-tabs {
+        padding: 4px;
+        border-radius: 999px;
+    }
+
+    #transaksi-modal-overlay .modal-tab-item {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    #transaksi-modal-overlay .form-group-modal {
+        gap: 6px;
+    }
+
+    #transaksi-modal-overlay .form-group-modal label {
+        margin-bottom: 4px;
+        font-size: 13px;
+    }
+
+    #transaksi-modal-overlay .form-input-modal {
+        padding: 10px 12px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    #transaksi-modal-overlay .btn-secondary-modal,
+    #transaksi-modal-overlay .btn-primary-modal {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
     #transaksi-modal-overlay .modal-footer {
-        padding: 12px 14px;
+        padding: 8px 12px;
+    }
+
+    /* Add Transaction modal: compact OCR box on mobile */
+    #transaksi-modal-overlay .ocr-box {
+        margin-bottom: 8px !important;
+        padding: 8px !important;
+        border-radius: 10px !important;
+    }
+
+    /* Reduce OCR helper spacing so later fields (e.g., Catatan) peek in */
+    #transaksi-modal-overlay .ocr-box p:last-of-type {
+        margin: 4px 0 0 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    #transaksi-modal-overlay .ocr-box p {
+        font-size: 11px !important;
+    }
+
+    #transaksi-modal-overlay #btn-scan-ocr {
+        padding: 7px 12px !important;
+        font-size: 12.5px !important;
+    }
+
+    /* Keep Catatan visible as a hint, but not too tall */
+    #transaksi-modal-overlay #modal-tx-catatan {
+        min-height: 76px;
     }
 
     /* Print Buku Kas modal (Preview Laporan Keuangan) */
@@ -8189,8 +8365,21 @@ textarea.form-input-modal {
     #print-laporan-overlay .modal-box {
         width: 100% !important;
         max-width: 420px !important;
-        max-height: calc(100vh - 220px) !important;
+        max-height: calc(100dvh - 220px) !important;
         border-radius: 12px;
+    }
+
+    #print-laporan-overlay .modal-box>form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    #print-laporan-overlay .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     #print-laporan-overlay .modal-header {

@@ -194,12 +194,14 @@
 {{-- // Modal Setup Usaha (Hanya muncul jika data usaha belum lengkap) --}}
     
     @if ($needsCompanySetup)
-        <div class="company-setup-overlay" id="company-setup-modal">
+        <div class="company-setup-overlay" id="company-setup-modal"
+            data-has-errors="{{ ($errors->has('logo') || $errors->has('nama_perusahaan')) ? '1' : '0' }}"
+            data-error-message="{{ $errors->first('logo') ?: $errors->first('nama_perusahaan') }}">
             <div class="company-setup-modal-content">
                 <h2>Selamat Datang!</h2>
                 <p>Silakan lengkapi info usaha Anda untuk melanjutkan.</p>
 
-                <form action="{{ route('company.setup.store') }}" method="POST" enctype="multipart/form-data">
+                <form id="company-setup-form" action="{{ route('company.setup.store') }}" method="POST" enctype="multipart/form-data" data-logo-max-bytes="2097152">
                     @csrf
 
                     <div class="form-group">
@@ -252,6 +254,80 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // --- COMPANY SETUP: client-side logo size validation (avoid hosting 403 on oversize upload) ---
+            const companySetupModal = document.getElementById('company-setup-modal');
+            const companySetupForm = document.getElementById('company-setup-form');
+            const companyLogoInput = document.getElementById('logo_usaha');
+
+            const getMaxLogoBytes = () => {
+                const attr = companySetupForm?.getAttribute('data-logo-max-bytes');
+                const parsed = attr ? Number(attr) : NaN;
+                return Number.isFinite(parsed) ? parsed : (2 * 1024 * 1024);
+            };
+
+            const showMiniToast = (icon, message) => {
+                if (window.Swal) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        }
+                    });
+
+                    Toast.fire({
+                        icon,
+                        title: message
+                    });
+                    return;
+                }
+                alert(message);
+            };
+
+            const showLogoTooLargeAlert = (maxBytes) => {
+                const maxMb = (maxBytes / (1024 * 1024)).toFixed(0);
+                showMiniToast('error', `Ukuran foto terlalu besar (maks ${maxMb} MB)`);
+            };
+
+            const validateLogoFileSize = () => {
+                if (!companyLogoInput || !companyLogoInput.files || companyLogoInput.files.length === 0) return true;
+                const maxBytes = getMaxLogoBytes();
+                const file = companyLogoInput.files[0];
+                if (file && file.size > maxBytes) {
+                    companyLogoInput.value = '';
+                    showLogoTooLargeAlert(maxBytes);
+                    return false;
+                }
+                return true;
+            };
+
+            if (companyLogoInput) {
+                companyLogoInput.addEventListener('change', validateLogoFileSize);
+            }
+
+            if (companySetupForm) {
+                companySetupForm.addEventListener('submit', (e) => {
+                    if (!validateLogoFileSize()) {
+                        e.preventDefault();
+                        return;
+                    }
+                });
+            }
+
+            // If server-side validation fails, show it as an alert and keep modal open
+            const hasSetupErrors = companySetupModal?.dataset?.hasErrors === '1';
+            const setupErrorMessage = companySetupModal?.dataset?.errorMessage || '';
+            if (hasSetupErrors) {
+                if (companySetupModal) companySetupModal.style.display = 'flex';
+                if (setupErrorMessage) {
+                    showMiniToast('error', setupErrorMessage);
+                }
+            }
+
             // --- 1. CONFIG & VARIABLES ---
             let lineChartInstance;
             let doughnutChartInstance;
