@@ -59,7 +59,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body class="{{ Request::is('buku-kas') ? 'page-buku-kas' : '' }} {{ Request::is('kategori') ? 'page-kategori' : '' }} {{ Request::is('pengaturan') ? 'page-pengaturan' : '' }}">
+<body class="{{ Request::is('buku-kas') ? 'page-buku-kas' : '' }} {{ Request::is('kategori') ? 'page-kategori' : '' }} {{ Request::is('pengaturan') ? 'page-pengaturan' : '' }} role-{{ $globalRole ?? 'guest' }}">
 
     {{-- // Bagian Sidebar Navigasi --}}
     <aside class="sidebar">
@@ -70,24 +70,36 @@
 
         <nav class="sidebar-nav">
             <ul>
+                @if (in_array(($globalRole ?? 'owner'), ['owner', 'bendahara'], true))
+                    <li>
+                        <a href="{{ route('dashboard') }}" class="{{ Request::is('dashboard') ? 'active' : '' }}">
+                            <i class="fa-solid fa-house-chimney"></i>
+                            <span>DASHBOARD</span>
+                        </a>
+                    </li>
+                @endif
+                @if (($globalRole ?? null) === 'owner')
+                    <li>
+                        <a href="{{ route('anggota.index') }}" class="{{ Request::is('anggota') ? 'active' : '' }}">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>ANGGOTA</span>
+                        </a>
+                    </li>
+                @endif
                 <li>
-                    <a href="{{ route('dashboard') }}" class="{{ Request::is('dashboard') ? 'active' : '' }}">
-                        <i class="fa-solid fa-house-chimney"></i>
-                        <span>DASHBOARD</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('buku-kas') }}" class="{{ Request::is('buku-kas') ? 'active' : '' }}">
+                    <a href="{{ route('buku-kas') }}" class="{{ Request::is('buku-kas') || (($globalRole ?? null) === 'sekretaris' && Request::is('dashboard')) ? 'active' : '' }}">
                         <i class="fa-solid fa-book-open"></i>
                         <span>BUKU KAS</span>
                     </a>
                 </li>
-                <li>
-                    <a href="{{ route('kategori') }}" class="{{ Request::is('kategori') ? 'active' : '' }}">
-                        <i class="fa-solid fa-tags"></i>
-                        <span>KATEGORI</span>
-                    </a>
-                </li>
+                @if (!in_array(($globalRole ?? null), ['owner', 'bendahara'], true))
+                    <li>
+                        <a href="{{ route('kategori') }}" class="{{ Request::is('kategori') ? 'active' : '' }}">
+                            <i class="fa-solid fa-tags"></i>
+                            <span>KATEGORI</span>
+                        </a>
+                    </li>
+                @endif
                 <li>
                     <a href="{{ route('pengaturan.show') }}" class="{{ Request::is('pengaturan') ? 'active' : '' }}">
                         <i class="fa-solid fa-gear"></i>
@@ -98,7 +110,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <small>@2025 UemkaSolve</small>
+            <small>@2026 UemkaSolve</small>
         </div>
     </aside>
 
@@ -134,21 +146,23 @@
                 <div class="user-profile-dropdown" id="profileTriggerBtn">
                     {{-- LOGO / AVATAR --}}
                     <span id="global-header-avatar" style="display: flex; align-items: center;">
-                            @if (optional($globalUser->business)->logo_path)
-                                <img src="{{ asset('storage/' . $globalUser->business->logo_path) }}" alt="Logo" class="profile-avatar-pojok" style="object-fit: cover;">
+                            @if ($globalUser->profile_photo_path)
+                                <img src="{{ asset('storage/' . $globalUser->profile_photo_path) }}" alt="Foto Profil" class="profile-avatar-pojok" style="object-fit: cover;">
                             @else
                                 <div class="default-avatar-pojok">
-                                    @php
-                                        $displayName = optional($globalUser->business)->nama_usaha ?? $globalUser->name;
-                                    @endphp
-                                    {{ substr($displayName, 0, 1) }}
+                                    {{ substr($globalUser->name, 0, 1) }}
                                 </div>
                             @endif
                     </span>
 
                     {{-- NAMA --}}
+                    @php
+                        $headerDisplayName = ($globalRole ?? null) === 'owner' && optional($globalUser->business)->nama_usaha
+                            ? 'Owner - ' . $globalUser->business->nama_usaha
+                            : $globalUser->name;
+                    @endphp
                     <span class="profile-name" id="global-header-business-name">
-                        {{ optional($globalUser->business)->nama_usaha ?? $globalUser->name }}
+                        {{ $headerDisplayName }}
                     </span>
 
                     <i class="fa-solid fa-chevron-down" style="margin-left: 8px; font-size: 12px; color: #64748b; transition: transform 0.2s;"></i>
@@ -172,18 +186,28 @@
 
     {{-- // Bagian Navigasi Bawah (Mobile) --}}
     <nav class="mobile-bottom-nav" aria-label="Navigasi bawah">
-        <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item {{ Request::is('dashboard') ? 'active' : '' }}">
-            <i class="fa-solid fa-house-chimney"></i>
-            <span>Dashboard</span>
-        </a>
+        @if (in_array(($globalRole ?? 'owner'), ['owner', 'bendahara'], true))
+            <a href="{{ route('dashboard') }}" class="mobile-bottom-nav__item {{ Request::is('dashboard') ? 'active' : '' }}">
+                <i class="fa-solid fa-house-chimney"></i>
+                <span>Dashboard</span>
+            </a>
+        @endif
+        @if (($globalRole ?? null) === 'owner')
+            <a href="{{ route('anggota.index') }}" class="mobile-bottom-nav__item {{ Request::is('anggota') ? 'active' : '' }}">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Anggota</span>
+            </a>
+        @endif
         <a href="{{ route('buku-kas') }}" class="mobile-bottom-nav__item {{ Request::is('buku-kas') ? 'active' : '' }}">
             <i class="fa-solid fa-book-open"></i>
             <span>Buku Kas</span>
         </a>
-        <a href="{{ route('kategori') }}" class="mobile-bottom-nav__item {{ Request::is('kategori') ? 'active' : '' }}">
-            <i class="fa-solid fa-tags"></i>
-            <span>Kategori</span>
-        </a>
+        @if (!in_array(($globalRole ?? null), ['owner', 'bendahara'], true))
+            <a href="{{ route('kategori') }}" class="mobile-bottom-nav__item {{ Request::is('kategori') ? 'active' : '' }}">
+                <i class="fa-solid fa-tags"></i>
+                <span>Kategori</span>
+            </a>
+        @endif
         <a href="{{ route('pengaturan.show') }}" class="mobile-bottom-nav__item {{ Request::is('pengaturan') ? 'active' : '' }}">
             <i class="fa-solid fa-gear"></i>
             <span>Pengaturan</span>
@@ -509,14 +533,16 @@
                         return response.json();
                     })
                     .then(data => {
-                        if (data.business && data.business.nama_usaha) {
-                            businessNameEl.textContent = data.business.nama_usaha;
-                        } else if (data.user && data.user.name) {
-                            businessNameEl.textContent = data.user.name;
+                        if (data.user && data.user.name) {
+                            const role = data.user.role || '';
+                            const businessName = data.business && data.business.nama_usaha ? data.business.nama_usaha : '';
+                            businessNameEl.textContent = role === 'owner' && businessName
+                                ? `Owner - ${businessName}`
+                                : data.user.name;
                         }
 
-                        if (data.business && data.business.logo_url) {
-                            avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo" class="profile-avatar-pojok">`;
+                        if (data.user && data.user.profile_photo_url) {
+                            avatarEl.innerHTML = `<img src="${data.user.profile_photo_url}" alt="Foto Profil" class="profile-avatar-pojok">`;
                         } else if (data.user && data.user.name) {
                             avatarEl.innerHTML = `<div class="default-avatar-pojok">${data.user.name.charAt(0).toUpperCase()}</div>`;
                         }

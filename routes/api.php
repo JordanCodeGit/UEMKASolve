@@ -63,6 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::put('/transactions/{id}', [TransactionController::class, 'update']);
+    Route::patch('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 
     // 7. Kategori (CRUD MANUAL - EKSPLISIT)

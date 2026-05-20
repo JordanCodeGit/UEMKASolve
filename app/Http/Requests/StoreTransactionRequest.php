@@ -21,7 +21,8 @@ class StoreTransactionRequest extends FormRequest
         $user = Auth::user();
 
         // [FIX] Ambil ID dari relasi business (bukan kolom id_perusahaan)
-        $idPerusahaan = $user->business ? $user->business->id : null;
+        $business = $user->activeBusiness();
+        $idPerusahaan = $business ? $business->id : null;
 
         return [
             'category_id' => [

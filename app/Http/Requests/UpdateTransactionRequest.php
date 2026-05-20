@@ -21,7 +21,8 @@ class UpdateTransactionRequest extends FormRequest
         $user = Auth::user();
 
         // [FIX] Ambil ID dari relasi business
-        $idPerusahaan = $user->business ? $user->business->id : null;
+        $business = $user->activeBusiness();
+        $idPerusahaan = $business ? $business->id : null;
 
         return [
             'category_id' => [

@@ -11,11 +11,12 @@
             const token = urlParams.get('token');
 
             if (token) {
+                const next = urlParams.get('next') || '/dashboard';
                 // 2. Simpan Token ke Browser
                 localStorage.setItem('auth_token', token);
                 
-                // 3. Langsung pindah ke Dashboard
-                window.location.href = '/dashboard';
+                // 3. Langsung pindah ke halaman yang sesuai role
+                window.location.href = next;
             } else {
                 // Jika gagal, balik ke login
                 window.location.href = '/login';

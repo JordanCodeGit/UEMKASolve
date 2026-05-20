@@ -32,4 +32,9 @@ class Business extends Model // Jangan extends Perusahaan lagi
     {
         return $this->hasMany(Category::class, 'business_id');
     }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(BusinessMember::class, 'business_id');
+    }
 }

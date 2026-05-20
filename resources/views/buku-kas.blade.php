@@ -430,6 +430,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const isOwnerReadOnly = @json(($globalRole ?? null) === 'owner');
 
             const token = localStorage.getItem('auth_token');
             if (!token) {
@@ -1190,6 +1191,8 @@
             });
 
             window.openEditModal = function(tx) {
+                if (isOwnerReadOnly) return;
+
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
                 document.getElementById('transaksi-modal-submit-btn').textContent = 'Simpan Perubahan';
@@ -1221,7 +1224,9 @@
                 txModalOverlay.style.display = 'flex';
             };
 
-            openAddTxBtn.addEventListener('click', function() {
+            if (openAddTxBtn) openAddTxBtn.addEventListener('click', function() {
+                if (isOwnerReadOnly) return;
+
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Tambah Transaksi';
                 document.getElementById('transaksi-modal-submit-btn').textContent = 'Tambah Transaksi';
@@ -1514,7 +1519,9 @@
                 }
             });
 
-            openAddTxBtn.addEventListener('click', function() {
+            if (openAddTxBtn) openAddTxBtn.addEventListener('click', function() {
+                if (isOwnerReadOnly) return;
+
                 txForm.reset();
                 txMessage.textContent = '';
                 const now = new Date();

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Models\Business;
 use App\Models\Transaction;
 
 class PrintLaporanController extends Controller
@@ -20,11 +21,19 @@ class PrintLaporanController extends Controller
 
             /** @var \App\Models\User $user */
             $user = Auth::user();
-            if (!$user || !$user->business) {
+            if ($user && !$user->activeBusiness() && $user->role !== 'owner') {
+                $user->setRelation('business', Business::create([
+                    'user_id' => $user->id,
+                    'nama_usaha' => 'Akun ' . ucfirst($user->role ?? 'User') . ' - ' . $user->name,
+                ]));
+            }
+
+            $business = $user ? $user->activeBusiness() : null;
+            if (!$user || !$business) {
                 return response()->json(['error' => 'Business not found'], 400);
             }
 
-            $idPerusahaan = $user->business->id;
+            $idPerusahaan = $business->id;
             $sections = $request->get('sections', []);
             $sections = (array)$sections;
 
@@ -138,7 +147,7 @@ class PrintLaporanController extends Controller
                     'laba' => $pemasukanPeriod - $pengeluaranPeriod
                 ],
                 'transactions' => $allTransactions->take(10), // Limit 10
-                'company' => ['name' => $user->business->nama_usaha ?? 'Usaha Saya'],
+                'company' => ['name' => $business->nama_usaha ?? 'Usaha Saya'],
 
                 // Variabel Grafik Baru
                 'expense_categories' => $expenseCategories,

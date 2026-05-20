@@ -17,6 +17,7 @@ class Transaction extends Model
         'jumlah',
         'catatan',
         'tanggal_transaksi',
+        'status',
     ];
 
     /**

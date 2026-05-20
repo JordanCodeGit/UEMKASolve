@@ -3,6 +3,9 @@
 @section('title', 'Pengaturan')
 
 @section('content')
+    @php
+        $isStaffRole = in_array(($globalRole ?? $user->role), ['sekretaris', 'bendahara'], true);
+    @endphp
 
     <style>
         /* Responsive untuk Pengaturan - Desktop */
@@ -142,7 +145,7 @@
         }
     </style>
 
-    <div class="content-card settings-card" data-active-tab="{{ session('active_tab') }}">
+    <div class="content-card settings-card" data-active-tab="{{ $isStaffRole ? 'akun' : session('active_tab') }}">
 
         {{-- // Bagian Header Profil (Banner & Avatar) --}}
         <div class="profile-header-container">
@@ -152,11 +155,14 @@
             <div class="profile-header-content">
                 <div class="profile-avatar-placeholder" id="profile-avatar">
                     {{-- [FIX] Menggunakan business->logo_path dan asset('storage/...') --}}
-                    @if ($user->business && $user->business->logo_path)
+                    @if ($user->profile_photo_path)
+                        <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="Foto Profil"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
+                    @elseif (!$isStaffRole && $user->business && $user->business->logo_path)
                         <img src="{{ asset('storage/' . $user->business->logo_path) }}" alt="Logo Usaha"
                             style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
                     @else
-                        <i class="fa-solid fa-shop" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                        <i class="fa-solid fa-user" style="font-size: 2.5rem; color: #94a3b8;"></i>
                     @endif
                 </div>
 
@@ -170,13 +176,21 @@
         {{-- // Navigasi Tab (Profil Usaha / Profil Akun) --}}
         <div class="tabs-nav-container">
             <nav class="tabs-nav full-width">
-                <a href="#" class="tab-item active" id="tab-usaha" onclick="switchTab(event, 'usaha')">
-                    <i class="fa-solid fa-shop"></i> Profil Usaha
-                </a>
+                @unless ($isStaffRole)
+                    <a href="#" class="tab-item active" id="tab-usaha" onclick="switchTab(event, 'usaha')">
+                        <i class="fa-solid fa-shop"></i> Profil Usaha
+                    </a>
+                @endunless
 
-                <a href="#" class="tab-item" id="tab-akun" onclick="switchTab(event, 'akun')">
-                    <i class="fa-solid fa-user-gear"></i> Profil Akun
-                </a>
+                @if ($isStaffRole)
+                    <span class="tab-item active settings-tab-static" id="tab-akun">
+                        <i class="fa-solid fa-user-gear"></i> Profil Akun
+                    </span>
+                @else
+                    <a href="#" class="tab-item" id="tab-akun" onclick="switchTab(event, 'akun')">
+                        <i class="fa-solid fa-user-gear"></i> Profil Akun
+                    </a>
+                @endif
             </nav>
         </div>
 
@@ -215,6 +229,7 @@
             </div>
 
             {{-- // Panel Tab: Profil Usaha --}}
+            @unless ($isStaffRole)
             <div class="tab-pane active" id="pane-usaha">
 
                 <form id="form-profil-usaha" action="{{ route('pengaturan.update.usaha') }}" method="POST"
@@ -255,16 +270,26 @@
                     </div> --}}
                 </form>
             </div>
+            @endunless
 
         </div>
 
         {{-- // Panel Tab: Profil Akun --}}
-        <div class="tab-pane" id="pane-akun" style="display: none;">
+        <div class="tab-pane {{ $isStaffRole ? 'active' : '' }}" id="pane-akun" style="{{ $isStaffRole ? 'display: block;' : 'display: none;' }}">
 
-            <form id="form-profil-akun" action="{{ route('pengaturan.update.akun') }}" method="POST">
+            <form id="form-profil-akun" action="{{ route('pengaturan.update.akun') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <h3 class="form-section-title">Ubah Akun</h3>
+
+                <div class="form-group-row">
+                    <label for="profile_photo">Foto Profil</label>
+                    <input type="file" id="profile_photo" name="profile_photo" accept="image/*" data-max-bytes="2097152">
+                    <small>Format: PNG, JPG, max 2MB</small>
+                    @error('profile_photo')
+                        <small class="text-error">{{ $message }}</small>
+                    @enderror
+                </div>
 
                 <div class="form-row-split">
                     <div class="form-col">
@@ -383,6 +408,7 @@
             // ===== LOGO FILE SIZE VALIDATION (2 MB max) =====
             const logoInput = document.getElementById('logo_usaha_settings');
             const profilUsahaForm = document.getElementById('form-profil-usaha');
+            const profilePhotoInput = document.getElementById('profile_photo');
 
             const getMaxLogoBytes = () => {
                 const attr = logoInput?.getAttribute('data-max-bytes');
@@ -435,6 +461,18 @@
                     if (!validateLogoFileSize()) {
                         e.preventDefault();
                         return;
+                    }
+                });
+            }
+
+            if (profilePhotoInput) {
+                profilePhotoInput.addEventListener('change', () => {
+                    if (!profilePhotoInput.files || profilePhotoInput.files.length === 0) return;
+                    const maxBytes = Number(profilePhotoInput.getAttribute('data-max-bytes')) || (2 * 1024 * 1024);
+                    const file = profilePhotoInput.files[0];
+                    if (file && file.size > maxBytes) {
+                        profilePhotoInput.value = '';
+                        showLogoTooLargeAlert(maxBytes);
                     }
                 });
             }

@@ -3,13 +3,38 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Business;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    private function ensureBusiness()
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        if (!$user) return null;
+
+        $activeBusiness = $user->activeBusiness();
+        if ($activeBusiness) {
+            return $activeBusiness;
+        }
+
+        if ($user->role === 'owner') {
+            return null;
+        }
+
+        $business = Business::create([
+            'user_id' => $user->id,
+            'nama_usaha' => 'Akun ' . ucfirst($user->role ?? 'User') . ' - ' . $user->name,
+        ]);
+
+        $user->setRelation('business', $business);
+
+        return $business;
+    }
+
     /**
      * Tampilkan semua kategori milik bisnis user
      * [UPDATED] Mendukung filter ?tipe=pemasukan atau ?tipe=pengeluaran
@@ -20,12 +45,13 @@ class CategoryController extends Controller
         $user = Auth::user();
 
         // Cek apakah user punya bisnis
-        if (!$user->business) {
+        $activeBusiness = $user->activeBusiness();
+        if (!$activeBusiness) {
             return response()->json([], 200);
         }
 
         // 1. Mulai Query Dasar (Milik bisnis user)
-        $query = Category::where('business_id', $user->business->id);
+        $query = Category::where('business_id', $activeBusiness->id);
 
         // 2. [LOGIKA BARU] Cek apakah Frontend meminta tipe tertentu?
         // Jika URL-nya: /api/categories?tipe=pengeluaran
@@ -48,8 +74,8 @@ class CategoryController extends Controller
     // Kode fungsi menyimpan kategori baru
     public function store(Request $request)
     {
-        $user = Auth::user();
-        if (!$user->business) {
+        $business = $this->ensureBusiness();
+        if (!$business) {
             return response()->json(['message' => 'Bisnis tidak ditemukan'], 400);
         }
 
@@ -60,7 +86,7 @@ class CategoryController extends Controller
         ]);
 
         $category = Category::create([
-            'business_id' => $user->business->id,
+            'business_id' => $business->id,
             'nama_kategori' => strip_tags($request->nama_kategori),
             'tipe' => $request->tipe,
             'ikon' => $request->ikon
@@ -76,10 +102,14 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         $user = Auth::user();
+        $activeBusiness = $user ? $user->activeBusiness() : null;
+        if (!$activeBusiness) {
+            return response()->json(['message' => 'Bisnis tidak ditemukan'], 400);
+        }
 
         // 1. Cari kategori & Pastikan milik bisnis user ini
         $category = Category::where('id', $id)
-            ->where('business_id', $user->business->id)
+            ->where('business_id', $activeBusiness->id)
             ->first();
 
         if (!$category) {
@@ -128,9 +158,13 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
+        $activeBusiness = $user ? $user->activeBusiness() : null;
+        if (!$activeBusiness) {
+            return response()->json(['message' => 'Bisnis tidak ditemukan'], 400);
+        }
 
         $category = Category::where('id', $id)
-            ->where('business_id', $user->business->id)
+            ->where('business_id', $activeBusiness->id)
             ->first();
 
         if (!$category) {

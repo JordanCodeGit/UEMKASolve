@@ -25,7 +25,7 @@ class ReportController extends Controller
         // 2. Ambil data bisnis (Otorisasi)
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $business = $user->business;
+        $business = $user->activeBusiness();
 
         if (!$business) {
             return response()->json(['message' => 'Bisnis tidak ditemukan.'], 404);

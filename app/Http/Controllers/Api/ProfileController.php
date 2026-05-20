@@ -20,17 +20,20 @@ class ProfileController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         $user->load('business');
+        $business = $user->activeBusiness();
 
         return response()->json([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
+                'profile_photo_url' => $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : null,
             ],
-            'business' => $user->business ? [
-                'id' => $user->business->id,
-                'nama_usaha' => $user->business->nama_usaha,
-                'logo_url' => $user->business->logo_path ? asset('storage/' . $user->business->logo_path) : null,
+            'business' => $business ? [
+                'id' => $business->id,
+                'nama_usaha' => $business->nama_usaha,
+                'logo_url' => $business->logo_path ? asset('storage/' . $business->logo_path) : null,
             ] : null
         ]);
     }
@@ -47,12 +50,22 @@ class ProfileController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'profile_photo' => 'nullable|image|max:2048',
         ]);
 
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
         ]);
+
+        if ($request->hasFile('profile_photo')) {
+            if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            $user->profile_photo_path = $request->file('profile_photo')->store('profile-photos', 'public');
+            $user->save();
+        }
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',

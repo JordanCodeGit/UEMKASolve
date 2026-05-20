@@ -83,6 +83,7 @@ class ProfileController extends Controller
         $rules = [
             'name'  => ['required', 'string', 'max:32'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'profile_photo' => ['nullable', 'image', 'max:2048'],
         ];
 
         // 2. LOGIKA PASSWORD
@@ -128,6 +129,14 @@ class ProfileController extends Controller
         // 5. Update Password
         if ($request->filled('password')) {
             $user->password = Hash::make($validated['password']);
+        }
+
+        if ($request->hasFile('profile_photo')) {
+            if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            $user->profile_photo_path = $request->file('profile_photo')->store('profile-photos', 'public');
         }
 
         $user->save();

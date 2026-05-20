@@ -20,8 +20,8 @@ class DashboardController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if ($user && $user->business) {
-            return $user->business->id;
+        if ($user && $user->activeBusiness()) {
+            return $user->activeBusiness()->id;
         }
         return null;
     }
@@ -29,6 +29,25 @@ class DashboardController extends Controller
     // Kode fungsi menampilkan dashboard
     public function index()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $hasPendingInvitation = $user->businessMemberships()
+            ->where('status', 'pending')
+            ->exists();
+
+        if (!$user->role && session('show_role_onboarding') && !$hasPendingInvitation) {
+            return redirect()->route('onboarding.show');
+        }
+
+        if ($user->role === 'sekretaris') {
+            return view('sekretaris.dashboard');
+        }
+
+        if ($user->role === 'bendahara') {
+            return view('bendahara.dashboard');
+        }
+
         return view('dashboard');
     }
 // Kode fungsi mengambil ringkasan data dashboard
@@ -273,7 +292,17 @@ class DashboardController extends Controller
     public function getData(Request $request)
     {
         $idPerusahaan = $this->getBusinessId();
-        if (!$idPerusahaan) return response()->json(['error' => 'Company not set'], 400);
+        if (!$idPerusahaan) {
+            return response()->json([
+                'summary' => [
+                    'saldo_real' => 0,
+                    'total_pemasukan' => 0,
+                    'total_pengeluaran' => 0,
+                    'laba' => 0,
+                ],
+                'recent_transactions' => [],
+            ]);
+        }
 
         $now = Carbon::now();
         $startDate = $now->clone()->startOfMonth();

@@ -21,9 +21,9 @@ class TransactionController extends Controller
         $user = Auth::user();
         if (!$user) return null;
 
-        // Cek relasi business (Standard)
-        if ($user->relationLoaded('business') || $user->business) {
-            return $user->business->id;
+        $business = $user->activeBusiness();
+        if ($business) {
+            return $business->id;
         }
 
         return null;
@@ -37,7 +37,22 @@ class TransactionController extends Controller
         $idPerusahaan = $this->getPerusahaanId();
 
         if (!$idPerusahaan) {
-            return response()->json(['message' => 'Business not found'], 400);
+            return response()->json([
+                'pagination' => [
+                    'data' => [],
+                    'links' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => (int) $request->input('per_page', 10),
+                    'total' => 0,
+                ],
+                'summary' => [
+                    'total_pemasukan' => 0,
+                    'total_pengeluaran' => 0,
+                    'laba' => 0,
+                    'saldo_real' => 0,
+                ],
+            ], 200);
         }
 
         // 1. Base Query (Filter Dasar)
@@ -67,6 +82,14 @@ class TransactionController extends Controller
         if ($request->filled('tipe')) {
             $tipe = $request->tipe;
             $queryFiltered->whereHas('category', fn($q) => $q->where('tipe', $tipe));
+        }
+
+        if ($request->filled('category_id')) {
+            $queryFiltered->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('status')) {
+            $queryFiltered->where('status', $request->status);
         }
 
         // Filter: Nominal
@@ -110,6 +133,10 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): JsonResponse
     {
+        if (Auth::user()?->role === 'owner') {
+            return response()->json(['message' => 'Owner hanya dapat memantau buku kas.'], 403);
+        }
+
         $idPerusahaan = $this->getPerusahaanId();
         if (!$idPerusahaan) return response()->json(['message' => 'Profil usaha belum diset.'], 400);
 
@@ -151,6 +178,10 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
+        if (Auth::user()?->role === 'owner') {
+            return response()->json(['message' => 'Owner hanya dapat memantau buku kas.'], 403);
+        }
+
         $transaction = Transaction::withTrashed()->find($id);
         $myBusinessId = $this->getPerusahaanId();
 
@@ -181,11 +212,39 @@ class TransactionController extends Controller
         return response()->json($transaction->load('category'), 200);
     }
 
+    public function updateStatus(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['verified', 'flagged', 'pending'])],
+        ]);
+
+        $transaction = Transaction::withTrashed()->find($id);
+        $myBusinessId = $this->getPerusahaanId();
+
+        if (!$transaction || $transaction->business_id != $myBusinessId) {
+            return response()->json(['message' => 'Data tidak ditemukan atau bukan milik Anda.'], 404);
+        }
+
+        if ($transaction->trashed()) {
+            return response()->json(['message' => 'Data ini sudah dihapus.'], 410);
+        }
+
+        $transaction->update([
+            'status' => $validated['status'],
+        ]);
+
+        return response()->json($transaction->load('category'), 200);
+    }
+
     /**
      * Hapus transaksi (Soft Delete)
      */
     public function destroy($id): JsonResponse
     {
+        if (Auth::user()?->role === 'owner') {
+            return response()->json(['message' => 'Owner hanya dapat memantau buku kas.'], 403);
+        }
+
         $transaction = Transaction::withTrashed()->where('id', $id)->first();
         $myBusinessId = $this->getPerusahaanId();
 

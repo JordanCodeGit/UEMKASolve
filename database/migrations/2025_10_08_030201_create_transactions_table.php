@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('jumlah', 16, 2); // DECIMAL sesuai aturan (15 digit total, 2 di belakang koma)
             $table->text('catatan')->nullable(); // Catatan bisa null
             $table->datetime('tanggal_transaksi'); // Tanggal transaksi
+            $table->string('status')->default('pending')->index();
             $table->timestamps();
             $table->softDeletes(); // Tambahkan Soft Deletes sesuai aturan
         });

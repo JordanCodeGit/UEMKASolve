@@ -9,6 +9,7 @@ use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
 use App\Models\Business; // Gunakan Model Business (terbaru)
+use App\Models\BusinessMember;
 // use App\Models\Perusahaan; // Tidak dipakai lagi
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -71,6 +72,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->role,
                 ]
             ], 201);
         } catch (\Throwable $e) {
@@ -132,6 +134,14 @@ class AuthController extends Controller
         Auth::login($user, $rememberMe); // True = remember me selama 12 jam, False = session browser only
         $request->session()->regenerate();
 
+        $hasPendingInvitation = BusinessMember::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if (!$user->role && !$hasPendingInvitation) {
+            $request->session()->put('show_role_onboarding', true);
+        }
+
         // Buat Token API
         $deviceNameInput = $request->input('device_name');
         $deviceName = is_string($deviceNameInput) ? $deviceNameInput : $user->email;
@@ -146,6 +156,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role,
+                'has_pending_invitation' => $hasPendingInvitation,
                 'business' => $business ? [
                     'id' => $business->id,
                     'nama_usaha' => $business->nama_usaha,
@@ -206,10 +218,19 @@ class AuthController extends Controller
             // 2. Regenerate Session ID (Wajib agar tidak dianggap session palsu)
             request()->session()->regenerate();
 
+            $hasPendingInvitation = BusinessMember::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->exists();
+
+            if (!$user->role && !$hasPendingInvitation) {
+                request()->session()->put('show_role_onboarding', true);
+            }
+
             // -----------------------------------------------------
 
             // Redirect ke Frontend
-            return redirect('/auth/google-success?token=' . $token);
+            $next = ($user->role || $hasPendingInvitation) ? '/dashboard' : '/onboarding';
+            return redirect('/auth/google-success?token=' . $token . '&next=' . urlencode($next));
         } catch (\Throwable $e) {
             $message = $e->getMessage();
 

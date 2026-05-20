@@ -17,9 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable(); // Penting untuk verifikasi
             $table->string('password');
+            $table->string('role')->nullable()->index();
+            $table->string('profile_photo_path')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            // Tidak ada kolom 'role' sesuai kesepakatan
         });
 
         // Tabel password_reset_tokens dan sessions biarkan seperti bawaan Laravel

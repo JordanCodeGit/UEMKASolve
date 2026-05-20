@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne; // Pastikan ini ada
 use App\Notifications\VerifyEmailNotification;
 
@@ -23,6 +24,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'google_id',
+        'role',
+        'profile_photo_path',
         // 'id_perusahaan', <--- HAPUS INI. Kita tidak pakai kolom ini lagi di tabel users.
     ];
 
@@ -49,6 +52,33 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Parameter kedua ('user_id') adalah Foreign Key yang ada di tabel businesses
         return $this->hasOne(Business::class, 'user_id');
+    }
+
+    public function businessMemberships(): HasMany
+    {
+        return $this->hasMany(BusinessMember::class, 'user_id');
+    }
+
+    public function acceptedBusinessMembership(): ?BusinessMember
+    {
+        return $this->businessMemberships()
+            ->where('status', 'accepted')
+            ->latest('accepted_at')
+            ->first();
+    }
+
+    public function activeBusiness(): ?Business
+    {
+        if ($this->role === 'owner' && $this->business) {
+            return $this->business;
+        }
+
+        $membership = $this->acceptedBusinessMembership();
+        if ($membership) {
+            return $membership->business;
+        }
+
+        return $this->business;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use App\Models\BusinessMember;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,11 +38,19 @@ class AppServiceProvider extends ServiceProvider
 
                 // 2. Cek apakah user sudah punya bisnis?
                 //    Jika object $user->business itu null, artinya belum setup.
-                $needsSetup = $user->business === null;
+                $needsSetup = $user->role === 'owner' && $user->business === null;
 
                 // Kirim variabel ke view
+                $pendingBusinessInvitations = BusinessMember::with(['business', 'business.user'])
+                    ->where('user_id', $user->id)
+                    ->where('status', 'pending')
+                    ->latest()
+                    ->get();
+
                 $view->with('needsCompanySetup', $needsSetup);
                 $view->with('globalUser', $user);
+                $view->with('globalRole', $user->role);
+                $view->with('pendingBusinessInvitations', $pendingBusinessInvitations);
             }
         });
     }

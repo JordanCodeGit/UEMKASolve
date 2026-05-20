@@ -21,10 +21,11 @@ class CheckCompanySetup
             $user->load('business');
 
             // Cek apakah relasi business ada isinya
-            $needsSetup = $user->business === null;
+            $needsSetup = $user->role === 'owner' && $user->business === null;
 
             View::share('needsCompanySetup', $needsSetup);
             View::share('globalUser', $user);
+            View::share('globalRole', $user->role);
         }
 
         return $next($request);
