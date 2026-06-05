@@ -11,6 +11,8 @@
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^11.0",
+        "ext-intl": "*",
+        "ext-pdo_mysql": "*",
         "laravel/sanctum": "^4.2",
         "laravel/socialite": "^5.23",
         "laravel/tinker": "^2.9"
