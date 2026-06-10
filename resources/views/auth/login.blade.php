@@ -137,9 +137,7 @@
                             sessionStorage.removeItem('login_recorded'); // Biar riwayat tercatat baru
 
                             setTimeout(() => {
-                                window.location.href = result.user && (result.user.role || result.user.has_pending_invitation)
-                                    ? "{{ route('dashboard') }}"
-                                    : "{{ route('onboarding.show') }}";
+                                window.location.href = "{{ route('dashboard') }}";
                             }, 500);
 
                         } else {

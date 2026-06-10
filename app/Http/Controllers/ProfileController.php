@@ -22,9 +22,11 @@ class ProfileController extends Controller
 
         // [FIX] Load relasi 'business' (bukan perusahaan lagi)
         $user->load('business');
+        $business = $user->activeBusiness();
 
         return view('pengaturan', [
-            'user' => $user
+            'user' => $user,
+            'business' => $business,
         ]);
     }
 
@@ -40,9 +42,13 @@ class ProfileController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        if ($user->role !== 'owner') {
+            abort(403, 'Hanya owner yang dapat mengubah profil usaha.');
+        }
+
         // Cek apakah user sudah punya bisnis
         // Karena sistem baru mewajibkan popup, seharusnya user->business sudah ada.
-        $business = $user->business;
+        $business = $user->activeBusiness();
 
         if (!$business) {
             // Fallback jika data hilang (sangat jarang terjadi jika popup jalan)
@@ -78,13 +84,17 @@ class ProfileController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $isStaffRole = in_array($user->role, ['sekretaris', 'bendahara'], true);
 
         // 1. Validasi Data Dasar
         $rules = [
             'name'  => ['required', 'string', 'max:32'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'profile_photo' => ['nullable', 'image', 'max:2048'],
         ];
+
+        if (!$isStaffRole) {
+            $rules['profile_photo'] = ['nullable', 'image', 'max:2048'];
+        }
 
         // 2. LOGIKA PASSWORD
         if ($request->filled('password')) {
@@ -131,7 +141,7 @@ class ProfileController extends Controller
             $user->password = Hash::make($validated['password']);
         }
 
-        if ($request->hasFile('profile_photo')) {
+        if (!$isStaffRole && $request->hasFile('profile_photo')) {
             if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
                 Storage::disk('public')->delete($user->profile_photo_path);
             }

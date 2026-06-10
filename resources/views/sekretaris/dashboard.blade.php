@@ -126,6 +126,11 @@
                         </select>
                     </div>
 
+                    <div class="form-group-modal" id="sekretaris-audit-note-group" style="display: none;">
+                        <label for="sekretaris-modal-audit-note">Catatan untuk Bendahara</label>
+                        <textarea id="sekretaris-modal-audit-note" class="form-input-modal" placeholder="Tuliskan bagian transaksi yang perlu dicek ulang..."></textarea>
+                    </div>
+
                     <div id="sekretaris-modal-message"></div>
                 </div>
 
@@ -211,6 +216,9 @@
             const modal = document.getElementById('sekretaris-status-modal');
             const modalMessage = document.getElementById('sekretaris-modal-message');
             const statusForm = document.getElementById('sekretaris-status-form');
+            const statusSelect = document.getElementById('sekretaris-modal-status');
+            const auditNoteGroup = document.getElementById('sekretaris-audit-note-group');
+            const auditNoteInput = document.getElementById('sekretaris-modal-audit-note');
             const printOverlay = document.getElementById('sekretaris-print-overlay');
             const printPreview = document.getElementById('sekretaris-print-preview');
             const checkboxRingkasan = document.getElementById('sekretaris-checkbox-ringkasan');
@@ -272,6 +280,13 @@
                 return normalized.charAt(0).toUpperCase() + normalized.slice(1);
             }
 
+            function syncAuditNoteField() {
+                const isFlagged = statusSelect.value === 'flagged';
+                auditNoteGroup.style.display = isFlagged ? 'block' : 'none';
+                auditNoteInput.required = isFlagged;
+                if (!isFlagged) auditNoteInput.value = '';
+            }
+
             function iconHtml(category) {
                 const icon = category?.ikon || 'fa-solid fa-question';
                 if (icon.includes('.')) {
@@ -304,7 +319,9 @@
                     ? '-'
                     : date.toLocaleDateString('id-ID');
                 document.getElementById('sekretaris-modal-catatan').value = tx.catatan || '';
-                document.getElementById('sekretaris-modal-status').value = tx.status || 'pending';
+                statusSelect.value = tx.status || 'pending';
+                auditNoteInput.value = tx.audit_note || '';
+                syncAuditNoteField();
                 modalMessage.textContent = '';
                 modal.style.display = 'flex';
             }
@@ -334,6 +351,7 @@
                     const shapeClass = isMasuk ? 'icon-shape-pemasukan' : 'icon-shape-pengeluaran';
                     const safeCategory = escapeHtml(category.nama_kategori || 'Tanpa Kategori');
                     const safeNote = escapeHtml(tx.catatan || '-');
+                    const safeAuditNote = tx.audit_note ? `<div class="sekretaris-audit-note">Catatan audit: ${escapeHtml(tx.audit_note)}</div>` : '';
                     const txStatus = tx.status || 'pending';
 
                     const row = document.createElement('button');
@@ -346,7 +364,7 @@
                             <span>${safeCategory}</span>
                         </div>
                         <div>${formatDate(tx.tanggal_transaksi)}</div>
-                        <div class="sekretaris-note-cell">${safeNote}</div>
+                        <div class="sekretaris-note-cell">${safeNote}${safeAuditNote}</div>
                         <div><span class="sekretaris-status sekretaris-status--${txStatus}">${statusLabel(txStatus)}</span></div>
                         <div class="${amountClass} sekretaris-amount">${amountSign}${formatRupiah(tx.jumlah)}</div>
                     `;
@@ -362,6 +380,7 @@
                             <div class="tx-item-text">
                                 <div class="tx-item-title">${safeCategory}</div>
                                 <div class="tx-item-subtitle">${safeNote}</div>
+                                ${safeAuditNote}
                                 <span class="sekretaris-status sekretaris-status--${txStatus}">${statusLabel(txStatus)}</span>
                             </div>
                         </div>
@@ -445,11 +464,20 @@
                 if (e.target === modal) closeStatusModal();
             });
 
+            statusSelect.addEventListener('change', syncAuditNoteField);
+
             statusForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const id = document.getElementById('sekretaris-tx-id').value;
-                const status = document.getElementById('sekretaris-modal-status').value;
+                const status = statusSelect.value;
+                const auditNote = auditNoteInput.value.trim();
                 const saveBtn = document.getElementById('sekretaris-modal-save');
+
+                if (status === 'flagged' && !auditNote) {
+                    modalMessage.textContent = 'Catatan wajib diisi saat transaksi diberi status flagged.';
+                    modalMessage.style.color = '#dc2626';
+                    return;
+                }
 
                 modalMessage.textContent = 'Menyimpan...';
                 modalMessage.style.color = '#2563eb';
@@ -459,7 +487,7 @@
                     const response = await fetch(`${API_TRANSACTIONS}/${id}/status`, {
                         method: 'PATCH',
                         headers: headersJson,
-                        body: JSON.stringify({ status })
+                        body: JSON.stringify({ status, audit_note: auditNote })
                     });
                     const result = await response.json();
 

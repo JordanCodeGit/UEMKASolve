@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class OnboardingController extends Controller
 {
@@ -13,26 +12,19 @@ class OnboardingController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if ($user->role) {
-            return redirect()->route('dashboard');
+        if (!$user->role) {
+            $user->role = 'owner';
+            $user->save();
         }
 
-        if (!session('show_role_onboarding')) {
-            return redirect()->route('dashboard');
-        }
-
-        return view('onboarding');
+        return redirect()->route('dashboard');
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'role' => ['required', Rule::in(['owner', 'sekretaris', 'bendahara'])],
-        ]);
-
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->role = $validated['role'];
+        $user->role = 'owner';
         $user->save();
 
         $request->session()->forget('show_role_onboarding');

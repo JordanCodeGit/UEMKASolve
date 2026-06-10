@@ -15,6 +15,13 @@
     @if (session('status'))
         <div style="background-color: #d1fae5; color: #065f46; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #a7f3d0;">
             <i class="fa-solid fa-check-circle"></i> {{ session('status') }}
+            @if (session('reset_link'))
+                <div style="margin-top: 10px;">
+                    <a href="{{ session('reset_link') }}" style="color: #047857; font-weight: 600; word-break: break-all;">
+                        Buka link reset password
+                    </a>
+                </div>
+            @endif
         </div>
     @endif
 

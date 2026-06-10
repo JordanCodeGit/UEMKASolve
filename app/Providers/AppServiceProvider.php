@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
                 // 1. Load relasi 'business' (sesuai fungsi baru di User.php)
                 //    Ini akan mencari data di tabel businesses.
                 $user->load('business');
+                $activeBusiness = $user->activeBusiness();
 
                 // 2. Cek apakah user sudah punya bisnis?
                 //    Jika object $user->business itu null, artinya belum setup.
@@ -50,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('needsCompanySetup', $needsSetup);
                 $view->with('globalUser', $user);
                 $view->with('globalRole', $user->role);
+                $view->with('globalBusiness', $activeBusiness);
                 $view->with('pendingBusinessInvitations', $pendingBusinessInvitations);
             }
         });

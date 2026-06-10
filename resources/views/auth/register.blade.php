@@ -39,13 +39,16 @@
                 <path d="m3 4 9 8 9-8"></path>
             </svg>
         </div>
-        <h3 style="color: #333; margin-bottom: 10px;">Verifikasi Email Anda</h3>
-        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+        <h3 id="verification-modal-title" style="color: #333; margin-bottom: 10px;">Verifikasi Email Anda</h3>
+        <p id="verification-modal-description" style="color: #666; margin-bottom: 15px; font-size: 14px;">
             Email verifikasi telah dikirim ke <strong id="email-display"></strong>
         </p>
-        <p style="color: #999; margin-bottom: 20px; font-size: 13px;">
+        <p id="verification-modal-hint" style="color: #999; margin-bottom: 20px; font-size: 13px;">
             Silakan cek inbox atau folder spam Anda. Klik link dalam email untuk memverifikasi akun Anda.
         </p>
+        <a href="#" id="verification-fallback-link" style="display: none; color: #047857; font-weight: 600; word-break: break-all; margin-bottom: 20px;">
+            Buka link verifikasi
+        </a>
         <a href="{{ url('/login') }}" class="btn btn-primary" style="display: inline-block; padding: 10px 25px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
             Kembali ke Login
         </a>
@@ -94,6 +97,24 @@
                 // SUKSES
                 messageDiv.textContent = '';
                 document.getElementById('email-display').textContent = data.email;
+                document.getElementById('verification-modal-title').textContent = result.body.verification_email_sent
+                    ? 'Verifikasi Email Anda'
+                    : 'Registrasi Berhasil';
+                document.getElementById('verification-modal-description').innerHTML = result.body.verification_email_sent
+                    ? `Email verifikasi telah dikirim ke <strong>${data.email}</strong>`
+                    : `Link verifikasi tersedia untuk pengujian lokal.`;
+                document.getElementById('verification-modal-hint').textContent = result.body.verification_email_sent
+                    ? 'Silakan cek inbox atau folder spam Anda. Klik link dalam email untuk memverifikasi akun Anda.'
+                    : 'Gunakan link di bawah hanya saat development. Pada hosting, email wajib terkirim melalui SMTP.';
+
+                const fallbackLink = document.getElementById('verification-fallback-link');
+                if (!result.body.verification_email_sent && result.body.verification_url) {
+                    fallbackLink.href = result.body.verification_url;
+                    fallbackLink.style.display = 'block';
+                } else {
+                    fallbackLink.removeAttribute('href');
+                    fallbackLink.style.display = 'none';
+                }
                 document.getElementById('verification-modal').style.display = 'flex';
                 registerForm.reset();
                 // Tombol biarkan mati agar tidak klik lagi

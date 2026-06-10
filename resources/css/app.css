@@ -4874,6 +4874,21 @@ textarea.form-input-modal {
     gap: 10px;
 }
 
+.app-alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.app-alert-container .alert-popup {
+    pointer-events: auto;
+}
+
 /* Style Dasar Pop-up */
 .alert-popup {
     background: #ffffff;
@@ -5084,7 +5099,8 @@ textarea.form-input-modal {
     top: 120%;
     right: -10px;
     /* Geser sedikit ke kiri */
-    width: 320px;
+    width: 420px;
+    max-width: calc(100vw - 24px);
     background: white;
     border: 1px solid #f1f5f9;
     border-radius: 16px;
@@ -5130,6 +5146,7 @@ textarea.form-input-modal {
 .notif-item {
     padding: 15px 20px;
     display: flex;
+    align-items: flex-start;
     gap: 15px;
     border-bottom: 1px solid #f8fafc;
     transition: background 0.2s;
@@ -5142,6 +5159,96 @@ textarea.form-input-modal {
 
 .notif-item:last-child {
     border-bottom: none;
+}
+
+.header-role-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    min-height: 28px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.notification-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-role-badge--owner {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #c2410c;
+}
+
+.header-role-badge--sekretaris {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.header-role-badge--bendahara {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+    color: #047857;
+}
+
+.header-role-badge--user,
+.header-role-badge--guest {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #475569;
+}
+
+/* Legacy role badge class kept for any cached markup */
+.notif-role-badge {
+    flex: 0 0 auto;
+    min-width: 70px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    border: 1px solid transparent;
+    margin-top: 7px;
+}
+
+.notif-role-badge--owner {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #c2410c;
+}
+
+.notif-role-badge--sekretaris {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.notif-role-badge--bendahara {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+    color: #047857;
+}
+
+.notif-role-badge--user,
+.notif-role-badge--guest {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #475569;
 }
 
 /* Icon Item */
@@ -5168,6 +5275,10 @@ textarea.form-input-modal {
 }
 
 /* Hijau (Login) */
+.icon-red-light {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
 
 /* Text Content */
 .notif-content {
@@ -9130,6 +9241,17 @@ textarea.form-input-modal {
         max-width: calc(100vw - 12px);
     }
 
+    .notif-item {
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .notif-role-badge {
+        min-width: 54px;
+        padding: 4px 5px;
+        font-size: 8px;
+    }
+
     .profile-dropdown {
         right: 6px;
         left: 6px;
@@ -9967,6 +10089,27 @@ textarea.form-input-modal {
 
 .sekretaris-status--pending::before {
     background: #64748b;
+}
+
+.sekretaris-audit-note {
+    margin-top: 4px;
+    color: #dc2626;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.buku-kas-audit-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.buku-kas-audit-note {
+    color: #dc2626;
+    font-size: 11px;
+    line-height: 1.35;
 }
 
 .sekretaris-amount {

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use App\Models\Business;
 use App\Models\Transaction;
 
 class PrintLaporanController extends Controller
@@ -21,13 +20,6 @@ class PrintLaporanController extends Controller
 
             /** @var \App\Models\User $user */
             $user = Auth::user();
-            if ($user && !$user->activeBusiness() && $user->role !== 'owner') {
-                $user->setRelation('business', Business::create([
-                    'user_id' => $user->id,
-                    'nama_usaha' => 'Akun ' . ucfirst($user->role ?? 'User') . ' - ' . $user->name,
-                ]));
-            }
-
             $business = $user ? $user->activeBusiness() : null;
             if (!$user || !$business) {
                 return response()->json(['error' => 'Business not found'], 400);
@@ -47,6 +39,7 @@ class PrintLaporanController extends Controller
             $endDate = $now->clone()->endOfMonth();
 
             $allTransactions = Transaction::where('business_id', $idPerusahaan)
+                ->where('status', 'verified')
                 ->whereBetween('tanggal_transaksi', [$startDate, $endDate])
                 ->with('category')
                 ->latest('tanggal_transaksi')
@@ -133,8 +126,8 @@ class PrintLaporanController extends Controller
             }
 
             // Saldo Total (All Time)
-            $allTimePemasukan = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-            $allTimePengeluaran = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+            $allTimePemasukan = Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+            $allTimePengeluaran = Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
             $pdfData = [
                 'title' => 'Laporan Keuangan',

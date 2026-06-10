@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Business;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,24 +14,12 @@ class CategoryController extends Controller
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (!$user) return null;
+        return $user->activeBusiness();
+    }
 
-        $activeBusiness = $user->activeBusiness();
-        if ($activeBusiness) {
-            return $activeBusiness;
-        }
-
-        if ($user->role === 'owner') {
-            return null;
-        }
-
-        $business = Business::create([
-            'user_id' => $user->id,
-            'nama_usaha' => 'Akun ' . ucfirst($user->role ?? 'User') . ' - ' . $user->name,
-        ]);
-
-        $user->setRelation('business', $business);
-
-        return $business;
+    private function canManageCategories(): bool
+    {
+        return in_array(Auth::user()?->role, ['owner', 'sekretaris'], true);
     }
 
     /**
@@ -74,6 +61,10 @@ class CategoryController extends Controller
     // Kode fungsi menyimpan kategori baru
     public function store(Request $request)
     {
+        if (!$this->canManageCategories()) {
+            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+        }
+
         $business = $this->ensureBusiness();
         if (!$business) {
             return response()->json(['message' => 'Bisnis tidak ditemukan'], 400);
@@ -85,9 +76,36 @@ class CategoryController extends Controller
             'ikon' => 'required|string',
         ]);
 
+        $namaKategori = trim(strip_tags($request->nama_kategori));
+        $existingCategory = Category::withTrashed()
+            ->where('business_id', $business->id)
+            ->where('tipe', $request->tipe)
+            ->whereRaw('LOWER(nama_kategori) = ?', [strtolower($namaKategori)])
+            ->first();
+
+        if ($existingCategory && !$existingCategory->trashed()) {
+            return response()->json([
+                'message' => 'Kategori sudah ada.',
+                'errors' => [
+                    'nama_kategori' => ['Kategori dengan nama dan tipe yang sama sudah ada.'],
+                ],
+            ], 422);
+        }
+
+        if ($existingCategory && $existingCategory->trashed()) {
+            $existingCategory->restore();
+            $existingCategory->update([
+                'nama_kategori' => $namaKategori,
+                'tipe' => $request->tipe,
+                'ikon' => $request->ikon,
+            ]);
+
+            return response()->json($existingCategory, 201);
+        }
+
         $category = Category::create([
             'business_id' => $business->id,
-            'nama_kategori' => strip_tags($request->nama_kategori),
+            'nama_kategori' => $namaKategori,
             'tipe' => $request->tipe,
             'ikon' => $request->ikon
         ]);
@@ -101,6 +119,10 @@ class CategoryController extends Controller
     // Kode fungsi memperbarui data kategori
     public function update(Request $request, $id)
     {
+        if (!$this->canManageCategories()) {
+            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+        }
+
         $user = Auth::user();
         $activeBusiness = $user ? $user->activeBusiness() : null;
         if (!$activeBusiness) {
@@ -142,8 +164,24 @@ class CategoryController extends Controller
             'ikon' => 'nullable|string',
         ]);
 
+        $namaKategori = trim(strip_tags($validated['nama_kategori']));
+        $duplicateCategory = Category::where('business_id', $activeBusiness->id)
+            ->where('id', '!=', $category->id)
+            ->where('tipe', $validated['tipe'])
+            ->whereRaw('LOWER(nama_kategori) = ?', [strtolower($namaKategori)])
+            ->first();
+
+        if ($duplicateCategory) {
+            return response()->json([
+                'message' => 'Kategori sudah ada.',
+                'errors' => [
+                    'nama_kategori' => ['Kategori dengan nama dan tipe yang sama sudah ada.'],
+                ],
+            ], 422);
+        }
+
         $category->update([
-            'nama_kategori' => strip_tags($validated['nama_kategori']),
+            'nama_kategori' => $namaKategori,
             'tipe' => $validated['tipe'],
             'ikon' => $validated['ikon'] ?? $category->ikon // Pakai ikon lama jika kosong
         ]);
@@ -157,6 +195,10 @@ class CategoryController extends Controller
     // Kode fungsi menghapus kategori
     public function destroy($id)
     {
+        if (!$this->canManageCategories()) {
+            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+        }
+
         $user = Auth::user();
         $activeBusiness = $user ? $user->activeBusiness() : null;
         if (!$activeBusiness) {

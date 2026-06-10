@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use App\Models\Transaction;
 use App\Models\Business;
 use Carbon\Carbon;
@@ -36,8 +35,10 @@ class DashboardController extends Controller
             ->where('status', 'pending')
             ->exists();
 
-        if (!$user->role && session('show_role_onboarding') && !$hasPendingInvitation) {
-            return redirect()->route('onboarding.show');
+        if (!$user->role && !$hasPendingInvitation) {
+            $user->role = 'owner';
+            $user->save();
+            $user->refresh();
         }
 
         if ($user->role === 'sekretaris') {
@@ -88,8 +89,8 @@ class DashboardController extends Controller
             // Semua: rekap per bulan (all time)
             $groupByFormat = "DATE_FORMAT(tanggal_transaksi, '%Y-%m')";
 
-            $minDate = Transaction::where('business_id', $idPerusahaan)->min('tanggal_transaksi');
-            $maxDate = Transaction::where('business_id', $idPerusahaan)->max('tanggal_transaksi');
+            $minDate = Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->min('tanggal_transaksi');
+            $maxDate = Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->max('tanggal_transaksi');
 
             if ($minDate && $maxDate) {
                 $currStart = Carbon::parse($minDate)->startOfMonth();
@@ -107,7 +108,8 @@ class DashboardController extends Controller
         // =========================================================
         // 2. QUERY DATA SAAT INI (CURRENT)
         // =========================================================
-        $queryCurrent = Transaction::where('business_id', $idPerusahaan);
+        $queryCurrent = Transaction::where('business_id', $idPerusahaan)
+            ->where('status', 'verified');
         if (!$isAllTimeMonthly) {
             $queryCurrent->whereBetween('tanggal_transaksi', [$currStart, $currEnd]);
         }
@@ -153,7 +155,8 @@ class DashboardController extends Controller
         // =========================================================
         // 4. SALDO TOTAL (REAL / ALL TIME)
         // =========================================================
-        $queryAllTime = Transaction::where('business_id', $idPerusahaan);
+        $queryAllTime = Transaction::where('business_id', $idPerusahaan)
+            ->where('status', 'verified');
         $totalMasuk   = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
         $totalKeluar  = (clone $queryAllTime)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
         $saldoTotal   = $totalMasuk - $totalKeluar;
@@ -309,13 +312,14 @@ class DashboardController extends Controller
         $endDate = $now->clone()->endOfMonth();
 
         $query = Transaction::where('business_id', $idPerusahaan)
+            ->where('status', 'verified')
             ->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
 
         $pemasukanPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
         $pengeluaranPeriod = (clone $query)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
-        $saldoTotal = Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah') -
-            Transaction::where('business_id', $idPerusahaan)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $saldoTotal = Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah') -
+            Transaction::where('business_id', $idPerusahaan)->where('status', 'verified')->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
         $recentTransactions = $query->clone()->with('category')->latest('tanggal_transaksi')->take(10)->get();
 

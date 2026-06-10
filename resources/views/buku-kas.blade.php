@@ -3,6 +3,9 @@
 @section('title', 'Buku Kas')
 
 @section('content')
+    @php
+        $canManageCategoriesForBukuKas = in_array(($globalRole ?? null), ['owner', 'sekretaris'], true);
+    @endphp
 
     {{-- // Kode Header Buku Kas (Saldo + Filter Bulan + Tombol Cetak) --}}
     <div class="bukukas-header">
@@ -170,7 +173,8 @@
                                     <div class="dropdown-item placeholder">Memuat...</div>
                                 </div>
 
-                                <div class="dropdown-add-btn" id="open-kategori-modal-link">
+                                <div class="dropdown-add-btn" id="open-kategori-modal-link"
+                                    style="{{ $canManageCategoriesForBukuKas ? '' : 'display: none;' }}">
                                     <i class="fa-solid fa-plus-circle"></i> Tambah Kategori Baru
                                 </div>
                             </div>
@@ -430,7 +434,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const isOwnerReadOnly = @json(($globalRole ?? null) === 'owner');
+            const isOwnerReadOnly = false;
+            const canManageCategories = {{ $canManageCategoriesForBukuKas ? 'true' : 'false' }};
+            const currentRole = @json($globalRole ?? '');
+            const showAuditStatusInBukuKas = currentRole === 'bendahara';
 
             const token = localStorage.getItem('auth_token');
             if (!token) {
@@ -450,6 +457,7 @@
             const txModalOverlay = document.getElementById('transaksi-modal-overlay');
             const txForm = document.getElementById('transaksi-form');
             const txMessage = document.getElementById('transaksi-modal-message');
+            const txSubmitBtn = document.getElementById('transaksi-modal-submit-btn');
             const txTipeHidden = document.getElementById('modal-tx-tipe');
             const txKategoriSelect = document.getElementById('modal-tx-kategori-select');
             const openKategoriModalLink = document.getElementById('open-kategori-modal-link');
@@ -482,6 +490,23 @@
                 'Cache-Control': 'no-cache'
             };
 
+            let isSubmittingTransaction = false;
+
+            function setTransactionSubmitState(isLoading, label = null) {
+                if (!txSubmitBtn) return;
+                txSubmitBtn.disabled = isLoading;
+                txSubmitBtn.style.pointerEvents = isLoading ? 'none' : '';
+                txSubmitBtn.textContent = isLoading ? 'Menyimpan...' : (label || txSubmitBtn.dataset.defaultLabel || 'Simpan');
+            }
+
+            function resetTransactionSubmitState(label) {
+                isSubmittingTransaction = false;
+                if (txSubmitBtn) {
+                    txSubmitBtn.dataset.defaultLabel = label;
+                }
+                setTransactionSubmitState(false, label);
+            }
+
             // --- UTILITY FUNCTION: Format Nominal Rupiah (integer, ribuan dengan '.') ---
             function formatNominal(value) {
                 const digitsOnly = String(value || '').replace(/\D/g, '');
@@ -506,6 +531,15 @@
                 // Fallback: strip thousand separators/any non-digits
                 const digits = s.replace(/\D/g, '');
                 return digits ? Number(digits) : '';
+            }
+
+            function showCategoryNotification(type, message) {
+                if (window.showAppToast) {
+                    window.showAppToast(type, message);
+                    return;
+                }
+
+                alert(message);
             }
 
             // --- UTILITY FUNCTION: Dialog Minimalis untuk Konfirmasi & Notifikasi ---
@@ -1195,7 +1229,7 @@
 
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
-                document.getElementById('transaksi-modal-submit-btn').textContent = 'Simpan Perubahan';
+                resetTransactionSubmitState('Simpan Perubahan');
                 document.getElementById('modal-tx-id').value = tx.id;
                 const jumlahInt = normalizeJumlahToInt(tx.jumlah);
                 document.getElementById('modal-tx-jumlah').value = formatNominal(String(jumlahInt));
@@ -1224,12 +1258,30 @@
                 txModalOverlay.style.display = 'flex';
             };
 
+            function statusLabel(status) {
+                const normalized = status || 'pending';
+                return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+            }
+
+            function auditStatusHtml(tx) {
+                if (!showAuditStatusInBukuKas) return '';
+                const status = tx.status || 'pending';
+                if (!['verified', 'flagged'].includes(status)) return '';
+                const note = tx.audit_note ? `<span class="buku-kas-audit-note">Flagged oleh sekretaris: ${escapeHtml(tx.audit_note)}</span>` : '';
+                return `
+                    <div class="buku-kas-audit-line">
+                        <span class="sekretaris-status sekretaris-status--${status}">${statusLabel(status)}</span>
+                        ${status === 'flagged' ? note : ''}
+                    </div>
+                `;
+            }
+
             if (openAddTxBtn) openAddTxBtn.addEventListener('click', function() {
                 if (isOwnerReadOnly) return;
 
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Tambah Transaksi';
-                document.getElementById('transaksi-modal-submit-btn').textContent = 'Tambah Transaksi';
+                resetTransactionSubmitState('Tambah Transaksi');
                 document.getElementById('modal-tx-id').value = '';
 
                 const now = new Date();
@@ -1305,6 +1357,7 @@
                         const safeNamaKategori = category.nama_kategori ?
                             escapeHtml(category.nama_kategori) :
                             '(Kategori Terhapus)';
+                        const auditHtml = auditStatusHtml(tx);
 
                         const dateObj = parseTxDate(tx.tanggal_transaksi || tx.created_at);
                         const dayKey = getDayKey(dateObj);
@@ -1352,6 +1405,7 @@
                                 <div class="tx-item-text">
                                     <div class="tx-item-title">${safeNamaKategori}</div>
                                     <div class="tx-item-subtitle">${safeCatatan}</div>
+                                    ${auditHtml}
                                 </div>
                             </div>
                             <div class="tx-item-amount ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
@@ -1406,6 +1460,7 @@
                     const safeNamaKategori = category.nama_kategori ?
                         escapeHtml(category.nama_kategori) :
                         '<span style="color:red; font-style:italic;">(Kategori Terhapus)</span>';
+                    const auditHtml = auditStatusHtml(tx);
 
                     const displayDate = formatDate(tx.tanggal_transaksi || tx.created_at);
 
@@ -1420,7 +1475,7 @@
                     </div>
 
                     <div class="cell-tanggal">${displayDate}</div>
-                    <div class="cell-deskripsi" style="color: #334155;">${safeCatatan}</div>
+                    <div class="cell-deskripsi" style="color: #334155;">${safeCatatan}${auditHtml}</div>
                     <div class="cell-nominal ${amountClass}">${amountSign}${formatRupiah(tx.jumlah)}</div>
                 `;
 
@@ -1539,6 +1594,11 @@
 
             txForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (isSubmittingTransaction) return;
+
+                isSubmittingTransaction = true;
+                const submitLabel = txSubmitBtn?.dataset.defaultLabel || txSubmitBtn?.textContent || 'Simpan';
+                setTransactionSubmitState(true);
                 txMessage.textContent = 'Menyimpan...';
 
                 const formData = new FormData(txForm);
@@ -1549,6 +1609,7 @@
                 if (isNaN(jumlah) || jumlah < 0 || jumlah > 999999999999999) {
                     txMessage.textContent =
                         'Error: Nominal harus antara 0 hingga Rp 999.999.999.999.999';
+                    resetTransactionSubmitState(submitLabel);
                     return;
                 }
 
@@ -1583,6 +1644,8 @@
                 } catch (error) {
                     console.error('Error submitting transaction:', error);
                     txMessage.textContent = 'Gagal terhubung ke server.';
+                } finally {
+                    resetTransactionSubmitState(submitLabel);
                 }
             });
 
@@ -1591,8 +1654,9 @@
                 this.value = formatNominal(this.value);
             });
 
-            openKategoriModalLink.addEventListener('click', function(e) {
+            if (openKategoriModalLink) openKategoriModalLink.addEventListener('click', function(e) {
                 e.preventDefault();
+                if (!canManageCategories) return;
                 katForm.reset();
                 katMessage.textContent = '';
                 const currentTxTipe = txTipeHidden.value;
@@ -1601,8 +1665,13 @@
                 katModalOverlay.style.display = 'flex';
             });
 
-            katForm.addEventListener('submit', async function(e) {
+            if (katForm) katForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!canManageCategories) {
+                    katMessage.textContent = '';
+                    showCategoryNotification('error', 'Hanya owner atau sekretaris yang dapat membuat kategori.');
+                    return;
+                }
                 katMessage.textContent = 'Menyimpan...';
                 const formData = new FormData(katForm);
                 const data = Object.fromEntries(formData.entries());
@@ -1617,17 +1686,23 @@
 
                     if (response.status === 201) {
                         closeModal(katModalOverlay);
+                        katMessage.textContent = '';
                         if (txTipeHidden.value !== data.tipe) {
                             setActiveTab(txModalTabs, txTipeHidden, data.tipe);
                         }
                         populateCategoryDropdown(data.tipe, result.id);
+                        showCategoryNotification('success', 'Kategori berhasil ditambahkan.');
                     } else if (response.status === 422) {
-                        katMessage.textContent = 'Error: ' + Object.values(result.errors)[0][0];
+                        katMessage.textContent = '';
+                        showCategoryNotification('error', Object.values(result.errors)[0][0]);
                     } else {
-                        katMessage.textContent = 'Error: ' + (result.message || 'Gagal menyimpan.');
+                        katMessage.textContent = '';
+                        showCategoryNotification('error', result.message || 'Gagal menyimpan.');
                     }
                 } catch (error) {
                     console.error('Error submitting category:', error);
+                    katMessage.textContent = '';
+                    showCategoryNotification('error', 'Gagal terhubung ke server.');
                 }
             });
 

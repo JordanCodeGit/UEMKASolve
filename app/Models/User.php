@@ -78,7 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $membership->business;
         }
 
-        return $this->business;
+        return null;
     }
 
     /**

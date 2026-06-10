@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\BusinessMember;
 use App\Models\User;
+use App\Support\MailDelivery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
 
 class MemberController extends Controller
@@ -47,13 +51,37 @@ class MemberController extends Controller
             'role' => ['required', Rule::in(['sekretaris', 'bendahara'])],
         ]);
 
-        $memberUser = User::where('email', $validated['email'])->first();
-        if (!$memberUser) {
-            return response()->json(['message' => 'email belum terdaftar'], 422);
+        if (!MailDelivery::isInboxMailerConfigured() && !MailDelivery::allowsDevelopmentFallback()) {
+            return response()->json([
+                'message' => MailDelivery::configurationErrorMessage(),
+            ], 503);
         }
+
+        $email = strtolower($validated['email']);
+        $memberUser = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => Str::headline(Str::before($email, '@')),
+                'password' => Hash::make(Str::random(32)),
+                'email_verified_at' => now(),
+            ]
+        );
 
         if ($memberUser->id === $owner->id) {
             return response()->json(['message' => 'Owner tidak dapat mengundang akun sendiri.'], 422);
+        }
+
+        if ($memberUser->role === 'owner' && $memberUser->business) {
+            return response()->json(['message' => 'Email ini sudah terdaftar sebagai owner bisnis lain.'], 422);
+        }
+
+        $acceptedMember = BusinessMember::where('business_id', $business->id)
+            ->where('user_id', $memberUser->id)
+            ->where('status', 'accepted')
+            ->first();
+
+        if ($acceptedMember) {
+            return response()->json(['message' => 'Email ini sudah menjadi anggota aktif.'], 422);
         }
 
         $token = Str::random(64);
@@ -66,7 +94,7 @@ class MemberController extends Controller
                 'role' => $validated['role'],
                 'status' => 'pending',
                 'invite_token' => $token,
-                'invited_email' => $memberUser->email,
+                'invited_email' => $email,
                 'accepted_at' => null,
             ]
         );
@@ -76,19 +104,54 @@ class MemberController extends Controller
         $ownerName = $owner->name;
         $businessName = $business->nama_usaha;
 
-        Mail::raw(
-            "Anda diundang untuk bergabung ke bisnis {$businessName} dari owner {$ownerName} sebagai {$validated['role']}.\n\nKlik link berikut untuk menerima undangan:\n{$acceptUrl}",
-            function ($message) use ($memberUser, $businessName) {
-                $message->to($memberUser->email)
-                    ->subject('Undangan Bisnis ' . $businessName);
+        $emailSent = true;
+        $emailError = null;
+
+        if (!MailDelivery::isInboxMailerConfigured()) {
+            $emailSent = false;
+
+            Log::info('Invitation email skipped because SMTP is not configured for development.', [
+                'business_id' => $business->id,
+                'member_id' => $member->id,
+                'email' => $memberUser->email,
+                'invitation_link' => $acceptUrl,
+            ]);
+        } else {
+            try {
+                Mail::raw(
+                    "Anda diundang untuk bergabung ke bisnis {$businessName} dari owner {$ownerName} sebagai {$validated['role']}.\n\nKlik link berikut untuk membuat password dan menerima undangan:\n{$acceptUrl}",
+                    function ($message) use ($memberUser, $businessName) {
+                        $message->to($memberUser->email)
+                            ->subject('Undangan Bisnis ' . $businessName);
+                    }
+                );
+            } catch (\Throwable $mailError) {
+                $emailSent = false;
+                $emailError = $mailError->getMessage();
+
+                Log::error('Invitation email failed', [
+                    'business_id' => $business->id,
+                    'member_id' => $member->id,
+                    'email' => $memberUser->email,
+                    'message' => $emailError,
+                    'invitation_link' => $acceptUrl,
+                ]);
             }
-        );
+        }
 
         return response()->json([
-            'message' => 'Undangan anggota berhasil dikirim.',
+            'message' => $emailSent
+                ? 'Undangan anggota berhasil dikirim.'
+                : (MailDelivery::allowsDevelopmentFallback()
+                    ? 'Undangan anggota berhasil dibuat untuk pengujian lokal. Gunakan link undangan di bawah.'
+                    : 'Undangan anggota belum dapat dikirim. Periksa konfigurasi SMTP hosting.'),
             'member' => $member->load('user'),
-            'invitation_link' => config('mail.default') === 'log' ? $localAcceptUrl : null,
-        ]);
+            'email_sent' => $emailSent,
+            'invitation_link' => MailDelivery::allowsDevelopmentFallback()
+                ? $localAcceptUrl
+                : null,
+            'mail_error' => MailDelivery::allowsDevelopmentFallback() ? $emailError : null,
+        ], $emailSent || MailDelivery::allowsDevelopmentFallback() ? 200 : 502);
     }
 
     public function accept(string $token)
@@ -98,6 +161,24 @@ class MemberController extends Controller
             ->with(['user', 'business'])
             ->firstOrFail();
 
+        return view('auth.create-password', [
+            'token' => $token,
+            'member' => $member,
+            'email' => $member->user->email,
+        ]);
+    }
+
+    public function completeInvitation(Request $request, string $token)
+    {
+        $member = BusinessMember::where('invite_token', $token)
+            ->where('status', 'pending')
+            ->with(['user', 'business'])
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ]);
+
         $member->update([
             'status' => 'accepted',
             'accepted_at' => now(),
@@ -105,6 +186,9 @@ class MemberController extends Controller
         ]);
 
         $member->user->role = $member->role;
+        $member->user->password = Hash::make($validated['password']);
+        $member->user->email_verified_at = $member->user->email_verified_at ?? now();
+        $member->user->remember_token = Str::random(60);
         $member->user->save();
 
         Auth::login($member->user, true);

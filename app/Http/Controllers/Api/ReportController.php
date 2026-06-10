@@ -34,6 +34,7 @@ class ReportController extends Controller
         // 3. Ambil data transaksi sesuai rentang tanggal & business_id
         $transactionsQuery = $business->transactions()
             ->with('category')
+            ->where('status', 'verified')
             ->whereBetween('tanggal_transaksi', [$startDate, $endDate])
             ->orderBy('tanggal_transaksi', 'asc');
 

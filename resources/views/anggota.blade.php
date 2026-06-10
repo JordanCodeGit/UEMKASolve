@@ -138,7 +138,7 @@
 
                     let successText = result.message;
                     if (result.invitation_link) {
-                        successText += ' Mailer aplikasi masih mode log. Link undangan localhost muncul di bawah.';
+                        successText += ' Link undangan tersedia di bawah.';
                     }
                     message.textContent = successText;
                     message.className = 'member-message-success';

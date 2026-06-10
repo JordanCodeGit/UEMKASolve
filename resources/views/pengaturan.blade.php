@@ -5,6 +5,7 @@
 @section('content')
     @php
         $isStaffRole = in_array(($globalRole ?? $user->role), ['sekretaris', 'bendahara'], true);
+        $activeBusiness = $business ?? ($globalBusiness ?? null);
     @endphp
 
     <style>
@@ -155,11 +156,11 @@
             <div class="profile-header-content">
                 <div class="profile-avatar-placeholder" id="profile-avatar">
                     {{-- [FIX] Menggunakan business->logo_path dan asset('storage/...') --}}
-                    @if ($user->profile_photo_path)
-                        <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="Foto Profil"
+                    @if ($activeBusiness && $activeBusiness->logo_path)
+                        <img src="{{ asset('storage/' . $activeBusiness->logo_path) }}" alt="Logo Usaha"
                             style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
-                    @elseif (!$isStaffRole && $user->business && $user->business->logo_path)
-                        <img src="{{ asset('storage/' . $user->business->logo_path) }}" alt="Logo Usaha"
+                    @elseif (!$isStaffRole && $user->profile_photo_path)
+                        <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="Foto Profil"
                             style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
                     @else
                         <i class="fa-solid fa-user" style="font-size: 2.5rem; color: #94a3b8;"></i>
@@ -242,7 +243,7 @@
                         <label for="nama_usaha">Nama Usaha</label>
                         {{-- [FIX] Menggunakan nama_usaha (bukan nama_perusahaan) --}}
                         <input type="text" id="nama_usaha" name="nama_usaha" maxlength="32"
-                            value="{{ $user->business->nama_usaha ?? '' }}" placeholder="Contoh: Toko Kopi Saya">
+                            value="{{ $activeBusiness->nama_usaha ?? '' }}" placeholder="Contoh: Toko Kopi Saya">
                         <small>Nama usaha akan muncul di laporan PDF</small>
                         @error('nama_usaha')
                             <small class="text-error">{{ $message }}</small>
@@ -282,14 +283,16 @@
 
                 <h3 class="form-section-title">Ubah Akun</h3>
 
-                <div class="form-group-row">
-                    <label for="profile_photo">Foto Profil</label>
-                    <input type="file" id="profile_photo" name="profile_photo" accept="image/*" data-max-bytes="2097152">
-                    <small>Format: PNG, JPG, max 2MB</small>
-                    @error('profile_photo')
-                        <small class="text-error">{{ $message }}</small>
-                    @enderror
-                </div>
+                @unless ($isStaffRole)
+                    <div class="form-group-row">
+                        <label for="profile_photo">Foto Profil</label>
+                        <input type="file" id="profile_photo" name="profile_photo" accept="image/*" data-max-bytes="2097152">
+                        <small>Format: PNG, JPG, max 2MB</small>
+                        @error('profile_photo')
+                            <small class="text-error">{{ $message }}</small>
+                        @enderror
+                    </div>
+                @endunless
 
                 <div class="form-row-split">
                     <div class="form-col">

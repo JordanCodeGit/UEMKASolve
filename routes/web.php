@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PrintLaporanController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\Api\TransactionController as ApiTransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,7 +63,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('buku-kas');
     Route::get('/kategori', function () {
         if (!Auth::user()->role && session('show_role_onboarding')) return redirect()->route('onboarding.show');
-        if (in_array(Auth::user()->role, ['owner', 'bendahara'], true)) return redirect()->route('dashboard');
+        if (Auth::user()->role !== 'sekretaris') return redirect()->route('dashboard');
         return view('kategori');
     })->name('kategori');
 
@@ -83,9 +84,12 @@ Route::middleware(['auth'])->group(function () {
     // API Internal (untuk Chart & PDF)
     Route::get('/api/dashboard-data', [DashboardController::class, 'getData'])->name('dashboard.data');
     Route::post('/api/print-laporan', [PrintLaporanController::class, 'generatePdf'])->name('print.laporan');
+    Route::get('/notifications/audit-transactions', [ApiTransactionController::class, 'auditNotifications'])
+        ->name('notifications.audit-transactions');
 });
 
 Route::get('/invitations/{token}/accept', [MemberController::class, 'accept'])->name('members.accept');
+Route::post('/invitations/{token}/password', [MemberController::class, 'completeInvitation'])->name('members.password.store');
 
 
 /*

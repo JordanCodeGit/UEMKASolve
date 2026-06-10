@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\TransactionController;
@@ -42,7 +44,32 @@ Route::middleware(['auth:sanctum'])->group(function () {
         if ($request->user()->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email sudah diverifikasi.'], 200);
         }
-        $request->user()->sendEmailVerificationNotification();
+
+        try {
+            $request->user()->sendEmailVerificationNotification();
+        } catch (\Throwable $mailError) {
+            $user = $request->user();
+            $verificationUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addHours(24),
+                [
+                    'id' => $user->getKey(),
+                    'hash' => sha1($user->getEmailForVerification()),
+                ]
+            );
+
+            Log::error('API verification email failed', [
+                'email' => $user->email,
+                'message' => $mailError->getMessage(),
+                'verification_url' => $verificationUrl,
+            ]);
+
+            return response()->json([
+                'message' => 'Link verifikasi dibuat, tetapi email belum dapat dikirim.',
+                'verification_url' => config('app.debug') ? $verificationUrl : null,
+            ], 202);
+        }
+
         return response()->json(['message' => 'Link verifikasi baru telah dikirim.'], 200);
     })->middleware(['throttle:6,1'])->name('verification.send.api');
 
@@ -60,8 +87,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // 6. Transaksi (CRUD MANUAL - EKSPLISIT)
     // Diubah dari apiResource agar Hosting mengenali DELETE/PUT dengan pasti (Anti 404)
     Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::get('/transactions/audit-notifications', [TransactionController::class, 'auditNotifications']);
+    Route::get('/transactions/flagged-notifications', [TransactionController::class, 'flaggedNotifications']);
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
+    Route::post('/transactions/{id}', [TransactionController::class, 'update']);
     Route::put('/transactions/{id}', [TransactionController::class, 'update']);
     Route::patch('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
@@ -70,6 +100,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Diubah dari apiResource untuk memperbaiki error drag-drop & delete (Anti 404)
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
+    Route::post('/categories/{category}', [CategoryController::class, 'update']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 

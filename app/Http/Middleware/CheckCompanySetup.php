@@ -19,6 +19,7 @@ class CheckCompanySetup
             // [FIX] Gunakan 'business', bukan 'perusahaan'
             // Karena di User.php sekarang namanya function business()
             $user->load('business');
+            $activeBusiness = $user->activeBusiness();
 
             // Cek apakah relasi business ada isinya
             $needsSetup = $user->role === 'owner' && $user->business === null;
@@ -26,6 +27,7 @@ class CheckCompanySetup
             View::share('needsCompanySetup', $needsSetup);
             View::share('globalUser', $user);
             View::share('globalRole', $user->role);
+            View::share('globalBusiness', $activeBusiness);
         }
 
         return $next($request);

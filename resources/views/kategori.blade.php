@@ -178,6 +178,15 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function showCategoryNotification(type, message) {
+            if (window.showAppToast) {
+                window.showAppToast(type, message);
+                return;
+            }
+
+            alert(message);
+        }
+
         // --- Variabel API ---
         const API_CATEGORIES = '{{ url("/api/categories") }}';
         const API_HEADERS = {
@@ -477,6 +486,7 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             modalMessage.textContent = 'Menyimpan...';
+            const isEditing = Boolean(currentEditingId);
 
             const formData = new FormData(modalForm);
             const data = Object.fromEntries(formData.entries());
@@ -509,18 +519,24 @@
                 if (response.ok) {
                     closeModal();
                     fetchCategories(); // Refresh list
-                    // Opsional: Tampilkan alert sukses
+                    modalMessage.textContent = '';
+                    showCategoryNotification('success', isEditing
+                        ? 'Kategori berhasil diperbarui.'
+                        : 'Kategori berhasil ditambahkan.');
                 } else if (response.status === 422) {
                     // Error Validasi Laravel
                     const errors = result.errors;
                     const firstError = Object.values(errors)[0][0];
-                    modalMessage.textContent = 'Error: ' + firstError;
+                    modalMessage.textContent = '';
+                    showCategoryNotification('error', firstError);
                 } else {
-                    modalMessage.textContent = 'Error: ' + (result.message || 'Terjadi kesalahan server.');
+                    modalMessage.textContent = '';
+                    showCategoryNotification('error', result.message || 'Terjadi kesalahan server.');
                 }
             } catch (error) {
                 console.error('Error submitting form:', error);
-                modalMessage.textContent = 'Gagal terhubung ke server.';
+                modalMessage.textContent = '';
+                showCategoryNotification('error', 'Gagal terhubung ke server.');
             }
         }
 // Kode fungsi menutup modal kategori

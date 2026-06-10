@@ -61,6 +61,8 @@
 
 <body class="{{ Request::is('buku-kas') ? 'page-buku-kas' : '' }} {{ Request::is('kategori') ? 'page-kategori' : '' }} {{ Request::is('pengaturan') ? 'page-pengaturan' : '' }} role-{{ $globalRole ?? 'guest' }}">
 
+    <div class="app-alert-container" id="app-alert-container" aria-live="polite" aria-atomic="true"></div>
+
     {{-- // Bagian Sidebar Navigasi --}}
     <aside class="sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-logo">
@@ -128,6 +130,9 @@
 
             <div class="top-bar-right">
                 <div class="notification-wrapper" style="position: relative;">
+                    <span class="header-role-badge header-role-badge--{{ $globalRole ?? 'guest' }}">
+                        {{ ucfirst($globalRole ?? 'User') }}
+                    </span>
                     <button class="notification-bell" id="notif-btn">
                         <i class="fa-regular fa-bell"></i>
                         <span class="notif-badge" id="notif-badge" style="display: none;"></span>
@@ -146,7 +151,9 @@
                 <div class="user-profile-dropdown" id="profileTriggerBtn">
                     {{-- LOGO / AVATAR --}}
                     <span id="global-header-avatar" style="display: flex; align-items: center;">
-                            @if ($globalUser->profile_photo_path)
+                            @if (($globalBusiness ?? null) && $globalBusiness->logo_path)
+                                <img src="{{ asset('storage/' . $globalBusiness->logo_path) }}" alt="Logo Usaha" class="profile-avatar-pojok" style="object-fit: cover;">
+                            @elseif ($globalUser->profile_photo_path)
                                 <img src="{{ asset('storage/' . $globalUser->profile_photo_path) }}" alt="Foto Profil" class="profile-avatar-pojok" style="object-fit: cover;">
                             @else
                                 <div class="default-avatar-pojok">
@@ -157,8 +164,8 @@
 
                     {{-- NAMA --}}
                     @php
-                        $headerDisplayName = ($globalRole ?? null) === 'owner' && optional($globalUser->business)->nama_usaha
-                            ? 'Owner - ' . $globalUser->business->nama_usaha
+                        $headerDisplayName = optional($globalBusiness ?? null)->nama_usaha
+                            ? $globalBusiness->nama_usaha
                             : $globalUser->name;
                     @endphp
                     <span class="profile-name" id="global-header-business-name">
@@ -254,6 +261,57 @@
 
     {{-- SCRIPT UTAMA (NOTIFIKASI & LOGIC) --}}
     <script>
+        (function() {
+            const alertTimers = new WeakMap();
+
+            function ensureAlertContainer() {
+                let container = document.getElementById('app-alert-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'app-alert-container';
+                    container.className = 'app-alert-container';
+                    container.setAttribute('aria-live', 'polite');
+                    container.setAttribute('aria-atomic', 'true');
+                    document.body.appendChild(container);
+                }
+                return container;
+            }
+
+            window.showAppToast = function(type = 'success', message = '') {
+                const container = ensureAlertContainer();
+                const isSuccess = type === 'success';
+                const alert = document.createElement('div');
+                alert.className = `alert-popup ${isSuccess ? 'alert-success' : 'alert-error'}`;
+
+                const title = isSuccess ? 'Berhasil!' : 'Gagal!';
+                const icon = isSuccess ? 'fa-check' : 'fa-xmark';
+                alert.innerHTML = `
+                    <div class="alert-icon">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div class="alert-message">
+                        <strong>${title}</strong>
+                        <span></span>
+                    </div>
+                    <button type="button" class="alert-close" aria-label="Tutup notifikasi">&times;</button>
+                `;
+
+                alert.querySelector('.alert-message span').textContent = message || (isSuccess
+                    ? 'Aksi berhasil diproses.'
+                    : 'Aksi gagal diproses.');
+
+                const removeAlert = () => {
+                    const timer = alertTimers.get(alert);
+                    if (timer) clearTimeout(timer);
+                    alert.remove();
+                };
+
+                alert.querySelector('.alert-close').addEventListener('click', removeAlert);
+                container.appendChild(alert);
+                alertTimers.set(alert, setTimeout(removeAlert, 4200));
+            };
+        })();
+
         document.addEventListener('DOMContentLoaded', function() {
             // --- SETUP ELEMENTS ---
             const profileBtn = document.getElementById('profileTriggerBtn');
@@ -266,6 +324,8 @@
             const notifBadge = document.getElementById('notif-badge');
 
             const notifications = [];
+            const currentRole = @json($globalRole ?? '');
+            const notificationKeys = new Set();
 
             // Kode fungsi deteksi browser & OS
             // ===== UTILITY: DETECT BROWSER & OS =====
@@ -301,6 +361,29 @@
 
             function getLoginHistory() {
                 return JSON.parse(localStorage.getItem('login_history')) || [];
+            }
+
+            function roleLabel(role) {
+                const labels = {
+                    owner: 'Owner',
+                    sekretaris: 'Sekretaris',
+                    bendahara: 'Bendahara'
+                };
+                return labels[role] || 'User';
+            }
+
+            function escapeNotifText(text) {
+                return String(text || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function updateNotificationBadge() {
+                if (!notifBadge) return;
+                notifBadge.style.display = notifications.length > 0 ? 'block' : 'none';
             }
 
             // ===== 1. LOGIKA PENCATATAN LOGIN (FIXED: ANTI SPAM) =====
@@ -372,6 +455,7 @@
 
                 notifications.push({
                     type: 'print',
+                    role: currentRole,
                     title: 'Waktunya Cetak Buku Kas!',
                     desc: `Periode ${currentMonth} akan berakhir ${daysLabel}.`,
                     time: 'Pengingat',
@@ -387,6 +471,7 @@
             if (!isNotifViewed) {
                 notifications.push({
                     type: 'login',
+                    role: currentRole,
                     title: 'Login Berhasil',
                     desc: `Semua riwayat login Anda tersimpan di bawah.`,
                     descExtended: historyHTML,
@@ -396,13 +481,13 @@
             }
 
             // ===== CHECK BADGE STATE =====
-            if (notifBadge) {
-                if (!isNotifViewed && notifications.length > 0) {
-                    notifBadge.style.display = 'block';
-                } else {
-                    notifBadge.style.display = 'none';
-                }
+            if (isNotifViewed) {
+                const persistentNotifications = notifications.filter(notif => notif.type !== 'login');
+                notifications.length = 0;
+                notifications.push(...persistentNotifications);
             }
+
+            updateNotificationBadge();
 
             // Kode fungsi render notifikasi
             // --- RENDER NOTIFIKASI ---
@@ -418,7 +503,9 @@
                 notifications.forEach(notif => {
                     const item = document.createElement('div');
                     item.className = 'notif-item';
-                    const iconClass = notif.type === 'print' ? 'icon-blue-light' : 'icon-green-light';
+                    const iconClass = notif.type === 'print'
+                        ? 'icon-blue-light'
+                        : (notif.type === 'audit' ? 'icon-red-light' : 'icon-green-light');
 
                     let iconHTML = '';
                     if (notif.type === 'login') {
@@ -432,14 +519,66 @@
                     item.innerHTML = `
                         <div class="notif-icon ${iconClass}">${iconHTML}</div>
                         <div class="notif-content">
-                            <p class="notif-title">${notif.title}</p>
-                            <p class="notif-desc">${notif.desc}</p>
+                            <p class="notif-title">${escapeNotifText(notif.title)}</p>
+                            <p class="notif-desc">${escapeNotifText(notif.desc)}</p>
                             ${extendedContent}
-                            <span class="notif-time">${notif.time}</span>
+                            <span class="notif-time">${escapeNotifText(notif.time)}</span>
                         </div>
                     `;
                     notifList.appendChild(item);
                 });
+            }
+
+            async function loadFlaggedAuditNotifications() {
+                const token = localStorage.getItem('auth_token');
+                if (!['bendahara', 'sekretaris'].includes(currentRole)) return;
+
+                try {
+                    const response = await fetch("{{ route('notifications.audit-transactions') }}", {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                        }
+                    });
+
+                    if (!response.ok) {
+                        console.warn('Audit notification request failed:', response.status);
+                        return;
+                    }
+
+                    const flaggedTransactions = await response.json();
+                    flaggedTransactions.forEach(tx => {
+                        const notificationKey = `${currentRole}:${tx.id}:${tx.status}:${tx.updated_at || ''}`;
+                        if (notificationKeys.has(notificationKey)) return;
+                        notificationKeys.add(notificationKey);
+
+                        const categoryName = tx.category?.nama_kategori || 'Tanpa Kategori';
+                        if (currentRole === 'bendahara') {
+                            const note = tx.audit_note ? ` Catatan: ${tx.audit_note}` : '';
+                            notifications.push({
+                                type: 'audit',
+                                title: 'Transaksi Perlu Dicek',
+                                desc: `${categoryName} senilai Rp ${Number(tx.jumlah || 0).toLocaleString('id-ID')} ditandai flagged oleh sekretaris.${note}`,
+                                time: 'Audit sekretaris',
+                                icon: '<i class="fa-solid fa-triangle-exclamation"></i>'
+                            });
+                        } else {
+                            notifications.push({
+                                type: 'audit',
+                                title: 'Transaksi Sudah Direvisi',
+                                desc: `${categoryName} senilai Rp ${Number(tx.jumlah || 0).toLocaleString('id-ID')} sudah direvisi bendahara dan perlu dicek kembali.`,
+                                time: 'Revisi bendahara',
+                                icon: '<i class="fa-solid fa-rotate"></i>'
+                            });
+                        }
+                    });
+
+                    renderNotifications();
+                    updateNotificationBadge();
+                } catch (error) {
+                    console.error('Gagal memuat notifikasi audit:', error);
+                }
             }
 
             // --- EVENT LISTENERS ---
@@ -463,10 +602,11 @@
                 notifications.length = 0;
                 renderNotifications();
                 sessionStorage.setItem('notif_viewed', 'true'); // Tandai sudah dibaca
-                if (notifBadge) notifBadge.style.display = 'none';
+                updateNotificationBadge();
             };
 
             if (notifList) renderNotifications();
+            loadFlaggedAuditNotifications();
 
             // Toggle Profile Menu
             if (profileBtn) {
@@ -534,14 +674,13 @@
                     })
                     .then(data => {
                         if (data.user && data.user.name) {
-                            const role = data.user.role || '';
                             const businessName = data.business && data.business.nama_usaha ? data.business.nama_usaha : '';
-                            businessNameEl.textContent = role === 'owner' && businessName
-                                ? `Owner - ${businessName}`
-                                : data.user.name;
+                            businessNameEl.textContent = businessName || data.user.name;
                         }
 
-                        if (data.user && data.user.profile_photo_url) {
+                        if (data.business && data.business.logo_url) {
+                            avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo Usaha" class="profile-avatar-pojok">`;
+                        } else if (data.user && data.user.profile_photo_url) {
                             avatarEl.innerHTML = `<img src="${data.user.profile_photo_url}" alt="Foto Profil" class="profile-avatar-pojok">`;
                         } else if (data.user && data.user.name) {
                             avatarEl.innerHTML = `<div class="default-avatar-pojok">${data.user.name.charAt(0).toUpperCase()}</div>`;

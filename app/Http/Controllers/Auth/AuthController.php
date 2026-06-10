@@ -8,21 +8,19 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
-use App\Models\Business; // Gunakan Model Business (terbaru)
 use App\Models\BusinessMember;
+use App\Support\MailDelivery;
 // use App\Models\Perusahaan; // Tidak dipakai lagi
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class AuthController extends Controller
 {
@@ -32,9 +30,13 @@ class AuthController extends Controller
     // Kode fungsi registrasi user
     public function register(RegisterRequest $request): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
+            if (!MailDelivery::isInboxMailerConfigured() && !MailDelivery::allowsDevelopmentFallback()) {
+                return response()->json([
+                    'message' => MailDelivery::configurationErrorMessage(),
+                ], 503);
+            }
+
             $validatedData = $request->validated();
 
             // 1. Buat User Baru
@@ -49,6 +51,7 @@ class AuthController extends Controller
                 'name' => $name,
                 'email' => $email,
                 'password' => Hash::make($password),
+                'role' => 'owner',
                 // 'id_perusahaan' => null, // [HAPUS] Kita pakai relasi business
             ]);
 
@@ -57,17 +60,83 @@ class AuthController extends Controller
             // CATATAN: Kita TIDAK membuat perusahaan di sini.
             // Biarkan user membuatnya nanti lewat Pop-up di Dashboard.
 
-            // Trigger Registered event untuk mengirim email verifikasi
-            Log::info('Triggering Registered event for: ' . $user->email);
-            // event(new Registered($user));
-            $user->sendEmailVerificationNotification();
+            $verificationEmailSent = true;
+            $verificationUrl = null;
 
-            DB::commit();
+            if (!MailDelivery::isInboxMailerConfigured()) {
+                $verificationEmailSent = false;
+                $verificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addHours(24),
+                    [
+                        'id' => $user->getKey(),
+                        'hash' => sha1($user->getEmailForVerification()),
+                    ]
+                );
+
+                Log::info('Verification email skipped because SMTP is not configured for development.', [
+                    'email' => $user->email,
+                    'verification_url' => $verificationUrl,
+                ]);
+            } else {
+                try {
+                    Log::info('Sending verification email for: ' . $user->email);
+                    $user->sendEmailVerificationNotification();
+                } catch (\Throwable $mailError) {
+                    $verificationEmailSent = false;
+                    $verificationUrl = URL::temporarySignedRoute(
+                        'verification.verify',
+                        now()->addHours(24),
+                        [
+                            'id' => $user->getKey(),
+                            'hash' => sha1($user->getEmailForVerification()),
+                        ]
+                    );
+
+                    Log::error('Verification email failed after registration', [
+                        'email' => $user->email,
+                        'message' => $mailError->getMessage(),
+                        'verification_url' => $verificationUrl,
+                    ]);
+
+                    if (!MailDelivery::allowsDevelopmentFallback()) {
+                        $user->delete();
+
+                        return response()->json([
+                            'message' => 'Registrasi gagal karena email verifikasi belum dapat dikirim. Periksa konfigurasi SMTP hosting lalu coba lagi.',
+                        ], 502);
+                    }
+                }
+            }
 
             Log::info('Registration successful for: ' . $user->email);
+            $usesLocalOnlyMailer = in_array(config('mail.default'), ['log', 'array'], true);
+
+            if ($usesLocalOnlyMailer && !$verificationUrl) {
+                $verificationUrl = URL::temporarySignedRoute(
+                    'verification.verify',
+                    now()->addHours(24),
+                    [
+                        'id' => $user->getKey(),
+                        'hash' => sha1($user->getEmailForVerification()),
+                    ]
+                );
+
+                Log::info('Verification email rendered locally; not delivered by current mailer.', [
+                    'email' => $user->email,
+                    'mailer' => config('mail.default'),
+                    'verification_url' => $verificationUrl,
+                ]);
+            }
+
+            $verificationEmailDelivered = $verificationEmailSent && !$usesLocalOnlyMailer;
 
             return response()->json([
-                'message' => 'Registrasi berhasil. Silakan cek email untuk verifikasi.',
+                'message' => $verificationEmailDelivered
+                    ? 'Registrasi berhasil. Silakan cek email untuk verifikasi.'
+                    : 'Registrasi berhasil untuk pengujian lokal. Gunakan link verifikasi di bawah.',
+                'verification_email_sent' => $verificationEmailDelivered,
+                'verification_url' => MailDelivery::allowsDevelopmentFallback() ? $verificationUrl : null,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -76,7 +145,6 @@ class AuthController extends Controller
                 ]
             ], 201);
         } catch (\Throwable $e) {
-            DB::rollBack();
             Log::error('Registration error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Terjadi kesalahan saat registrasi.',
@@ -139,14 +207,15 @@ class AuthController extends Controller
             ->exists();
 
         if (!$user->role && !$hasPendingInvitation) {
-            $request->session()->put('show_role_onboarding', true);
+            $user->role = 'owner';
+            $user->save();
         }
 
         // Buat Token API
         $deviceNameInput = $request->input('device_name');
         $deviceName = is_string($deviceNameInput) ? $deviceNameInput : $user->email;
         $token = $user->createToken($deviceName)->plainTextToken;
-        $business = $user->business; // [FIX] Menggunakan relasi business
+        $business = $user->activeBusiness();
 
         return response()->json([
             'message' => 'Login berhasil.',
@@ -198,12 +267,18 @@ class AuthController extends Controller
                     'google_id'         => $googleUser->getId(),
                     'password'          => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
+                    'role'              => 'owner',
                     // 'id_perusahaan'     => null // [HAPUS]
                 ]);
             } else {
                 // --- USER LAMA ---
                 if (empty($user->google_id)) {
                     $user->update(['google_id' => $googleUser->getId()]);
+                }
+
+                if (!$user->role) {
+                    $user->role = 'owner';
+                    $user->save();
                 }
             }
 
@@ -222,14 +297,10 @@ class AuthController extends Controller
                 ->where('status', 'pending')
                 ->exists();
 
-            if (!$user->role && !$hasPendingInvitation) {
-                request()->session()->put('show_role_onboarding', true);
-            }
-
             // -----------------------------------------------------
 
             // Redirect ke Frontend
-            $next = ($user->role || $hasPendingInvitation) ? '/dashboard' : '/onboarding';
+            $next = '/dashboard';
             return redirect('/auth/google-success?token=' . $token . '&next=' . urlencode($next));
         } catch (\Throwable $e) {
             $message = $e->getMessage();
