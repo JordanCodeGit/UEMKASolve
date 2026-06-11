@@ -276,6 +276,7 @@ class RoleDataSyncTest extends TestCase
         $member = BusinessMember::where('business_id', $business->id)
             ->where('user_id', $secretary->id)
             ->firstOrFail();
+        $secretary->createToken('staff-session');
 
         $this->actingAs($owner)
             ->deleteJson(route('anggota.destroy', $member))
@@ -285,6 +286,25 @@ class RoleDataSyncTest extends TestCase
         $this->assertDatabaseMissing('business_members', [
             'id' => $member->id,
         ]);
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_type' => User::class,
+            'tokenable_id' => $secretary->id,
+        ]);
+    }
+
+    public function test_staff_without_active_membership_is_logged_out_from_web_pages(): void
+    {
+        [$owner, $business, $secretary] = $this->createBusinessTeam();
+
+        BusinessMember::where('business_id', $business->id)
+            ->where('user_id', $secretary->id)
+            ->delete();
+
+        $this->actingAs($secretary)
+            ->get(route('buku-kas'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 
     public function test_owner_cannot_delete_staff_member_from_another_business(): void

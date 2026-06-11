@@ -169,7 +169,11 @@
                     });
 
                     if (response.status === 401) {
-                        if (token) localStorage.removeItem('auth_token');
+                        if (token) {
+                            localStorage.removeItem('auth_token');
+                            window.location.href = "{{ route('login') }}";
+                            return;
+                        }
                         resetSummary();
                         renderRecentTransactions([]);
                         return;

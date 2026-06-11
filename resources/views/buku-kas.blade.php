@@ -440,10 +440,6 @@
             const showAuditStatusInBukuKas = currentRole === 'bendahara';
 
             const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = "{{ url('/login') }}";
-                return;
-            }
 
             // --- Elemen Halaman Utama ---
             const transactionListContainer = document.getElementById('transaction-list-container');
@@ -471,24 +467,29 @@
             const katModalTabs = document.querySelectorAll('#kategori-modal-overlay .modal-tab-item');
 
             // --- Variabel API URL ---
-            const API_TRANSACTIONS = "{{ url('/api/transactions') }}";
-            const API_CATEGORIES = "{{ url('/api/categories') }}";
-            const API_DASHBOARD = "{{ url('/api/dashboard') }}";
+            const API_TRANSACTIONS = "/api/transactions";
+            const API_CATEGORIES = "/api/categories";
+            const API_DASHBOARD = "/api/dashboard";
             const ICON_BASE = "{{ asset('icons') }}";
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const authHeader = token ? { 'Authorization': 'Bearer ' + token } : {};
 
             const API_HEADERS = {
                 'Accept': 'application/json',
-                'Authorization': 'Bearer ' + token,
+                ...authHeader,
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             };
             const API_HEADERS_GET = {
                 'Accept': 'application/json',
-                'Authorization': 'Bearer ' + token,
+                ...authHeader,
                 'Cache-Control': 'no-cache'
             };
+
+            function makeUrl(input) {
+                return new URL(input || API_TRANSACTIONS, window.location.origin);
+            }
 
             let isSubmittingTransaction = false;
 
@@ -659,6 +660,7 @@
             async function loadPrintData() {
                 try {
                     const response = await fetch('/api/dashboard-data', {
+                        credentials: 'same-origin',
                         headers: API_HEADERS_GET
                     });
                     if (!response.ok) throw new Error('Failed to load dashboard data');
@@ -780,6 +782,7 @@
                 try {
                     const response = await fetch('/api/print-laporan', {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: API_HEADERS,
                         body: JSON.stringify({
                             sections: selectedSections
@@ -960,9 +963,9 @@
                 if (typeof resetSelectionState === 'function') resetSelectionState();
                 let targetUrl;
                 if (url) {
-                    targetUrl = new URL(url);
+                    targetUrl = makeUrl(url);
                 } else {
-                    targetUrl = new URL(API_TRANSACTIONS);
+                    targetUrl = makeUrl(API_TRANSACTIONS);
                 }
 
                 const searchInputEl = document.getElementById('search-input');
@@ -1020,6 +1023,7 @@
 
                 try {
                     const response = await fetch(targetUrl.toString(), {
+                        credentials: 'same-origin',
                         headers: API_HEADERS_GET
                     });
 
@@ -1185,6 +1189,7 @@
                     try {
                         const response = await fetch(`${API_TRANSACTIONS}/${id}`, {
                             method: 'DELETE',
+                            credentials: 'same-origin',
                             headers: API_HEADERS
                         });
 
@@ -1497,7 +1502,7 @@
                         if (link.active) pageButton.disabled = true;
                         pageButton.addEventListener('click', (e) => {
                             e.preventDefault();
-                            const url = new URL(link.url);
+                            const url = makeUrl(link.url);
                             url.searchParams.append('search', searchInput.value || '');
                             fetchTransactions(url.toString());
                         });
@@ -1518,6 +1523,7 @@
 
                 try {
                     const response = await fetch(`${API_CATEGORIES}?tipe=${selectedTipe}`, {
+                        credentials: 'same-origin',
                         headers: API_HEADERS_GET
                     });
                     const categories = await response.json();
@@ -1627,6 +1633,7 @@
                 try {
                     const response = await fetch(url, {
                         method: method,
+                        credentials: 'same-origin',
                         headers: API_HEADERS,
                         body: JSON.stringify(data)
                     });
@@ -1679,6 +1686,7 @@
                 try {
                     const response = await fetch(API_CATEGORIES, {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: API_HEADERS,
                         body: JSON.stringify(data)
                     });
@@ -1749,13 +1757,13 @@
             searchInput.addEventListener('input', function(e) {
                 clearTimeout(debounceTimerBukuKas);
                 debounceTimerBukuKas = setTimeout(() => {
-                    const url = new URL(API_TRANSACTIONS);
+                    const url = makeUrl(API_TRANSACTIONS);
                     url.searchParams.append('search', e.target.value);
                     fetchTransactions(url.toString());
                 }, 500);
             });
 
-            const initialUrl = new URL(API_TRANSACTIONS);
+            const initialUrl = makeUrl(API_TRANSACTIONS);
             const urlParams = new URLSearchParams(window.location.search);
             const searchQuery = urlParams.get('search');
 
@@ -1864,11 +1872,11 @@
                     try {
                         const response = await fetch('/api/ocr/scan', {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: {
                                 'Accept': 'application/json',
-                                'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                    ?.getAttribute('content')
+                                ...authHeader,
+                                'X-CSRF-TOKEN': csrfToken
                             },
                             body: formData
                         });

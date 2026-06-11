@@ -264,7 +264,12 @@ class MemberController extends Controller
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
 
+        $removedUser = $memberToDelete->user;
         $memberToDelete->delete();
+
+        if ($removedUser && !$removedUser->acceptedBusinessMembership()) {
+            $removedUser->tokens()->delete();
+        }
 
         return response()->json(['message' => 'Anggota berhasil dihapus.']);
     }
