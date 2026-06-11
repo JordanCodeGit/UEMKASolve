@@ -67,9 +67,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = "{{ route('login') }}";
-                return;
+            const API_DASHBOARD = '/api/dashboard';
+
+            function apiHeaders() {
+                return {
+                    'Accept': 'application/json',
+                    ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                };
             }
 
             function formatRupiah(number) {
@@ -94,6 +98,12 @@
                 if (!raw) return new Date();
                 if (typeof raw !== 'string') return new Date(raw);
                 return new Date(raw.includes('T') ? raw : raw.replace(' ', 'T'));
+            }
+
+            function resetSummary() {
+                document.getElementById('bendahara-summary-saldo').textContent = formatRupiah(0);
+                document.getElementById('bendahara-summary-pemasukan').textContent = formatRupiah(0);
+                document.getElementById('bendahara-summary-pengeluaran').textContent = formatRupiah(0);
             }
 
             function renderRecentTransactions(transactions) {
@@ -153,17 +163,20 @@
 
             async function loadDashboard() {
                 try {
-                    const response = await fetch("{{ url('/api/dashboard') }}", {
-                        headers: {
-                            'Accept': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        }
+                    const response = await fetch(API_DASHBOARD, {
+                        credentials: 'same-origin',
+                        headers: apiHeaders()
                     });
 
                     if (response.status === 401) {
-                        localStorage.removeItem('auth_token');
-                        window.location.href = "{{ route('login') }}";
+                        if (token) localStorage.removeItem('auth_token');
+                        resetSummary();
+                        renderRecentTransactions([]);
                         return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Gagal memuat dashboard.');
                     }
 
                     const data = await response.json();
@@ -176,6 +189,7 @@
                     renderRecentTransactions(data.recent_transactions || []);
                 } catch (error) {
                     console.error('Bendahara dashboard error:', error);
+                    resetSummary();
                     renderRecentTransactions([]);
                 }
             }

@@ -193,10 +193,10 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const API_TRANSACTIONS = "{{ url('/api/transactions') }}";
-            const API_CATEGORIES = "{{ url('/api/categories') }}";
-            const API_PRINT = "{{ url('/api/print-laporan') }}";
-            const API_PRINT_DATA = "{{ url('/api/dashboard-data') }}";
+            const API_TRANSACTIONS = "/api/transactions";
+            const API_CATEGORIES = "/api/categories";
+            const API_PRINT = "/api/print-laporan";
+            const API_PRINT_DATA = "/api/dashboard-data";
             const token = localStorage.getItem('auth_token');
             const headersGet = {
                 'Accept': 'application/json',
@@ -227,6 +227,10 @@
             const btnDownloadPdf = document.getElementById('sekretaris-download-pdf');
             const transactionsById = new Map();
             let currentPrintData = null;
+
+            function shouldRedirectToLogin(response) {
+                return response.status === 401 && Boolean(token);
+            }
 
             function formatRupiah(number) {
                 return new Intl.NumberFormat('id-ID', {
@@ -414,7 +418,10 @@
 
             async function loadCategories() {
                 try {
-                    const response = await fetch(API_CATEGORIES, { headers: headersGet });
+                    const response = await fetch(API_CATEGORIES, {
+                        credentials: 'same-origin',
+                        headers: headersGet
+                    });
                     if (!response.ok) return;
 
                     const categories = await response.json();
@@ -434,11 +441,18 @@
                 cardListEl.innerHTML = '<div class="transaction-card-empty">Memuat data transaksi...</div>';
 
                 try {
-                    const response = await fetch(url.toString(), { headers: headersGet });
-                    if (response.status === 401) {
+                    const response = await fetch(url.toString(), {
+                        credentials: 'same-origin',
+                        headers: headersGet
+                    });
+                    if (shouldRedirectToLogin(response)) {
                         localStorage.removeItem('auth_token');
                         window.location.href = "{{ route('login') }}";
                         return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('Gagal memuat transaksi.');
                     }
 
                     const data = await response.json();
@@ -486,6 +500,7 @@
                 try {
                     const response = await fetch(`${API_TRANSACTIONS}/${id}/status`, {
                         method: 'PATCH',
+                        credentials: 'same-origin',
                         headers: headersJson,
                         body: JSON.stringify({ status, audit_note: auditNote })
                     });
@@ -507,7 +522,10 @@
 
             async function loadPrintData() {
                 try {
-                    const response = await fetch(API_PRINT_DATA, { headers: headersGet });
+                    const response = await fetch(API_PRINT_DATA, {
+                        credentials: 'same-origin',
+                        headers: headersGet
+                    });
                     if (!response.ok) throw new Error('Failed to load print data');
                     currentPrintData = await response.json();
                 } catch (error) {
@@ -626,6 +644,7 @@
                 try {
                     const response = await fetch(API_PRINT, {
                         method: 'POST',
+                        credentials: 'same-origin',
                         headers: headersJson,
                         body: JSON.stringify({
                             sections: selectedSections

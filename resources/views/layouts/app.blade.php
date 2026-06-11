@@ -532,7 +532,8 @@
                 if (!['bendahara', 'sekretaris'].includes(currentRole)) return;
 
                 try {
-                    const response = await fetch("{{ route('notifications.audit-transactions') }}", {
+                    const response = await fetch(@json(route('notifications.audit-transactions', [], false)), {
+                        credentials: 'same-origin',
                         headers: {
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
@@ -575,7 +576,7 @@
                     renderNotifications();
                     updateNotificationBadge();
                 } catch (error) {
-                    console.error('Gagal memuat notifikasi audit:', error);
+                    // Notifikasi audit bersifat pendukung; dashboard utama tidak boleh terganggu jika request ini diblokir jaringan/hosting.
                 }
             }
 

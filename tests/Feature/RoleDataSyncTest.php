@@ -246,10 +246,18 @@ class RoleDataSyncTest extends TestCase
         $this->post(route('members.password.store', $member->invite_token), [
             'password' => 'Password1',
             'password_confirmation' => 'Password1',
-        ])->assertRedirect(route('dashboard'));
+        ])
+            ->assertOk()
+            ->assertSee('Sedang masuk ke Dashboard')
+            ->assertSee('localStorage.setItem', false);
 
         $this->assertAuthenticatedAs($staff->fresh());
         $this->assertTrue(Hash::check('Password1', $staff->fresh()->password));
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_type' => User::class,
+            'tokenable_id' => $staff->id,
+            'name' => 'invitation-login',
+        ]);
         $this->assertDatabaseHas('business_members', [
             'id' => $member->id,
             'status' => 'accepted',
@@ -258,6 +266,44 @@ class RoleDataSyncTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $staff->id,
             'role' => 'bendahara',
+        ]);
+    }
+
+    public function test_owner_can_delete_staff_member_from_owned_business(): void
+    {
+        [$owner, $business, $secretary] = $this->createBusinessTeam();
+
+        $member = BusinessMember::where('business_id', $business->id)
+            ->where('user_id', $secretary->id)
+            ->firstOrFail();
+
+        $this->actingAs($owner)
+            ->deleteJson(route('anggota.destroy', $member))
+            ->assertOk()
+            ->assertJsonPath('message', 'Anggota berhasil dihapus.');
+
+        $this->assertDatabaseMissing('business_members', [
+            'id' => $member->id,
+        ]);
+    }
+
+    public function test_owner_cannot_delete_staff_member_from_another_business(): void
+    {
+        [$owner] = $this->createBusinessTeam();
+        [$otherOwner, $otherBusiness, $otherSecretary] = $this->createBusinessTeam();
+
+        $otherMember = BusinessMember::where('business_id', $otherBusiness->id)
+            ->where('user_id', $otherSecretary->id)
+            ->firstOrFail();
+
+        $this->actingAs($owner)
+            ->deleteJson(route('anggota.destroy', $otherMember))
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Akses ditolak.');
+
+        $this->assertDatabaseHas('business_members', [
+            'id' => $otherMember->id,
+            'business_id' => $otherBusiness->id,
         ]);
     }
 

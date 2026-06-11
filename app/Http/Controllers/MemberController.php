@@ -194,7 +194,12 @@ class MemberController extends Controller
         Auth::login($member->user, true);
         request()->session()->regenerate();
 
-        return redirect()->route('dashboard')->with('success', 'Undangan bisnis berhasil diterima.');
+        $token = $member->user->createToken('invitation-login')->plainTextToken;
+
+        return response()->view('auth.session-token-callback', [
+            'token' => $token,
+            'next' => route('dashboard', absolute: false),
+        ]);
     }
 
     public function acceptPending(BusinessMember $member)
@@ -243,12 +248,23 @@ class MemberController extends Controller
     {
         /** @var \App\Models\User $owner */
         $owner = Auth::user();
+        $business = $owner->role === 'owner'
+            ? $owner->business()->first()
+            : null;
 
-        if (!$owner->business || $member->business_id !== $owner->business->id) {
+        if (!$business) {
             return response()->json(['message' => 'Akses ditolak.'], 403);
         }
 
-        $member->delete();
+        $memberToDelete = $business->members()
+            ->whereKey($member->getKey())
+            ->first();
+
+        if (!$memberToDelete) {
+            return response()->json(['message' => 'Akses ditolak.'], 403);
+        }
+
+        $memberToDelete->delete();
 
         return response()->json(['message' => 'Anggota berhasil dihapus.']);
     }
