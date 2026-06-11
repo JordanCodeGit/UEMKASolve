@@ -5,10 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\GeminiOcrService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 
 class OcrController extends Controller
 {
+    private const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg'];
+    private const ALLOWED_IMAGE_MIME_TYPES = ['image/png', 'image/jpeg'];
+    private const UNSUPPORTED_FORMAT_MESSAGE = 'format yang anda upload tidak didukung';
+    private const IMAGE_ONLY_MESSAGE = 'format yang diterima hanya format gambar (png, jpeg, jpg, dll)';
+
     protected $ocrService;
 
     public function __construct(GeminiOcrService $ocrService)
@@ -19,11 +25,10 @@ class OcrController extends Controller
     public function scan(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'image' => ['required', 'file', 'mimes:png,jpg,jpeg', 'max:4096'],
+            'image' => ['required', 'file', 'max:4096'],
         ], [
             'image.required' => 'Silakan pilih foto struk terlebih dahulu.',
             'image.file' => 'File yang diunggah tidak valid.',
-            'image.mimes' => 'Format yang dapat kami terima hanya PNG, JPG, atau JPEG.',
             'image.max' => 'Ukuran gambar maksimal 4 MB.',
         ]);
 
@@ -33,9 +38,21 @@ class OcrController extends Controller
             ], 422);
         }
 
-        try {
-            $file = $request->file('image');
+        $file = $request->file('image');
 
+        if (!$this->hasSupportedImageExtension($file)) {
+            return response()->json([
+                'message' => self::UNSUPPORTED_FORMAT_MESSAGE,
+            ], 422);
+        }
+
+        if (!$this->isReadableImage($file)) {
+            return response()->json([
+                'message' => self::IMAGE_ONLY_MESSAGE,
+            ], 422);
+        }
+
+        try {
             // Panggil Service Manual tadi
             $data = $this->ocrService->extractTransactionData($file);
 
@@ -106,5 +123,31 @@ class OcrController extends Controller
         return !empty($data['total_transaksi'])
             || !empty($data['items'])
             || !empty($data['nama_toko']);
+    }
+
+    private function hasSupportedImageExtension(?UploadedFile $file): bool
+    {
+        if (!$file) {
+            return false;
+        }
+
+        return in_array(strtolower($file->getClientOriginalExtension()), self::ALLOWED_IMAGE_EXTENSIONS, true);
+    }
+
+    private function isReadableImage(UploadedFile $file): bool
+    {
+        $path = $file->getRealPath();
+
+        if (!$path) {
+            return false;
+        }
+
+        $imageInfo = @getimagesize($path);
+
+        if ($imageInfo === false) {
+            return false;
+        }
+
+        return in_array(strtolower($imageInfo['mime'] ?? ''), self::ALLOWED_IMAGE_MIME_TYPES, true);
     }
 }

@@ -21,7 +21,18 @@ class OcrScanTest extends TestCase
             'image' => UploadedFile::fake()->create('struk.pdf', 12, 'application/pdf'),
         ])
             ->assertStatus(422)
-            ->assertJsonPath('message', 'Format yang dapat kami terima hanya PNG, JPG, atau JPEG.');
+            ->assertJsonPath('message', 'format yang anda upload tidak didukung');
+    }
+
+    public function test_ocr_rejects_non_image_content_with_image_extension(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'bendahara']));
+
+        $this->postJson('/api/ocr/scan', [
+            'image' => UploadedFile::fake()->create('struk.jpg', 12, 'application/javascript'),
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'format yang diterima hanya format gambar (png, jpeg, jpg, dll)');
     }
 
     public function test_ocr_rejects_cut_or_blurry_receipts(): void

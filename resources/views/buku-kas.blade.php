@@ -1772,6 +1772,9 @@
             const ocrLoadingText = document.getElementById('ocr-loading-text');
             const allowedOcrMimeTypes = ['image/png', 'image/jpeg'];
             const allowedOcrExtensions = ['png', 'jpg', 'jpeg'];
+            const unsupportedOcrFormatMessage = 'format yang anda upload tidak didukung';
+            const imageOnlyOcrFormatMessage =
+                'format yang diterima hanya format gambar (png, jpeg, jpg, dll)';
 
             const showOcrMessage = (message, type = 'error') => {
                 const txMessage = document.getElementById('transaksi-modal-message');
@@ -1788,16 +1791,44 @@
                     ? file.name.split('.').pop().toLowerCase()
                     : '';
 
-                return allowedOcrMimeTypes.includes(file.type) || allowedOcrExtensions.includes(extension);
+                return allowedOcrExtensions.includes(extension) &&
+                    (!file.type || allowedOcrMimeTypes.includes(file.type));
+            };
+
+            const normalizeOcrErrorMessage = (message) => {
+                const normalized = String(message || '').toLowerCase();
+
+                if (
+                    normalized.includes('must be an image') ||
+                    normalized.includes('should an image') ||
+                    normalized.includes('should be an image') ||
+                    normalized.includes('the image field')
+                ) {
+                    return imageOnlyOcrFormatMessage;
+                }
+
+                if (
+                    normalized.includes('unexpected token') ||
+                    normalized.includes('not valid json') ||
+                    normalized.includes('respons ocr yang valid')
+                ) {
+                    return unsupportedOcrFormatMessage;
+                }
+
+                return message || 'Gagal membaca gambar';
             };
 
             const readJsonSafely = async (response) => {
                 const contentType = response.headers.get('content-type') || '';
                 if (contentType.includes('application/json')) {
-                    return response.json();
+                    try {
+                        return await response.json();
+                    } catch (error) {
+                        return { message: unsupportedOcrFormatMessage };
+                    }
                 }
 
-                return { message: 'Server tidak mengembalikan respons OCR yang valid.' };
+                return { message: unsupportedOcrFormatMessage };
             };
 
             if (btnScanOcr) {
@@ -1817,7 +1848,7 @@
                     if (txMessage) txMessage.textContent = '';
 
                     if (!isAllowedOcrFile(file)) {
-                        showOcrMessage('Format yang dapat kami terima hanya PNG, JPG, atau JPEG.');
+                        showOcrMessage(unsupportedOcrFormatMessage);
                         ocrFileInput.value = '';
                         return;
                     }
@@ -1901,7 +1932,7 @@
 
                     } catch (error) {
                         console.error('OCR Error:', error);
-                        showOcrMessage(error.message);
+                        showOcrMessage(normalizeOcrErrorMessage(error.message));
                     } finally {
                         // Reset Loading
                         btnScanOcr.disabled = false;
