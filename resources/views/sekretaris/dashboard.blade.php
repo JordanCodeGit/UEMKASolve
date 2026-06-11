@@ -228,6 +228,10 @@
             const transactionsById = new Map();
             let currentPrintData = null;
 
+            function makeUrl(input) {
+                return new URL(input || API_TRANSACTIONS, window.location.origin);
+            }
+
             function shouldRedirectToLogin(response) {
                 return response.status === 401 && Boolean(token);
             }
@@ -396,7 +400,7 @@
             }
 
             function buildUrl() {
-                const url = new URL(API_TRANSACTIONS);
+                const url = makeUrl(API_TRANSACTIONS);
                 url.searchParams.set('per_page', '50');
 
                 const startDate = document.getElementById('filter-start-date').value;

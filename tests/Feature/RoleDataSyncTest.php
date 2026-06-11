@@ -126,6 +126,35 @@ class RoleDataSyncTest extends TestCase
             ->count());
     }
 
+    public function test_secretary_can_see_treasurer_transactions_from_same_business(): void
+    {
+        [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
+
+        $category = Category::create([
+            'business_id' => $business->id,
+            'nama_kategori' => 'Operasional',
+            'tipe' => 'pengeluaran',
+            'ikon' => 'pengeluaran/Button.png',
+        ]);
+
+        Sanctum::actingAs($treasurer);
+
+        $transaction = $this->postJson('/api/transactions', [
+            'category_id' => $category->id,
+            'jumlah' => 125000,
+            'tanggal_transaksi' => '2026-06-11 10:00:00',
+            'catatan' => 'Pembelian perlengkapan kantor',
+        ])->assertCreated()->json();
+
+        Sanctum::actingAs($secretary);
+
+        $this->getJson('/api/transactions')
+            ->assertOk()
+            ->assertJsonPath('pagination.data.0.id', $transaction['id'])
+            ->assertJsonPath('pagination.data.0.business_id', $business->id)
+            ->assertJsonPath('pagination.data.0.catatan', 'Pembelian perlengkapan kantor');
+    }
+
     public function test_only_verified_transactions_affect_cash_summary_and_flagged_requires_audit_note(): void
     {
         [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
