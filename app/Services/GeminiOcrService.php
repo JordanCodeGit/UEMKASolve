@@ -35,11 +35,19 @@ class GeminiOcrService
         $imageData = base64_encode(file_get_contents($image->getRealPath()));
         $mimeType = $image->getMimeType();
 
-        // 3. Prompt (UPDATE: Tambah Field Kategori)
+        // 3. Prompt (UPDATE: Tambah Field Kualitas Gambar)
         // Kita beri daftar kategori umum agar AI memilih salah satu dari itu
         $prompt = "
-            Analisis struk ini. Output JSON murni:
+            Analisis foto struk ini. Output JSON murni:
             {
+                \"quality\": {
+                    \"is_receipt\": true,
+                    \"is_cut_off\": false,
+                    \"is_blurry\": false,
+                    \"is_dark\": false,
+                    \"readable\": true,
+                    \"reason\": \"\"
+                },
                 \"items\": [{\"nama_barang\": \"string\", \"qty\": 1, \"harga_satuan\": 0, \"total\": 0}],
                 \"total_transaksi\": 0,
                 \"tanggal\": \"YYYY-MM-DD HH:MM\",
@@ -47,12 +55,18 @@ class GeminiOcrService
                 \"kategori\": \"Kategori\"
             }
             Aturan:
-            1. total_transaksi integer.
-            2. tanggal default hari ini.
-            3. Field 'kategori' HARUS memilih salah satu yang paling cocok dari daftar ini:
+            1. Cek kualitas foto lebih dulu.
+            2. Jika bukan struk, set quality.is_receipt=false dan quality.readable=false.
+            3. Jika struk terpotong, bagian total/tanggal/item penting tidak terlihat, atau tepi struk hilang, set quality.is_cut_off=true dan quality.readable=false.
+            4. Jika foto buram/blur sehingga angka atau item tidak aman dibaca, set quality.is_blurry=true dan quality.readable=false.
+            5. Jika foto gelap tetapi masih bisa dibaca, set quality.is_dark=true, quality.readable=true, lalu tetap ekstrak datanya.
+            6. Jika quality.readable=false, biarkan items kosong, total_transaksi=0, nama_toko kosong, dan isi quality.reason singkat.
+            7. total_transaksi integer.
+            8. tanggal default hari ini.
+            9. Field 'kategori' HARUS memilih salah satu yang paling cocok dari daftar ini:
                [Makanan, Minuman, Transportasi, Belanja, Tagihan, Kesehatan, Pendidikan, Hiburan, Sedekah, Gaji, Bonus, Penjualan, Lainnya].
-            4. Jika ragu, pilih 'Lainnya'.
-            5. Tanpa markdown.
+            10. Jika ragu, pilih 'Lainnya'.
+            11. Tanpa markdown.
         ";
 
         $lastError = 'Unknown error';
@@ -86,6 +100,13 @@ class GeminiOcrService
 
                 $rawText = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
                 $cleanJson = str_replace(['```json', '```'], '', $rawText);
+                $start = strpos($cleanJson, '{');
+                $end = strrpos($cleanJson, '}');
+
+                if ($start !== false && $end !== false && $end >= $start) {
+                    $cleanJson = substr($cleanJson, $start, $end - $start + 1);
+                }
+
                 $data = json_decode(trim($cleanJson), true);
 
                 if (json_last_error() === JSON_ERROR_NONE) {

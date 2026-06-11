@@ -82,6 +82,15 @@ class RoleDataSyncTest extends TestCase
             ->assertJsonPath('pagination.data.0.category.nama_kategori', 'Modal');
     }
 
+    public function test_secretary_dashboard_url_redirects_to_buku_kas(): void
+    {
+        [$owner, $business, $secretary] = $this->createBusinessTeam();
+
+        $this->actingAs($secretary)
+            ->get('/dashboard')
+            ->assertRedirect(route('buku-kas'));
+    }
+
     public function test_treasurer_repeated_transaction_submit_only_creates_one_record(): void
     {
         Cache::flush();

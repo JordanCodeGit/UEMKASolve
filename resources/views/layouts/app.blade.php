@@ -153,8 +153,6 @@
                     <span id="global-header-avatar" style="display: flex; align-items: center;">
                             @if (($globalBusiness ?? null) && $globalBusiness->logo_path)
                                 <img src="{{ asset('storage/' . $globalBusiness->logo_path) }}" alt="Logo Usaha" class="profile-avatar-pojok" style="object-fit: cover;">
-                            @elseif ($globalUser->profile_photo_path)
-                                <img src="{{ asset('storage/' . $globalUser->profile_photo_path) }}" alt="Foto Profil" class="profile-avatar-pojok" style="object-fit: cover;">
                             @else
                                 <div class="default-avatar-pojok">
                                     {{ substr($globalUser->name, 0, 1) }}
@@ -680,8 +678,6 @@
 
                         if (data.business && data.business.logo_url) {
                             avatarEl.innerHTML = `<img src="${data.business.logo_url}" alt="Logo Usaha" class="profile-avatar-pojok">`;
-                        } else if (data.user && data.user.profile_photo_url) {
-                            avatarEl.innerHTML = `<img src="${data.user.profile_photo_url}" alt="Foto Profil" class="profile-avatar-pojok">`;
                         } else if (data.user && data.user.name) {
                             avatarEl.innerHTML = `<div class="default-avatar-pojok">${data.user.name.charAt(0).toUpperCase()}</div>`;
                         }

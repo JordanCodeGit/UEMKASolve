@@ -159,9 +159,6 @@
                     @if ($activeBusiness && $activeBusiness->logo_path)
                         <img src="{{ asset('storage/' . $activeBusiness->logo_path) }}" alt="Logo Usaha"
                             style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
-                    @elseif (!$isStaffRole && $user->profile_photo_path)
-                        <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="Foto Profil"
-                            style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
                     @else
                         <i class="fa-solid fa-user" style="font-size: 2.5rem; color: #94a3b8;"></i>
                     @endif
@@ -283,17 +280,6 @@
 
                 <h3 class="form-section-title">Ubah Akun</h3>
 
-                @unless ($isStaffRole)
-                    <div class="form-group-row">
-                        <label for="profile_photo">Foto Profil</label>
-                        <input type="file" id="profile_photo" name="profile_photo" accept="image/*" data-max-bytes="2097152">
-                        <small>Format: PNG, JPG, max 2MB</small>
-                        @error('profile_photo')
-                            <small class="text-error">{{ $message }}</small>
-                        @enderror
-                    </div>
-                @endunless
-
                 <div class="form-row-split">
                     <div class="form-col">
                         <label for="nama_lengkap">Nama Lengkap</label>
@@ -411,7 +397,6 @@
             // ===== LOGO FILE SIZE VALIDATION (2 MB max) =====
             const logoInput = document.getElementById('logo_usaha_settings');
             const profilUsahaForm = document.getElementById('form-profil-usaha');
-            const profilePhotoInput = document.getElementById('profile_photo');
 
             const getMaxLogoBytes = () => {
                 const attr = logoInput?.getAttribute('data-max-bytes');
@@ -464,18 +449,6 @@
                     if (!validateLogoFileSize()) {
                         e.preventDefault();
                         return;
-                    }
-                });
-            }
-
-            if (profilePhotoInput) {
-                profilePhotoInput.addEventListener('change', () => {
-                    if (!profilePhotoInput.files || profilePhotoInput.files.length === 0) return;
-                    const maxBytes = Number(profilePhotoInput.getAttribute('data-max-bytes')) || (2 * 1024 * 1024);
-                    const file = profilePhotoInput.files[0];
-                    if (file && file.size > maxBytes) {
-                        profilePhotoInput.value = '';
-                        showLogoTooLargeAlert(maxBytes);
                     }
                 });
             }

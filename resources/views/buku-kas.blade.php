@@ -128,7 +128,7 @@
 
                     {{-- [MODIFIKASI OCR START] --}}
                     <div class="ocr-box" style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border: 1px dashed #007bff; border-radius: 8px; text-align: center;">
-                        <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
+                        <input type="file" id="ocr-file-input" accept="image/png,image/jpeg" style="display: none;">
 
                         <button type="button" id="btn-scan-ocr" class="btn" style="background: #fff; color: #007bff; border: 1px solid #007bff; font-weight: 600; padding: 8px 20px; border-radius: 50px; cursor: pointer; transition: all 0.2s;">
                             <i class="fa-solid fa-camera" style="margin-right: 8px;"></i> Scan Struk Otomatis (AI)
@@ -1770,6 +1770,35 @@
             const btnScanOcr = document.getElementById('btn-scan-ocr');
             const ocrFileInput = document.getElementById('ocr-file-input');
             const ocrLoadingText = document.getElementById('ocr-loading-text');
+            const allowedOcrMimeTypes = ['image/png', 'image/jpeg'];
+            const allowedOcrExtensions = ['png', 'jpg', 'jpeg'];
+
+            const showOcrMessage = (message, type = 'error') => {
+                const txMessage = document.getElementById('transaksi-modal-message');
+                if (!txMessage) return;
+
+                txMessage.style.color = type === 'success'
+                    ? 'green'
+                    : (type === 'warning' ? '#b45309' : 'red');
+                txMessage.textContent = message;
+            };
+
+            const isAllowedOcrFile = (file) => {
+                const extension = file.name.includes('.')
+                    ? file.name.split('.').pop().toLowerCase()
+                    : '';
+
+                return allowedOcrMimeTypes.includes(file.type) || allowedOcrExtensions.includes(extension);
+            };
+
+            const readJsonSafely = async (response) => {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    return response.json();
+                }
+
+                return { message: 'Server tidak mengembalikan respons OCR yang valid.' };
+            };
 
             if (btnScanOcr) {
                 btnScanOcr.addEventListener('click', function() {
@@ -1782,6 +1811,17 @@
                     if (this.files.length === 0) return;
 
                     const file = this.files[0];
+
+                    // Bersihkan pesan sebelumnya
+                    const txMessage = document.getElementById('transaksi-modal-message');
+                    if (txMessage) txMessage.textContent = '';
+
+                    if (!isAllowedOcrFile(file)) {
+                        showOcrMessage('Format yang dapat kami terima hanya PNG, JPG, atau JPEG.');
+                        ocrFileInput.value = '';
+                        return;
+                    }
+
                     const formData = new FormData();
                     formData.append('image', file);
 
@@ -1789,10 +1829,6 @@
                     btnScanOcr.disabled = true;
                     btnScanOcr.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Memproses...';
                     ocrLoadingText.style.display = 'block';
-
-                    // Bersihkan pesan error sebelumnya
-                    const txMessage = document.getElementById('transaksi-modal-message');
-                    if (txMessage) txMessage.textContent = '';
 
                     try {
                         const response = await fetch('/api/ocr/scan', {
@@ -1806,7 +1842,7 @@
                             body: formData
                         });
 
-                        const result = await response.json();
+                        const result = await readJsonSafely(response);
 
                         if (response.ok) {
                             const data = result.data; // JSON hasil ekstraksi Gemini
@@ -1854,11 +1890,10 @@
                             setActiveTab(txModalTabs, txTipeHidden, 'pengeluaran');
                             populateCategoryDropdown('pengeluaran');
 
-                            if (txMessage) {
-                                txMessage.style.color = 'green';
-                                txMessage.textContent =
-                                    'Berhasil membaca struk! Silakan cek data sebelum simpan.';
-                            }
+                            showOcrMessage(
+                                result.warning || 'Berhasil membaca struk! Silakan cek data sebelum simpan.',
+                                result.warning ? 'warning' : 'success'
+                            );
 
                         } else {
                             throw new Error(result.message || 'Gagal membaca gambar');
@@ -1866,10 +1901,7 @@
 
                     } catch (error) {
                         console.error('OCR Error:', error);
-                        if (txMessage) {
-                            txMessage.style.color = 'red';
-                            txMessage.textContent = 'Gagal scan: ' + error.message;
-                        }
+                        showOcrMessage(error.message);
                     } finally {
                         // Reset Loading
                         btnScanOcr.disabled = false;

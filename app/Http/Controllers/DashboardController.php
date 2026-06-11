@@ -42,7 +42,7 @@ class DashboardController extends Controller
         }
 
         if ($user->role === 'sekretaris') {
-            return view('sekretaris.dashboard');
+            return redirect()->route('buku-kas');
         }
 
         if ($user->role === 'bendahara') {
