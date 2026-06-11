@@ -8,11 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
+        $hasAuditNote = Schema::hasColumn('transactions', 'audit_note');
+
+        Schema::table('transactions', function (Blueprint $table) use ($hasAuditNote) {
+            if (!Schema::hasColumn('transactions', 'audit_note')) {
+                $table->text('audit_note')->nullable()->after('status');
+            }
+
             if (!Schema::hasColumn('transactions', 'needs_reaudit')) {
                 $column = $table->boolean('needs_reaudit')->default(false)->index();
 
-                if (Schema::hasColumn('transactions', 'audit_note')) {
+                if ($hasAuditNote) {
                     $column->after('audit_note');
                 } else {
                     $column->after('status');
@@ -23,10 +29,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            if (Schema::hasColumn('transactions', 'needs_reaudit')) {
-                $table->dropColumn('needs_reaudit');
-            }
-        });
+        //
     }
 };
