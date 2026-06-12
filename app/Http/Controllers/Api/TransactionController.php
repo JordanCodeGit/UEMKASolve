@@ -152,6 +152,7 @@ class TransactionController extends Controller
         $catatan = strip_tags($request->catatan ?? '');
         $tanggalTransaksi = Carbon::parse($request->tanggal_transaksi)->format('Y-m-d H:i:s');
         $jumlah = number_format((float) $request->jumlah, 2, '.', '');
+        $receiptPath = $this->receiptPathFromRequest($request);
         $duplicateWindowSeconds = 12;
 
         if (Auth::user()?->role === 'bendahara') {
@@ -163,6 +164,7 @@ class TransactionController extends Controller
                 ->where('created_at', '>=', now()->subSeconds($duplicateWindowSeconds));
 
             if ($existingTransaction = (clone $duplicateQuery)->latest('id')->first()) {
+                $this->attachReceiptToDuplicate($existingTransaction, $receiptPath);
                 return response()->json($existingTransaction->load('category'), 200);
             }
 
@@ -177,6 +179,7 @@ class TransactionController extends Controller
 
             if (!Cache::add('transaction-submit:' . $fingerprint, true, now()->addSeconds($duplicateWindowSeconds))) {
                 if ($existingTransaction = (clone $duplicateQuery)->latest('id')->first()) {
+                    $this->attachReceiptToDuplicate($existingTransaction, $receiptPath);
                     return response()->json($existingTransaction->load('category'), 200);
                 }
 
@@ -190,7 +193,7 @@ class TransactionController extends Controller
             'jumlah'            => $jumlah,
             'tanggal_transaksi' => $tanggalTransaksi,
             'catatan'           => $catatan,
-            'receipt_path'      => $this->receiptPathFromRequest($request),
+            'receipt_path'      => $receiptPath,
         ]);
 
         return response()->json($transaction->load('category'), 201);
@@ -359,6 +362,15 @@ class TransactionController extends Controller
         }
 
         return Storage::disk('public')->exists($receiptPath) ? $receiptPath : null;
+    }
+
+    private function attachReceiptToDuplicate(Transaction $transaction, ?string $receiptPath): void
+    {
+        if (!$receiptPath || $transaction->receipt_path) {
+            return;
+        }
+
+        $transaction->forceFill(['receipt_path' => $receiptPath])->save();
     }
 
     /**

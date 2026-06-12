@@ -1934,8 +1934,11 @@
                             const txModalTabs = document.querySelectorAll(
                                 '#transaksi-modal-overlay .modal-tab-item');
                             const txTipeHidden = document.getElementById('modal-tx-tipe');
+                            const selectedCategoryId = txKategoriSelect?.value || null;
                             setActiveTab(txModalTabs, txTipeHidden, 'pengeluaran');
-                            populateCategoryDropdown('pengeluaran');
+                            if (selectedCategoryId) {
+                                populateCategoryDropdown('pengeluaran', selectedCategoryId);
+                            }
 
                             showOcrMessage(
                                 result.warning || 'Berhasil membaca struk! Silakan cek data sebelum simpan.',

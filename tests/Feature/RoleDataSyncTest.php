@@ -213,6 +213,51 @@ class RoleDataSyncTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_duplicate_treasurer_submit_keeps_ocr_receipt_on_existing_transaction(): void
+    {
+        Cache::flush();
+        Storage::fake('public');
+
+        [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
+
+        $category = Category::create([
+            'business_id' => $business->id,
+            'nama_kategori' => 'Operasional',
+            'tipe' => 'pengeluaran',
+            'ikon' => 'pengeluaran/Button.png',
+        ]);
+
+        $receiptPath = 'receipts/struk-duplikat.jpg';
+        Storage::disk('public')->put($receiptPath, 'receipt image');
+
+        Sanctum::actingAs($treasurer);
+
+        $payload = [
+            'category_id' => $category->id,
+            'jumlah' => 88000,
+            'tanggal_transaksi' => '2026-06-11 11:00:00',
+            'catatan' => 'Pembelian dari scan',
+        ];
+
+        $firstResponse = $this->postJson('/api/transactions', $payload)
+            ->assertCreated()
+            ->assertJsonPath('receipt_path', null);
+
+        $this->postJson('/api/transactions', $payload + ['receipt_path' => $receiptPath])
+            ->assertOk()
+            ->assertJsonPath('id', $firstResponse->json('id'))
+            ->assertJsonPath('receipt_path', $receiptPath);
+
+        Sanctum::actingAs($secretary);
+
+        $this->getJson('/api/transactions?per_page=10')
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $firstResponse->json('id'),
+                'receipt_path' => $receiptPath,
+            ]);
+    }
+
     public function test_only_verified_transactions_affect_cash_summary_and_flagged_requires_audit_note(): void
     {
         [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
