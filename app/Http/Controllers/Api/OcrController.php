@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\GeminiOcrService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class OcrController extends Controller
@@ -87,9 +88,12 @@ class OcrController extends Controller
                 ], 422);
             }
 
+            $receiptPath = $file->store('receipts', 'public') ?: null;
+
             $response = [
                 'message' => 'Scan Berhasil',
                 'data' => $data,
+                'receipt_path' => $receiptPath,
             ];
 
             if ($isDark) {

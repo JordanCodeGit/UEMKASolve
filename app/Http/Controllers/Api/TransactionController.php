@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
@@ -189,6 +190,7 @@ class TransactionController extends Controller
             'jumlah'            => $jumlah,
             'tanggal_transaksi' => $tanggalTransaksi,
             'catatan'           => $catatan,
+            'receipt_path'      => $this->receiptPathFromRequest($request),
         ]);
 
         return response()->json($transaction->load('category'), 201);
@@ -246,9 +248,37 @@ class TransactionController extends Controller
             $updateData['needs_reaudit'] = true;
         }
 
+        if ($request->filled('receipt_path')) {
+            $updateData['receipt_path'] = $this->receiptPathFromRequest($request);
+        }
+
         $transaction->update($updateData);
 
         return response()->json($transaction->load('category'), 200);
+    }
+
+    public function showReceipt($id)
+    {
+        if (Auth::user()?->role !== 'sekretaris') {
+            abort(403);
+        }
+
+        $transaction = Transaction::find($id);
+        $myBusinessId = $this->getPerusahaanId();
+        $receiptPath = $transaction?->receipt_path;
+
+        if (
+            !$transaction
+            || $transaction->business_id != $myBusinessId
+            || !$receiptPath
+            || !str_starts_with($receiptPath, 'receipts/')
+            || str_contains($receiptPath, '..')
+            || !Storage::disk('public')->exists($receiptPath)
+        ) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->response($receiptPath);
     }
 
     public function updateStatus(Request $request, $id): JsonResponse
@@ -314,6 +344,21 @@ class TransactionController extends Controller
     public function flaggedNotifications(): JsonResponse
     {
         return $this->auditNotifications();
+    }
+
+    private function receiptPathFromRequest(Request $request): ?string
+    {
+        $receiptPath = $request->input('receipt_path');
+
+        if (!is_string($receiptPath) || $receiptPath === '') {
+            return null;
+        }
+
+        if (!str_starts_with($receiptPath, 'receipts/') || str_contains($receiptPath, '..')) {
+            return null;
+        }
+
+        return Storage::disk('public')->exists($receiptPath) ? $receiptPath : null;
     }
 
     /**

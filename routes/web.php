@@ -86,6 +86,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/print-laporan', [PrintLaporanController::class, 'generatePdf'])->name('print.laporan');
     Route::get('/notifications/audit-transactions', [ApiTransactionController::class, 'auditNotifications'])
         ->name('notifications.audit-transactions');
+    Route::get('/transactions/{id}/receipt', [ApiTransactionController::class, 'showReceipt'])
+        ->name('transactions.receipt');
 });
 
 Route::get('/invitations/{token}/accept', [MemberController::class, 'accept'])->name('members.accept');

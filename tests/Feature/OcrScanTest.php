@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\GeminiOcrService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -64,6 +65,7 @@ class OcrScanTest extends TestCase
 
     public function test_ocr_accepts_dark_but_readable_receipts_with_warning(): void
     {
+        Storage::fake('public');
         Sanctum::actingAs(User::factory()->create(['role' => 'bendahara']));
 
         $this->mockOcrService([
@@ -84,12 +86,17 @@ class OcrScanTest extends TestCase
             'kategori' => 'Belanja',
         ]);
 
-        $this->postJson('/api/ocr/scan', [
+        $response = $this->postJson('/api/ocr/scan', [
             'image' => UploadedFile::fake()->image('struk.png', 800, 1200),
-        ])
-            ->assertOk()
+        ]);
+
+        $response->assertOk()
             ->assertJsonPath('warning', 'Struk berhasil dibaca, namun foto terlihat gelap. Untuk hasil lebih akurat, upload struk dengan kondisi cahaya cukup terang.')
             ->assertJsonPath('data.total_transaksi', 5000);
+
+        $this->assertIsString($response->json('receipt_path'));
+        $this->assertStringStartsWith('receipts/', $response->json('receipt_path'));
+        $this->assertCount(1, Storage::disk('public')->files('receipts'));
     }
 
     private function mockOcrService(array $response): void

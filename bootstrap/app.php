@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // 2. Middleware khusus grup 'web' tetap disini
         $middleware->web(append: [
             \App\Http\Middleware\CheckCompanySetup::class,
+            \App\Http\Middleware\PreventBackHistory::class,
             // \App\Http\Middleware\CheckUserActivity::class, // TEMPORARILY DISABLED
         ]);
 

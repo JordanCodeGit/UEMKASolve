@@ -36,6 +36,7 @@ class StoreTransactionRequest extends FormRequest
             'jumlah'            => ['required', 'numeric', 'min:0', 'max:999999999999999'],
             'catatan'           => ['nullable', 'string', 'max:1000'],
             'tanggal_transaksi' => ['required', 'date'],
+            'receipt_path'      => ['nullable', 'string', 'max:255', 'regex:/^receipts\/[A-Za-z0-9_\-\/.]+$/', 'not_regex:/\.\./'],
         ];
     }
 
@@ -51,6 +52,7 @@ class StoreTransactionRequest extends FormRequest
             'jumlah.max'           => 'Nominal transaksi terlalu besar.',
             'tanggal_transaksi.required' => 'Tanggal transaksi wajib diisi.',
             'tanggal_transaksi.date'     => 'Format tanggal harus YYYY-MM-DD.',
+            'receipt_path.regex' => 'Path struk tidak valid.',
         ];
     }
 }

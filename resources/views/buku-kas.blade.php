@@ -122,6 +122,8 @@
             </div>
 
             <form id="transaksi-form">
+                <input type="hidden" id="modal-tx-receipt-path" name="receipt_path">
+
                 <div class="modal-body">
 
                     <div id="transaksi-modal-message"></div>
@@ -455,6 +457,7 @@
             const txMessage = document.getElementById('transaksi-modal-message');
             const txSubmitBtn = document.getElementById('transaksi-modal-submit-btn');
             const txTipeHidden = document.getElementById('modal-tx-tipe');
+            const txReceiptPathInput = document.getElementById('modal-tx-receipt-path');
             const txKategoriSelect = document.getElementById('modal-tx-kategori-select');
             const openKategoriModalLink = document.getElementById('open-kategori-modal-link');
             const txModalTabs = document.querySelectorAll('#transaksi-modal-overlay .modal-tab-item');
@@ -1236,6 +1239,7 @@
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
                 resetTransactionSubmitState('Simpan Perubahan');
                 document.getElementById('modal-tx-id').value = tx.id;
+                if (txReceiptPathInput) txReceiptPathInput.value = tx.receipt_path || '';
                 const jumlahInt = normalizeJumlahToInt(tx.jumlah);
                 document.getElementById('modal-tx-jumlah').value = formatNominal(String(jumlahInt));
                 document.getElementById('modal-tx-catatan').value = tx.catatan || '';
@@ -1288,6 +1292,7 @@
                 document.getElementById('transaksi-modal-title').textContent = 'Tambah Transaksi';
                 resetTransactionSubmitState('Tambah Transaksi');
                 document.getElementById('modal-tx-id').value = '';
+                if (txReceiptPathInput) txReceiptPathInput.value = '';
 
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1585,6 +1590,7 @@
 
                 txForm.reset();
                 txMessage.textContent = '';
+                if (txReceiptPathInput) txReceiptPathInput.value = '';
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1854,6 +1860,7 @@
                     // Bersihkan pesan sebelumnya
                     const txMessage = document.getElementById('transaksi-modal-message');
                     if (txMessage) txMessage.textContent = '';
+                    if (txReceiptPathInput) txReceiptPathInput.value = '';
 
                     if (!isAllowedOcrFile(file)) {
                         showOcrMessage(unsupportedOcrFormatMessage);
@@ -1885,6 +1892,7 @@
 
                         if (response.ok) {
                             const data = result.data; // JSON hasil ekstraksi Gemini
+                            if (txReceiptPathInput) txReceiptPathInput.value = result.receipt_path || '';
 
                             // --- AUTO FILL FORM ---
 

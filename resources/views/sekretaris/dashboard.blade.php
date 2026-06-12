@@ -112,7 +112,7 @@
                         <textarea id="sekretaris-modal-catatan" class="form-input-modal" disabled></textarea>
                     </div>
 
-                    <button type="button" class="sekretaris-receipt-btn" disabled>
+                    <button type="button" class="sekretaris-receipt-btn" id="sekretaris-receipt-btn" style="display: none;">
                         <i class="fa-solid fa-camera"></i>
                         <span>Lihat Struk Transaksi</span>
                     </button>
@@ -217,6 +217,7 @@
             const modalMessage = document.getElementById('sekretaris-modal-message');
             const statusForm = document.getElementById('sekretaris-status-form');
             const statusSelect = document.getElementById('sekretaris-modal-status');
+            const receiptBtn = document.getElementById('sekretaris-receipt-btn');
             const auditNoteGroup = document.getElementById('sekretaris-audit-note-group');
             const auditNoteInput = document.getElementById('sekretaris-modal-audit-note');
             const printOverlay = document.getElementById('sekretaris-print-overlay');
@@ -230,6 +231,10 @@
 
             function makeUrl(input) {
                 return new URL(input || API_TRANSACTIONS, window.location.origin);
+            }
+
+            function receiptUrl(id) {
+                return @json(url('/transactions')) + '/' + encodeURIComponent(id) + '/receipt';
             }
 
             function shouldRedirectToLogin(response) {
@@ -330,6 +335,10 @@
                 statusSelect.value = tx.status || 'pending';
                 auditNoteInput.value = tx.audit_note || '';
                 syncAuditNoteField();
+                if (receiptBtn) {
+                    receiptBtn.dataset.id = tx.receipt_path ? tx.id : '';
+                    receiptBtn.style.display = tx.receipt_path ? 'inline-flex' : 'none';
+                }
                 modalMessage.textContent = '';
                 modal.style.display = 'flex';
             }
@@ -483,6 +492,13 @@
             });
 
             statusSelect.addEventListener('change', syncAuditNoteField);
+
+            if (receiptBtn) {
+                receiptBtn.addEventListener('click', function() {
+                    if (!this.dataset.id) return;
+                    window.open(receiptUrl(this.dataset.id), '_blank', 'noopener');
+                });
+            }
 
             statusForm.addEventListener('submit', async function(e) {
                 e.preventDefault();

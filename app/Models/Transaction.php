@@ -20,6 +20,7 @@ class Transaction extends Model
         'status',
         'audit_note',
         'needs_reaudit',
+        'receipt_path',
     ];
 
     /**

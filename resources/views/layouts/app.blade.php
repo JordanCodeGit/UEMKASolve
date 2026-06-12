@@ -259,6 +259,15 @@
 
     {{-- SCRIPT UTAMA (NOTIFIKASI & LOGIC) --}}
     <script>
+        window.addEventListener('pageshow', function(event) {
+            const navigationEntry = performance.getEntriesByType('navigation')[0];
+            const isBackForward = event.persisted || navigationEntry?.type === 'back_forward';
+
+            if (isBackForward && !localStorage.getItem('auth_token')) {
+                window.location.replace("{{ route('login') }}");
+            }
+        });
+
         (function() {
             const alertTimers = new WeakMap();
 

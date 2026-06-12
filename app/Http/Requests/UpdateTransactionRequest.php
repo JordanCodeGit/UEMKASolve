@@ -35,6 +35,7 @@ class UpdateTransactionRequest extends FormRequest
             'jumlah'            => ['required', 'numeric', 'min:0', 'max:999999999999999'],
             'catatan'           => ['nullable', 'string', 'max:255'],
             'tanggal_transaksi' => ['required', 'date'],
+            'receipt_path'      => ['nullable', 'string', 'max:255', 'regex:/^receipts\/[A-Za-z0-9_\-\/.]+$/', 'not_regex:/\.\./'],
         ];
     }
 
@@ -45,6 +46,7 @@ class UpdateTransactionRequest extends FormRequest
             'category_id.exists'   => 'Error: Kategori yang dipilih tidak valid atau bukan milik Anda.',
             'jumlah.required'      => 'Nominal wajib diisi.',
             'category_id.required' => 'Silakan pilih kategori.',
+            'receipt_path.regex'   => 'Path struk tidak valid.',
         ];
     }
 }

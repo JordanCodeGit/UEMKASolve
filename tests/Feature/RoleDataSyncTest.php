@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -153,6 +154,63 @@ class RoleDataSyncTest extends TestCase
             ->assertJsonPath('pagination.data.0.id', $transaction['id'])
             ->assertJsonPath('pagination.data.0.business_id', $business->id)
             ->assertJsonPath('pagination.data.0.catatan', 'Pembelian perlengkapan kantor');
+    }
+
+    public function test_secretary_receipt_is_available_only_for_transactions_saved_with_ocr_receipt(): void
+    {
+        Storage::fake('public');
+
+        [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
+
+        $category = Category::create([
+            'business_id' => $business->id,
+            'nama_kategori' => 'Operasional',
+            'tipe' => 'pengeluaran',
+            'ikon' => 'pengeluaran/Button.png',
+        ]);
+
+        $receiptPath = 'receipts/struk-test.jpg';
+        Storage::disk('public')->put($receiptPath, 'receipt image');
+
+        Sanctum::actingAs($treasurer);
+
+        $manualTransaction = $this->postJson('/api/transactions', [
+            'category_id' => $category->id,
+            'jumlah' => 50000,
+            'tanggal_transaksi' => '2026-06-11 09:00:00',
+            'catatan' => 'Input manual',
+        ])->assertCreated()->json();
+
+        $ocrTransaction = $this->postJson('/api/transactions', [
+            'category_id' => $category->id,
+            'jumlah' => 75000,
+            'tanggal_transaksi' => '2026-06-11 10:00:00',
+            'catatan' => 'Dari scan OCR',
+            'receipt_path' => $receiptPath,
+        ])->assertCreated()
+            ->assertJsonPath('receipt_path', $receiptPath)
+            ->json();
+
+        Sanctum::actingAs($secretary);
+
+        $this->getJson('/api/transactions?per_page=10')
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $ocrTransaction['id'],
+                'receipt_path' => $receiptPath,
+            ])
+            ->assertJsonFragment([
+                'id' => $manualTransaction['id'],
+                'receipt_path' => null,
+            ]);
+
+        $this->actingAs($secretary)
+            ->get(route('transactions.receipt', $ocrTransaction['id']))
+            ->assertOk();
+
+        $this->actingAs($secretary)
+            ->get(route('transactions.receipt', $manualTransaction['id']))
+            ->assertNotFound();
     }
 
     public function test_only_verified_transactions_affect_cash_summary_and_flagged_requires_audit_note(): void
