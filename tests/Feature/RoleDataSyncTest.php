@@ -401,6 +401,30 @@ class RoleDataSyncTest extends TestCase
         ]);
     }
 
+    public function test_owner_cannot_invite_another_owner_as_staff(): void
+    {
+        [$owner] = $this->createBusinessTeam();
+
+        $otherOwner = User::factory()->create([
+            'role' => 'owner',
+            'email' => 'owner-lain@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($owner)
+            ->postJson(route('anggota.store'), [
+                'email' => $otherOwner->email,
+                'role' => 'sekretaris',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'akun ini sudah terafiliasi dengan umkm lain');
+
+        $this->assertDatabaseMissing('business_members', [
+            'user_id' => $otherOwner->id,
+            'role' => 'sekretaris',
+        ]);
+    }
+
     public function test_owner_can_delete_staff_member_from_owned_business(): void
     {
         [$owner, $business, $secretary] = $this->createBusinessTeam();
@@ -435,6 +459,34 @@ class RoleDataSyncTest extends TestCase
         $this->actingAs($secretary)
             ->get(route('buku-kas'))
             ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_removed_staff_cannot_log_in_again_without_active_membership(): void
+    {
+        [$owner, $business, $secretary] = $this->createBusinessTeam();
+
+        $secretary->forceFill([
+            'password' => Hash::make('Password1'),
+        ])->save();
+
+        $member = BusinessMember::where('business_id', $business->id)
+            ->where('user_id', $secretary->id)
+            ->firstOrFail();
+
+        $this->actingAs($owner)
+            ->deleteJson(route('anggota.destroy', $member))
+            ->assertOk();
+
+        $this->post('/logout');
+
+        $this->postJson(route('login.process'), [
+            'email' => $secretary->email,
+            'password' => 'Password1',
+        ])
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'harap melakukan registrasi');
 
         $this->assertGuest();
     }

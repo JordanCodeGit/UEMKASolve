@@ -65,7 +65,8 @@
                     google_no_code: 'Google tidak mengirim kode autentikasi. Silakan coba lagi.',
                     google_state: 'Sesi login Google tidak valid. Silakan coba lagi.',
                     google_ssl: 'Gagal terhubung ke Google (SSL/cURL). Cek konfigurasi SSL PHP (cacert).',
-                    google_failed: 'Login Google gagal. Silakan coba lagi.'
+                    google_failed: 'Login Google gagal. Silakan coba lagi.',
+                    registration_required: 'harap melakukan registrasi'
                 };
 
                 messageDiv.textContent = messages[errorParam] || ('Login gagal: ' + errorParam);

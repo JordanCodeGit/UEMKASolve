@@ -19,6 +19,8 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, HasApiTokens;
 
+    public const STAFF_ROLES = ['sekretaris', 'bendahara'];
+
     protected $fillable = [
         'name',
         'email',
@@ -65,6 +67,30 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('status', 'accepted')
             ->latest('accepted_at')
             ->first();
+    }
+
+    public function isStaff(): bool
+    {
+        return in_array($this->role, self::STAFF_ROLES, true);
+    }
+
+    public function isStaffWithoutActiveBusiness(): bool
+    {
+        return $this->isStaff() && !$this->acceptedBusinessMembership();
+    }
+
+    public function hasBusinessAffiliation(?int $exceptBusinessId = null): bool
+    {
+        $ownedBusiness = $this->business()->first();
+
+        if ($ownedBusiness && $ownedBusiness->id !== $exceptBusinessId) {
+            return true;
+        }
+
+        return $this->businessMemberships()
+            ->whereIn('status', ['pending', 'accepted'])
+            ->when($exceptBusinessId, fn ($query) => $query->where('business_id', '!=', $exceptBusinessId))
+            ->exists();
     }
 
     public function activeBusiness(): ?Business

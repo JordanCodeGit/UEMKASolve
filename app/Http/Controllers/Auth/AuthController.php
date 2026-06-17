@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\URL;
 
 class AuthController extends Controller
 {
+    private const REGISTRATION_REQUIRED_MESSAGE = 'harap melakukan registrasi';
+
     /**
      * Handle user registration request.
      */
@@ -195,6 +197,14 @@ class AuthController extends Controller
             ], 403);
         }
 
+        if ($user->isStaffWithoutActiveBusiness()) {
+            $this->revokeStaffAccess($user);
+
+            return response()->json([
+                'message' => self::REGISTRATION_REQUIRED_MESSAGE,
+            ], 403);
+        }
+
         // --- JIKA LULUS ---
 
         // Login Session Web dengan Remember Me
@@ -272,11 +282,21 @@ class AuthController extends Controller
                 ]);
             } else {
                 // --- USER LAMA ---
+                if ($user->isStaffWithoutActiveBusiness()) {
+                    $this->revokeStaffAccess($user);
+
+                    return redirect('/login?error=registration_required');
+                }
+
+                $hasPendingInvitation = BusinessMember::where('user_id', $user->id)
+                    ->where('status', 'pending')
+                    ->exists();
+
                 if (empty($user->google_id)) {
                     $user->update(['google_id' => $googleUser->getId()]);
                 }
 
-                if (!$user->role) {
+                if (!$user->role && !$hasPendingInvitation) {
                     $user->role = 'owner';
                     $user->save();
                 }
@@ -401,5 +421,13 @@ class AuthController extends Controller
         /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
         $driver = Socialite::driver('google');
         return $driver->stateless()->redirect();
+    }
+
+    private function revokeStaffAccess(User $user): void
+    {
+        $user->tokens()->delete();
+        $user->forceFill([
+            'remember_token' => Str::random(60),
+        ])->save();
     }
 }

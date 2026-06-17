@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\MailDelivery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -57,22 +58,24 @@ class MemberController extends Controller
             ], 503);
         }
 
-        $email = strtolower($validated['email']);
-        $memberUser = User::firstOrCreate(
-            ['email' => $email],
-            [
+        $email = strtolower(trim($validated['email']));
+        $memberUser = User::where('email', $email)->first();
+
+        if ($memberUser) {
+            if ($memberUser->id === $owner->id) {
+                return response()->json(['message' => 'Owner tidak dapat mengundang akun sendiri.'], 422);
+            }
+
+            if ($memberUser->role === 'owner' || $memberUser->hasBusinessAffiliation($business->id)) {
+                return response()->json(['message' => 'akun ini sudah terafiliasi dengan umkm lain'], 422);
+            }
+        } else {
+            $memberUser = User::create([
                 'name' => Str::headline(Str::before($email, '@')),
+                'email' => $email,
                 'password' => Hash::make(Str::random(32)),
                 'email_verified_at' => now(),
-            ]
-        );
-
-        if ($memberUser->id === $owner->id) {
-            return response()->json(['message' => 'Owner tidak dapat mengundang akun sendiri.'], 422);
-        }
-
-        if ($memberUser->role === 'owner' && $memberUser->business) {
-            return response()->json(['message' => 'Email ini sudah terdaftar sebagai owner bisnis lain.'], 422);
+            ]);
         }
 
         $acceptedMember = BusinessMember::where('business_id', $business->id)
@@ -269,6 +272,18 @@ class MemberController extends Controller
 
         if ($removedUser && !$removedUser->acceptedBusinessMembership()) {
             $removedUser->tokens()->delete();
+            $removedUser->forceFill([
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            try {
+                DB::table('sessions')->where('user_id', $removedUser->id)->delete();
+            } catch (\Throwable $sessionError) {
+                Log::warning('Unable to delete staff web sessions after member removal', [
+                    'user_id' => $removedUser->id,
+                    'message' => $sessionError->getMessage(),
+                ]);
+            }
         }
 
         return response()->json(['message' => 'Anggota berhasil dihapus.']);
