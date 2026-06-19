@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SetupController;
 use App\Http\Controllers\Api\OcrController;
+use App\Http\Controllers\Api\MobileAuthController;
+use App\Http\Controllers\Api\MobileMemberController;
+use App\Http\Controllers\Api\BusinessProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +31,37 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10
 // Bagian Google Auth
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
+
+Route::prefix('mobile')->group(function () {
+    Route::post('/register', [MobileAuthController::class, 'register'])
+        ->middleware('throttle:10,1');
+
+    Route::post('/login', [MobileAuthController::class, 'login'])
+        ->middleware('throttle:10,1');
+
+    Route::post('/google-login', [MobileAuthController::class, 'googleLogin'])
+        ->middleware('throttle:10,1');
+
+    Route::post('/resend-verification', [MobileAuthController::class, 'resendVerification'])
+        ->middleware('throttle:6,1');
+
+    Route::post('/forgot-password', [MobileAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:5,1');
+
+    Route::post('/reset-password', [MobileAuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1');
+
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/user', [MobileAuthController::class, 'user']);
+        Route::post('/logout', [MobileAuthController::class, 'logout']);
+
+        Route::post('/profile/update-usaha', [BusinessProfileController::class, 'update']);
+
+        Route::get('/members', [MobileMemberController::class, 'index']);
+        Route::post('/members', [MobileMemberController::class, 'store'])->middleware('throttle:10,1');
+        Route::delete('/members/{member}', [MobileMemberController::class, 'destroy']);
+    });
+});
 
 // --- Rute Terproteksi (Login Wajib) ---
 // Bagian Rute Terproteksi (Login Wajib)
@@ -94,6 +128,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/transactions/{id}', [TransactionController::class, 'update']);
     Route::put('/transactions/{id}', [TransactionController::class, 'update']);
     Route::patch('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
+    Route::get('/transactions/{id}/receipt', [TransactionController::class, 'showReceipt']);
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
 
     // 7. Kategori (CRUD MANUAL - EKSPLISIT)

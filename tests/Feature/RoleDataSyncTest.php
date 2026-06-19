@@ -57,9 +57,9 @@ class RoleDataSyncTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_owner_can_create_and_see_business_transactions(): void
+    public function test_owner_cannot_create_but_can_see_business_transactions(): void
     {
-        [$owner, $business] = $this->createBusinessTeam();
+        [$owner, $business, $secretary, $treasurer] = $this->createBusinessTeam();
 
         $category = Category::create([
             'business_id' => $business->id,
@@ -75,7 +75,18 @@ class RoleDataSyncTest extends TestCase
             'jumlah' => 250000,
             'tanggal_transaksi' => '2026-06-10 10:00:00',
             'catatan' => 'Setoran awal',
+        ])->assertForbidden();
+
+        Sanctum::actingAs($treasurer);
+
+        $this->postJson('/api/transactions', [
+            'category_id' => $category->id,
+            'jumlah' => 250000,
+            'tanggal_transaksi' => '2026-06-10 10:00:00',
+            'catatan' => 'Setoran awal',
         ])->assertCreated();
+
+        Sanctum::actingAs($owner);
 
         $this->getJson('/api/transactions')
             ->assertOk()
@@ -269,7 +280,7 @@ class RoleDataSyncTest extends TestCase
             'ikon' => 'pemasukan/Button.png',
         ]);
 
-        Sanctum::actingAs($owner);
+        Sanctum::actingAs($treasurer);
 
         $pendingTransaction = $this->postJson('/api/transactions', [
             'category_id' => $category->id,
@@ -446,6 +457,9 @@ class RoleDataSyncTest extends TestCase
             'tokenable_type' => User::class,
             'tokenable_id' => $secretary->id,
         ]);
+        $this->assertDatabaseMissing('users', [
+            'id' => $secretary->id,
+        ]);
     }
 
     public function test_staff_without_active_membership_is_logged_out_from_web_pages(): void
@@ -463,10 +477,11 @@ class RoleDataSyncTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_removed_staff_cannot_log_in_again_without_active_membership(): void
+    public function test_removed_staff_user_is_deleted_and_email_can_register_again(): void
     {
         [$owner, $business, $secretary] = $this->createBusinessTeam();
 
+        $removedEmail = $secretary->email;
         $secretary->forceFill([
             'password' => Hash::make('Password1'),
         ])->save();
@@ -482,11 +497,21 @@ class RoleDataSyncTest extends TestCase
         $this->post('/logout');
 
         $this->postJson(route('login.process'), [
-            'email' => $secretary->email,
+            'email' => $removedEmail,
             'password' => 'Password1',
         ])
-            ->assertStatus(403)
-            ->assertJsonPath('message', 'harap melakukan registrasi');
+            ->assertStatus(401)
+            ->assertJsonPath('message', 'Email belum terdaftar.');
+
+        $this->assertDatabaseMissing('users', [
+            'email' => $removedEmail,
+        ]);
+
+        $this->postJson('/api/register', [
+            'name' => 'Staff Baru',
+            'email' => $removedEmail,
+            'password' => 'Password1',
+        ])->assertCreated();
 
         $this->assertGuest();
     }

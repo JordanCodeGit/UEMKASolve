@@ -32,6 +32,11 @@ class TransactionController extends Controller
         return null;
     }
 
+    private function canManageCashTransactions(): bool
+    {
+        return Auth::user()?->role === 'bendahara';
+    }
+
     /**
      * Mengambil daftar transaksi dengan perhitungan Saldo & Laba yang Akurat
      */
@@ -105,14 +110,20 @@ class TransactionController extends Controller
 
         // 2. Hitung Summary (Berdasarkan Filter di atas)
         // Kita clone query agar tidak mengganggu pagination
-        $summaryVerified = (clone $queryFiltered)->where('status', 'verified');
-        $summaryPemasukan = (clone $summaryVerified)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
-        $summaryPengeluaran = (clone $summaryVerified)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
+        $includePending = $request->boolean('include_pending');
+        $summaryQuery = clone $queryFiltered;
+        if (!$includePending) {
+            $summaryQuery->where('status', 'verified');
+        }
+        $summaryPemasukan = (clone $summaryQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
+        $summaryPengeluaran = (clone $summaryQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
 
         // 3. Hitung Saldo Real (ALL TIME / Dompet)
         // Saldo dompet TIDAK boleh terpengaruh filter tanggal/search, harus selalu total uang saat ini.
-        $allTimeQuery = Transaction::where('business_id', $idPerusahaan)
-            ->where('status', 'verified');
+        $allTimeQuery = Transaction::where('business_id', $idPerusahaan);
+        if (!$includePending) {
+            $allTimeQuery->where('status', 'verified');
+        }
 
         $saldoMasuk = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pemasukan'))->sum('jumlah');
         $saldoKeluar = (clone $allTimeQuery)->whereHas('category', fn($q) => $q->where('tipe', 'pengeluaran'))->sum('jumlah');
@@ -138,6 +149,10 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request): JsonResponse
     {
+        if (!$this->canManageCashTransactions()) {
+            return response()->json(['message' => 'Hanya bendahara yang dapat mengelola transaksi.'], 403);
+        }
+
         $idPerusahaan = $this->getPerusahaanId();
         if (!$idPerusahaan) return response()->json(['message' => 'Profil usaha belum diset.'], 400);
 
@@ -218,6 +233,10 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, $id): JsonResponse
     {
+        if (!$this->canManageCashTransactions()) {
+            return response()->json(['message' => 'Hanya bendahara yang dapat mengelola transaksi.'], 403);
+        }
+
         $transaction = Transaction::withTrashed()->find($id);
         $myBusinessId = $this->getPerusahaanId();
 
@@ -263,7 +282,9 @@ class TransactionController extends Controller
     public function showReceipt($id)
     {
         if (Auth::user()?->role !== 'sekretaris') {
-            abort(403);
+            return response()->json([
+                'message' => 'Hanya sekretaris yang dapat melihat struk transaksi.',
+            ], 403);
         }
 
         $transaction = Transaction::find($id);
@@ -278,7 +299,9 @@ class TransactionController extends Controller
             || str_contains($receiptPath, '..')
             || !Storage::disk('public')->exists($receiptPath)
         ) {
-            abort(404);
+            return response()->json([
+                'message' => 'Struk transaksi tidak ditemukan.',
+            ], 404);
         }
 
         return Storage::disk('public')->response($receiptPath);
@@ -378,6 +401,10 @@ class TransactionController extends Controller
      */
     public function destroy($id): JsonResponse
     {
+        if (!$this->canManageCashTransactions()) {
+            return response()->json(['message' => 'Hanya bendahara yang dapat mengelola transaksi.'], 403);
+        }
+
         $transaction = Transaction::withTrashed()->where('id', $id)->first();
         $myBusinessId = $this->getPerusahaanId();
 

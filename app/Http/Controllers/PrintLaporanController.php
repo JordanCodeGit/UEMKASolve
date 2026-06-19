@@ -25,6 +25,10 @@ class PrintLaporanController extends Controller
                 return response()->json(['error' => 'Business not found'], 400);
             }
 
+            if ($user->role !== 'sekretaris') {
+                return response()->json(['error' => 'Hanya sekretaris yang dapat mencetak buku kas.'], 403);
+            }
+
             $idPerusahaan = $business->id;
             $sections = $request->get('sections', []);
             $sections = (array)$sections;
@@ -139,7 +143,7 @@ class PrintLaporanController extends Controller
                     'total_pengeluaran' => $pengeluaranPeriod,
                     'laba' => $pemasukanPeriod - $pengeluaranPeriod
                 ],
-                'transactions' => $allTransactions->take(10), // Limit 10
+                'transactions' => $allTransactions,
                 'company' => ['name' => $business->nama_usaha ?? 'Usaha Saya'],
 
                 // Variabel Grafik Baru

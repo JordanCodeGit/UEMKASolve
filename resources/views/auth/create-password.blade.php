@@ -7,7 +7,14 @@
         <h2>Buat Password</h2>
 
         <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">
-            Anda diundang sebagai {{ ucfirst($member->role) }} untuk bergabung ke {{ $member->business->nama_usaha }}.
+            @php
+                $roleLabels = collect(explode(',', $member->role))
+                    ->map(fn ($role) => trim($role) === 'sekretaris' ? 'Sekretaris' : (trim($role) === 'bendahara' ? 'Bendahara' : ucfirst(trim($role))))
+                    ->filter()
+                    ->values()
+                    ->implode(' dan ');
+            @endphp
+            Anda diundang sebagai {{ $roleLabels }} untuk bergabung ke {{ $member->business->nama_usaha }}.
         </p>
 
         @if ($errors->any())

@@ -4,7 +4,9 @@
 
 @section('content')
     @php
-        $canManageCategoriesForBukuKas = in_array(($globalRole ?? null), ['owner', 'sekretaris'], true);
+        $isOwnerBukuKas = ($globalRole ?? null) === 'owner';
+        $canOpenCategoriesForBukuKas = in_array(($globalRole ?? null), ['owner', 'sekretaris'], true);
+        $canManageCategoriesForBukuKas = ($globalRole ?? null) === 'sekretaris';
     @endphp
 
     {{-- // Kode Header Buku Kas (Saldo + Filter Bulan + Tombol Cetak) --}}
@@ -35,7 +37,8 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-gradient" id="btn-cetak-laporan">
+            <button class="btn btn-gradient" id="btn-cetak-laporan"
+                @if (($globalRole ?? null) !== 'sekretaris') style="display: none;" disabled aria-hidden="true" @endif>
                 <i class="fa-solid fa-print"></i>
                 <span class="btn-label">Cetak Buku Kas</span>
             </button>
@@ -61,7 +64,8 @@
                 <i class="fa-solid fa-trash-can"></i> Hapus (<span id="selected-count">0</span>)
             </button>
 
-            <button class="btn-primary-green" id="add-transaction-btn">
+            <button class="btn-primary-green" id="add-transaction-btn"
+                @if ($isOwnerBukuKas) style="display: none;" disabled aria-hidden="true" @endif>
                 <i class="fa-solid fa-plus"></i>
                 <span class="btn-label">Tambah Transaksi</span>
             </button>
@@ -176,7 +180,7 @@
                                 </div>
 
                                 <div class="dropdown-add-btn" id="open-kategori-modal-link"
-                                    style="{{ $canManageCategoriesForBukuKas ? '' : 'display: none;' }}">
+                                    style="{{ $canOpenCategoriesForBukuKas ? '' : 'display: none;' }}">
                                     <i class="fa-solid fa-plus-circle"></i> Tambah Kategori Baru
                                 </div>
                             </div>
@@ -436,9 +440,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const isOwnerReadOnly = false;
-            const canManageCategories = {{ $canManageCategoriesForBukuKas ? 'true' : 'false' }};
             const currentRole = @json($globalRole ?? '');
+            const isOwnerReadOnly = currentRole === 'owner';
+            const canOpenCategoryModal = {{ $canOpenCategoriesForBukuKas ? 'true' : 'false' }};
+            const canManageCategories = {{ $canManageCategoriesForBukuKas ? 'true' : 'false' }};
             const showAuditStatusInBukuKas = currentRole === 'bendahara';
 
             const token = localStorage.getItem('auth_token');
@@ -468,6 +473,7 @@
             const katMessage = document.getElementById('kategori-modal-message');
             const katTipeHidden = document.getElementById('modal-kat-tipe');
             const katModalTabs = document.querySelectorAll('#kategori-modal-overlay .modal-tab-item');
+            const katSubmitBtn = document.getElementById('kategori-modal-submit-btn');
 
             // --- Variabel API URL ---
             const API_TRANSACTIONS = "/api/transactions";
@@ -495,6 +501,65 @@
             }
 
             let isSubmittingTransaction = false;
+
+            function setTransactionModalReadOnly(readOnly) {
+                const title = document.getElementById('transaksi-modal-title');
+                const ocrBox = document.querySelector('#transaksi-modal-overlay .ocr-box');
+                const editableFields = txForm.querySelectorAll(
+                    'input:not([type="hidden"]), textarea, #btn-scan-ocr, .modal-tab-item'
+                );
+
+                editableFields.forEach(field => {
+                    field.disabled = readOnly;
+                });
+
+                if (catTrigger) {
+                    catTrigger.classList.toggle('is-disabled', readOnly);
+                    catTrigger.setAttribute('aria-disabled', readOnly ? 'true' : 'false');
+                }
+
+                if (openKategoriModalLink) {
+                    openKategoriModalLink.style.display = readOnly && currentRole !== 'owner' ? 'none' : '';
+                }
+
+                if (txSubmitBtn) {
+                    txSubmitBtn.style.display = readOnly ? 'none' : '';
+                    txSubmitBtn.disabled = readOnly;
+                }
+
+                if (ocrBox) {
+                    ocrBox.style.opacity = readOnly ? '0.55' : '';
+                }
+
+                if (title && readOnly) {
+                    title.textContent = 'Detail Transaksi';
+                }
+            }
+
+            function setCategoryModalReadOnly(readOnly) {
+                const editableFields = katForm.querySelectorAll('input, .modal-tab-item');
+                editableFields.forEach(field => {
+                    field.disabled = readOnly;
+                });
+
+                const iconGrid = document.getElementById('icon-grid-container-kat');
+                if (iconGrid) {
+                    iconGrid.style.pointerEvents = readOnly ? 'none' : '';
+                    iconGrid.style.opacity = readOnly ? '0.65' : '';
+                }
+
+                if (katSubmitBtn) {
+                    katSubmitBtn.style.display = readOnly ? 'none' : '';
+                    katSubmitBtn.disabled = readOnly;
+                }
+
+                if (katMessage) {
+                    katMessage.textContent = readOnly
+                        ? 'Owner hanya dapat melihat kategori. Pembuatan kategori dilakukan oleh sekretaris.'
+                        : '';
+                    katMessage.className = readOnly ? 'member-message-info' : '';
+                }
+            }
 
             function setTransactionSubmitState(isLoading, label = null) {
                 if (!txSubmitBtn) return;
@@ -1166,6 +1231,8 @@
 
             // 4. Aksi Klik Tombol Hapus Massal (FIXED LOGIC)
             document.getElementById('bulk-delete-btn').addEventListener('click', async function() {
+                if (isOwnerReadOnly) return;
+
                 const ids = Array.from(selectedIdsCurrentPage);
                 if (ids.length === 0) return;
 
@@ -1233,8 +1300,6 @@
             });
 
             window.openEditModal = function(tx) {
-                if (isOwnerReadOnly) return;
-
                 txForm.reset();
                 document.getElementById('transaksi-modal-title').textContent = 'Edit Transaksi';
                 resetTransactionSubmitState('Simpan Perubahan');
@@ -1264,6 +1329,9 @@
 
                 setActiveTab(txModalTabs, txTipeHidden, tipe);
                 populateCategoryDropdown(tipe, kategori.id);
+                txMessage.textContent = isOwnerReadOnly ? 'Owner hanya dapat melihat transaksi.' : '';
+                txMessage.style.color = isOwnerReadOnly ? '#64748b' : '';
+                setTransactionModalReadOnly(isOwnerReadOnly);
                 txModalOverlay.style.display = 'flex';
             };
 
@@ -1293,6 +1361,7 @@
                 resetTransactionSubmitState('Tambah Transaksi');
                 document.getElementById('modal-tx-id').value = '';
                 if (txReceiptPathInput) txReceiptPathInput.value = '';
+                setTransactionModalReadOnly(false);
 
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1408,9 +1477,11 @@
                         itemEl.tabIndex = 0;
                         itemEl.innerHTML = `
                             <div class="tx-item-left">
-                                <span class="tx-item-check" aria-label="Pilih transaksi" onclick="event.stopPropagation()">
-                                    <input type="checkbox" class="check-item" data-id="${tx.id}" onclick="event.stopPropagation()">
-                                </span>
+                                ${isOwnerReadOnly ? '' : `
+                                    <span class="tx-item-check" aria-label="Pilih transaksi" onclick="event.stopPropagation()">
+                                        <input type="checkbox" class="check-item" data-id="${tx.id}" onclick="event.stopPropagation()">
+                                    </span>
+                                `}
                                 <span class="icon-wrapper ${shapeClass}">${iconHtml}</span>
                                 <div class="tx-item-text">
                                     <div class="tx-item-title">${safeNamaKategori}</div>
@@ -1476,7 +1547,7 @@
 
                     row.innerHTML = `
                     <div class="cell-check" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="check-item" data-id="${tx.id}">
+                        ${isOwnerReadOnly ? '' : `<input type="checkbox" class="check-item" data-id="${tx.id}">`}
                     </div>
 
                     <div class="cell-kategori">
@@ -1492,7 +1563,7 @@
                     row.addEventListener('click', function() {
                         openEditModal(tx);
                     });
-                    row.style.cursor = 'pointer';
+                    row.style.cursor = isOwnerReadOnly ? 'default' : 'pointer';
                     container.appendChild(row);
                 });
             }
@@ -1548,6 +1619,11 @@
                             }
 
                             item.addEventListener('click', function() {
+                                if (isOwnerReadOnly) {
+                                    document.getElementById('category-dropdown').classList.remove('active');
+                                    return;
+                                }
+
                                 triggerText.textContent = cat.nama_kategori;
                                 hiddenInput.value = cat.id;
                                 document.querySelectorAll('.dropdown-item').forEach(el => el
@@ -1591,6 +1667,7 @@
                 txForm.reset();
                 txMessage.textContent = '';
                 if (txReceiptPathInput) txReceiptPathInput.value = '';
+                setTransactionModalReadOnly(false);
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1606,6 +1683,12 @@
 
             txForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (isOwnerReadOnly) {
+                    txMessage.textContent = 'Owner hanya dapat melihat transaksi.';
+                    txMessage.style.color = '#dc2626';
+                    return;
+                }
+
                 if (isSubmittingTransaction) return;
 
                 isSubmittingTransaction = true;
@@ -1669,12 +1752,13 @@
 
             if (openKategoriModalLink) openKategoriModalLink.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!canManageCategories) return;
+                if (!canOpenCategoryModal) return;
                 katForm.reset();
                 katMessage.textContent = '';
                 const currentTxTipe = txTipeHidden.value;
                 setActiveTab(katModalTabs, katTipeHidden, currentTxTipe);
                 renderIconGrid(currentTxTipe);
+                setCategoryModalReadOnly(!canManageCategories);
                 katModalOverlay.style.display = 'flex';
             });
 
@@ -1682,7 +1766,7 @@
                 e.preventDefault();
                 if (!canManageCategories) {
                     katMessage.textContent = '';
-                    showCategoryNotification('error', 'Hanya owner atau sekretaris yang dapat membuat kategori.');
+                    showCategoryNotification('error', 'Hanya sekretaris yang dapat membuat kategori.');
                     return;
                 }
                 katMessage.textContent = 'Menyimpan...';
@@ -1745,6 +1829,7 @@
 
             txModalTabs.forEach(tab => {
                 tab.addEventListener('click', () => {
+                    if (isOwnerReadOnly) return;
                     const tipe = tab.dataset.txTabType;
                     setActiveTab(txModalTabs, txTipeHidden, tipe);
                     populateCategoryDropdown(tipe);

@@ -46,27 +46,31 @@ class GeminiOcrService
                     \"is_blurry\": false,
                     \"is_dark\": false,
                     \"readable\": true,
+                    \"has_multiple_receipts\": false,
+                    \"receipt_count\": 1,
                     \"reason\": \"\"
                 },
                 \"items\": [{\"nama_barang\": \"string\", \"qty\": 1, \"harga_satuan\": 0, \"total\": 0}],
                 \"total_transaksi\": 0,
-                \"tanggal\": \"YYYY-MM-DD HH:MM\",
+                \"tanggal\": \"YYYY-MM-DD HH:MM atau null\",
                 \"nama_toko\": \"Nama Toko\",
                 \"kategori\": \"Kategori\"
             }
             Aturan:
             1. Cek kualitas foto lebih dulu.
             2. Jika bukan struk, set quality.is_receipt=false dan quality.readable=false.
-            3. Jika struk terpotong, bagian total/tanggal/item penting tidak terlihat, atau tepi struk hilang, set quality.is_cut_off=true dan quality.readable=false.
-            4. Jika foto buram/blur sehingga angka atau item tidak aman dibaca, set quality.is_blurry=true dan quality.readable=false.
-            5. Jika foto gelap tetapi masih bisa dibaca, set quality.is_dark=true, quality.readable=true, lalu tetap ekstrak datanya.
-            6. Jika quality.readable=false, biarkan items kosong, total_transaksi=0, nama_toko kosong, dan isi quality.reason singkat.
-            7. total_transaksi integer.
-            8. tanggal default hari ini.
-            9. Field 'kategori' HARUS memilih salah satu yang paling cocok dari daftar ini:
+            3. Jika dalam satu foto terlihat lebih dari 1 struk/nota terpisah, set quality.has_multiple_receipts=true, quality.receipt_count sesuai jumlah struk yang terlihat, quality.readable=false, dan jangan ekstrak data transaksi.
+            4. Jika hanya ada 1 struk, set quality.has_multiple_receipts=false dan quality.receipt_count=1.
+            5. Jika struk terpotong, bagian total/tanggal/item penting tidak terlihat, atau tepi struk hilang, set quality.is_cut_off=true dan quality.readable=false.
+            6. Jika foto buram/blur sehingga angka atau item tidak aman dibaca, set quality.is_blurry=true dan quality.readable=false.
+            7. Jika foto gelap tetapi masih bisa dibaca, set quality.is_dark=true, quality.readable=true, lalu tetap ekstrak datanya.
+            8. Jika quality.readable=false, biarkan items kosong, total_transaksi=0, nama_toko kosong, dan isi quality.reason singkat.
+            9. total_transaksi integer.
+            10. tanggal WAJIB mengikuti tanggal yang tertulis pada struk. Jika tanggal tidak terlihat atau tidak yakin, isi null, jangan mengarang tanggal hari ini.
+            11. Field 'kategori' HARUS memilih salah satu yang paling cocok dari daftar ini:
                [Makanan, Minuman, Transportasi, Belanja, Tagihan, Kesehatan, Pendidikan, Hiburan, Sedekah, Gaji, Bonus, Penjualan, Lainnya].
-            10. Jika ragu, pilih 'Lainnya'.
-            11. Tanpa markdown.
+            12. Jika ragu, pilih 'Lainnya'.
+            13. Tanpa markdown.
         ";
 
         $lastError = 'Unknown error';

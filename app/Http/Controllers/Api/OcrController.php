@@ -69,10 +69,18 @@ class OcrController extends Controller
             $isBlurry = $this->qualityFlag($quality, 'is_blurry', false);
             $isReadable = $this->qualityFlag($quality, 'readable', true);
             $isDark = $this->qualityFlag($quality, 'is_dark', false);
+            $hasMultipleReceipts = $this->qualityFlag($quality, 'has_multiple_receipts', false);
+            $receiptCount = max(1, (int) ($quality['receipt_count'] ?? 1));
 
             if (!$isReceipt) {
                 return response()->json([
                     'message' => 'File yang diunggah belum terdeteksi sebagai struk. Mohon upload foto struk transaksi yang jelas.',
+                ], 422);
+            }
+
+            if ($hasMultipleReceipts || $receiptCount > 1) {
+                return response()->json([
+                    'message' => 'Hanya diperbolehkan scan 1 struk. Foto yang terdeteksi berisi lebih dari 1 struk, silakan foto ulang satu struk saja.',
                 ], 422);
             }
 

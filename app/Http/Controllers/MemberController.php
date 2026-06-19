@@ -270,11 +270,8 @@ class MemberController extends Controller
         $removedUser = $memberToDelete->user;
         $memberToDelete->delete();
 
-        if ($removedUser && !$removedUser->acceptedBusinessMembership()) {
+        if ($removedUser && !$removedUser->acceptedBusinessMembership() && !$removedUser->business()->exists()) {
             $removedUser->tokens()->delete();
-            $removedUser->forceFill([
-                'remember_token' => Str::random(60),
-            ])->save();
 
             try {
                 DB::table('sessions')->where('user_id', $removedUser->id)->delete();
@@ -284,6 +281,8 @@ class MemberController extends Controller
                     'message' => $sessionError->getMessage(),
                 ]);
             }
+
+            $removedUser->delete();
         }
 
         return response()->json(['message' => 'Anggota berhasil dihapus.']);

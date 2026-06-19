@@ -19,7 +19,7 @@ class CategoryController extends Controller
 
     private function canManageCategories(): bool
     {
-        return in_array(Auth::user()?->role, ['owner', 'sekretaris'], true);
+        return Auth::user()?->role === 'sekretaris';
     }
 
     /**
@@ -62,7 +62,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         if (!$this->canManageCategories()) {
-            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+            return response()->json(['message' => 'Hanya sekretaris yang dapat mengelola kategori.'], 403);
         }
 
         $business = $this->ensureBusiness();
@@ -120,7 +120,7 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         if (!$this->canManageCategories()) {
-            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+            return response()->json(['message' => 'Hanya sekretaris yang dapat mengelola kategori.'], 403);
         }
 
         $user = Auth::user();
@@ -196,7 +196,7 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         if (!$this->canManageCategories()) {
-            return response()->json(['message' => 'Hanya owner atau sekretaris yang dapat mengelola kategori.'], 403);
+            return response()->json(['message' => 'Hanya sekretaris yang dapat mengelola kategori.'], 403);
         }
 
         $user = Auth::user();
