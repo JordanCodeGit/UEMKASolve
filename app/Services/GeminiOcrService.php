@@ -10,13 +10,11 @@ class GeminiOcrService
 {
     protected $apiKey;
 
-    // DAFTAR MODEL (PRIORITAS 1 S/D 5)
+    // DAFTAR MODEL DIPERBARUI - Urutan berdasarkan ketersediaan & kuota
     protected $models = [
-        'gemini-2.5-flash',      // 1. Paling Cepat
-        'gemini-2.5-pro',          // 2. Standar Stabil
-        'gemini-2.0-flash-exp',   // 3. Alternatif Flash
-        'gemini-2.0-flash',       // 4. Versi Lite
-        'gemini-2.0-flash-001',         // 5. Versi Klasik (Benteng Terakhir)'
+        'gemini-2.5-flash',       // PRIORITAS UTAMA: Terbukti aktif & tersedia
+        'gemini-2.0-flash',       // Cadangan 1
+        'gemini-2.0-flash-lite',  // Cadangan 2: Lebih ringan
     ];
 
     public function __construct()
@@ -76,12 +74,18 @@ class GeminiOcrService
         $lastError = 'Unknown error';
         $allLimitReached = false;
 
-        // 4. [AUTO-SWITCH] Loop semua model (Kode sama seperti sebelumnya)
-        foreach ($this->models as $model) {
+        // 4. [AUTO-SWITCH] Loop semua model dengan retry
+        foreach ($this->models as $index => $model) {
             try {
+                // Beri jeda kecil antar percobaan model (kecuali model pertama)
+                if ($index > 0) {
+                    sleep(2);
+                }
+
                 $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
 
                 $response = Http::withOptions(['verify' => false])
+                    ->timeout(45)
                     ->withHeaders(['Content-Type' => 'application/json'])
                     ->post($url . '?key=' . $this->apiKey, [
                         'contents' => [[
@@ -98,7 +102,11 @@ class GeminiOcrService
                     $msg = $errBody['error']['message'] ?? $response->body();
                     Log::warning("Model {$model} GAGAL ({$status}): {$msg}");
                     $lastError = $msg;
-                    if ($status === 429) $allLimitReached = true;
+                    if ($status === 429 || $status === 503) $allLimitReached = true;
+                    if ($status === 404) {
+                        // Model tidak tersedia, skip ke model berikutnya
+                        Log::warning("Model {$model} tidak tersedia (404), skip ke model berikutnya.");
+                    }
                     continue;
                 }
 
