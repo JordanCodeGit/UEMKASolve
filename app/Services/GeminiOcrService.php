@@ -8,33 +8,59 @@ use Illuminate\Support\Facades\Log;
 
 class GeminiOcrService
 {
-    protected $apiKey;
+    // =========================================================
+    // KONFIGURASI MULTI API KEY
+    // Tambahkan API Key baru dari Google Project yang BERBEDA
+    // di file .env dengan format GEMINI_API_KEY_1, _2, _3, dst.
+    // =========================================================
+    protected array $apiKeys = [];
 
-    // DAFTAR MODEL DIPERBARUI - Urutan berdasarkan ketersediaan & kuota
-    protected $models = [
-        'gemini-2.5-flash',       // PRIORITAS UTAMA: Terbukti aktif & tersedia
-        'gemini-2.0-flash',       // Cadangan 1
-        'gemini-2.0-flash-lite',  // Cadangan 2: Lebih ringan
+    // Model yang dicoba per API Key (urutan prioritas)
+    protected array $models = [
+        'gemini-2.5-flash',      // PRIORITAS UTAMA: Terbukti aktif & tersedia
+        'gemini-2.0-flash',      // Cadangan 1
+        'gemini-2.0-flash-lite', // Cadangan 2: Lebih ringan
     ];
 
     public function __construct()
     {
-        $this->apiKey = env('GEMINI_API_KEY');
+        // Kumpulkan semua API key yang tersedia dari .env
+        // Format: GEMINI_API_KEY_1, GEMINI_API_KEY_2, GEMINI_API_KEY_3, dst.
+        // Juga support GEMINI_API_KEY (key lama, sebagai key pertama)
+        $keys = [];
+
+        // Support key lama (backward compatible)
+        if (!empty(env('GEMINI_API_KEY'))) {
+            $keys[] = trim(env('GEMINI_API_KEY'));
+        }
+
+        // Tambahkan key bernomor (key 1, 2, 3, ...)
+        for ($i = 1; $i <= 10; $i++) {
+            $key = env("GEMINI_API_KEY_{$i}");
+            if (!empty($key)) {
+                $trimmedKey = trim($key);
+                // Hindari duplikat
+                if (!in_array($trimmedKey, $keys)) {
+                    $keys[] = $trimmedKey;
+                }
+            }
+        }
+
+        $this->apiKeys = $keys;
     }
 
-   public function extractTransactionData(UploadedFile $image)
+    public function extractTransactionData(UploadedFile $image): array
     {
-        // 1. Cek API Key
-        if (empty($this->apiKey)) {
+        // 1. Cek apakah ada minimal 1 API Key
+        if (empty($this->apiKeys)) {
             throw new \Exception("API Key Gemini belum disetting di file .env");
         }
 
         // 2. Siapkan Data Gambar
         $imageData = base64_encode(file_get_contents($image->getRealPath()));
-        $mimeType = $image->getMimeType();
+        $mimeType  = $image->getMimeType();
 
-        // 3. Prompt (UPDATE: Tambah Field Kualitas Gambar)
-        // Kita beri daftar kategori umum agar AI memilih salah satu dari itu
+        // 3. Prompt Analisis Struk
         $prompt = "
             Analisis foto struk ini. Output JSON murni:
             {
@@ -71,72 +97,108 @@ class GeminiOcrService
             13. Tanpa markdown.
         ";
 
-        $lastError = 'Unknown error';
-        $allLimitReached = false;
+        $lastError        = 'Unknown error';
+        $allKeysExhausted = true;
 
-        // 4. [AUTO-SWITCH] Loop semua model dengan retry
-        foreach ($this->models as $index => $model) {
-            try {
-                // Beri jeda kecil antar percobaan model (kecuali model pertama)
-                if ($index > 0) {
-                    sleep(2);
-                }
+        // 4. [ROTASI MULTI KEY] Loop setiap API Key
+        foreach ($this->apiKeys as $keyIndex => $apiKey) {
+            $keyLabel        = 'Key-' . ($keyIndex + 1);
+            $keyLimitReached = false;
 
-                $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+            Log::info("OCR: Mencoba {$keyLabel}...");
 
-                $response = Http::withOptions(['verify' => false])
-                    ->timeout(45)
-                    ->withHeaders(['Content-Type' => 'application/json'])
-                    ->post($url . '?key=' . $this->apiKey, [
-                        'contents' => [[
-                            'parts' => [
-                                ['text' => $prompt],
-                                ['inlineData' => ['mimeType' => $mimeType, 'data' => $imageData]]
-                            ]
-                        ]]
-                    ]);
-
-                if ($response->failed()) {
-                    $status = $response->status();
-                    $errBody = $response->json();
-                    $msg = $errBody['error']['message'] ?? $response->body();
-                    Log::warning("Model {$model} GAGAL ({$status}): {$msg}");
-                    $lastError = $msg;
-                    if ($status === 429 || $status === 503) $allLimitReached = true;
-                    if ($status === 404) {
-                        // Model tidak tersedia, skip ke model berikutnya
-                        Log::warning("Model {$model} tidak tersedia (404), skip ke model berikutnya.");
+            // Loop setiap model untuk key ini
+            foreach ($this->models as $modelIndex => $model) {
+                try {
+                    // Jeda kecil antar percobaan model (kecuali model pertama)
+                    if ($modelIndex > 0) {
+                        sleep(1);
                     }
-                    continue;
+
+                    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
+                    $response = Http::withOptions(['verify' => false])
+                        ->timeout(45)
+                        ->withHeaders(['Content-Type' => 'application/json'])
+                        ->post($url . '?key=' . $apiKey, [
+                            'contents' => [[
+                                'parts' => [
+                                    ['text'       => $prompt],
+                                    ['inlineData' => ['mimeType' => $mimeType, 'data' => $imageData]],
+                                ],
+                            ]],
+                        ]);
+
+                    if ($response->failed()) {
+                        $status  = $response->status();
+                        $errBody = $response->json();
+                        $msg     = $errBody['error']['message'] ?? $response->body();
+
+                        Log::warning("OCR [{$keyLabel}][{$model}] GAGAL ({$status}): " . substr($msg, 0, 200));
+                        $lastError = $msg;
+
+                        if ($status === 429 || $status === 503) {
+                            // Quota habis pada key ini — tandai & skip semua model key ini
+                            $keyLimitReached = true;
+                            break; // Langsung beralih ke key berikutnya
+                        }
+
+                        if ($status === 404) {
+                            // Model tidak tersedia — coba model berikutnya
+                            Log::warning("OCR [{$keyLabel}][{$model}] tidak tersedia (404), skip.");
+                            continue;
+                        }
+
+                        // Error lain (400, 401, dll) — skip model ini
+                        continue;
+                    }
+
+                    // Response berhasil — parse JSON
+                    $rawText   = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    $cleanJson = str_replace(['```json', '```'], '', $rawText);
+                    $start     = strpos($cleanJson, '{');
+                    $end       = strrpos($cleanJson, '}');
+
+                    if ($start !== false && $end !== false && $end >= $start) {
+                        $cleanJson = substr($cleanJson, $start, $end - $start + 1);
+                    }
+
+                    $data = json_decode(trim($cleanJson), true);
+
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        Log::info("OCR: Berhasil dengan {$keyLabel} + model {$model}.");
+                        return $data;
+                    }
+
+                    Log::warning("OCR [{$keyLabel}][{$model}] JSON tidak valid, coba model berikutnya.");
+
+                } catch (\Exception $e) {
+                    $lastError = $e->getMessage();
+                    Log::warning("OCR [{$keyLabel}][{$model}] Koneksi Error: " . $lastError);
                 }
-
-                $rawText = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
-                $cleanJson = str_replace(['```json', '```'], '', $rawText);
-                $start = strpos($cleanJson, '{');
-                $end = strrpos($cleanJson, '}');
-
-                if ($start !== false && $end !== false && $end >= $start) {
-                    $cleanJson = substr($cleanJson, $start, $end - $start + 1);
-                }
-
-                $data = json_decode(trim($cleanJson), true);
-
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    return $data;
-                }
-
-            } catch (\Exception $e) {
-                $lastError = $e->getMessage();
-                Log::warning("Koneksi Error pada {$model}: " . $lastError);
             }
+
+            // Jika key ini gagal bukan karena limit, ada kemungkinan error lain
+            if (!$keyLimitReached) {
+                $allKeysExhausted = false;
+            }
+
+            Log::warning("OCR: {$keyLabel} tidak berhasil, beralih ke key berikutnya...");
         }
 
-        Log::error("SEMUA MODEL GEMINI GAGAL. Error terakhir: " . $lastError);
+        // 5. Semua key & model sudah dicoba, semua gagal
+        $totalKeys = count($this->apiKeys);
+        Log::error("OCR: SEMUA {$totalKeys} API KEY GAGAL. Error terakhir: " . $lastError);
 
-        if ($allLimitReached || str_contains(strtolower((string)$lastError), 'quota')) {
-            throw new \Exception("Maaf, kuota scan AI harian sudah limit. Silakan input manual.");
-        } else {
-            throw new \Exception("Gagal Scan: Server AI sedang sibuk. Silakan input manual.");
+        $isQuotaError = $allKeysExhausted
+            || str_contains(strtolower((string) $lastError), 'quota')
+            || str_contains(strtolower((string) $lastError), 'resource_exhausted');
+
+        if ($isQuotaError) {
+            $keyInfo = $totalKeys > 1 ? "Semua {$totalKeys} API Key" : "Kuota scan AI";
+            throw new \Exception("{$keyInfo} sudah mencapai limit harian. Kuota akan reset tengah malam (sekitar pukul 15.00 WIB). Silakan input manual untuk sementara.");
         }
+
+        throw new \Exception("Gagal Scan: Server AI sedang sibuk. Silakan coba beberapa saat lagi atau input manual.");
     }
 }
