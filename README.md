@@ -25,6 +25,20 @@ Built on **Laravel 11**, the system exposes both a **Blade web application** and
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="uemkasolve.my.id_.png" alt="UEMKASolve login page" width="800"/>
+  <br/><em>Login — email/password or Google sign-in</em>
+</p>
+
+<p align="center">
+  <img src="uemkasolve.my.id_dashboard.png" alt="UEMKASolve dashboard" width="800"/>
+  <br/><em>Dashboard — balance, income/expense/profit cards, cash-flow chart, and category breakdown</em>
+</p>
+
+---
+
 ## ✨ Key Features
 
 | Area | Capability |
@@ -246,11 +260,19 @@ UEMKASolve/
 
 ---
 
-## 👥 Authors
+## 👥 Team
 
 Developed as an academic software-engineering project at **Telkom University**.
 
-- **Jordan Angkawijaya** — [GitHub @JordanCodeGit](https://github.com/JordanCodeGit) · [Portfolio](https://jordanaw.vercel.app/) · [LinkedIn](https://www.linkedin.com/in/jordan-angkawijaya-776502254/)
+| Member | Role | Links |
+|--------|------|-------|
+| **Jordan Angkawijaya** | Project Manager | [GitHub](https://github.com/JordanCodeGit) · [LinkedIn](https://www.linkedin.com/in/jordan-angkawijaya-776502254/) · [Portfolio](https://jordanaw.vercel.app/) |
+| **Axandio Biyanatul Lizan** | Frontend Web Developer | [GitHub](https://github.com/xancodess) · [LinkedIn](https://www.linkedin.com/in/axandio-biyanatul-lizan-b79a29260/) |
+| **Mahija Danadyaksa Sadtomo** | Backend Web Developer | [GitHub](https://github.com/AxxA3205) · [LinkedIn](https://www.linkedin.com/in/mahija-danadyaksa-84658829a/) |
+| **Hizkia Kevin Octaviano** | Fullstack Mobile Developer | [GitHub](https://github.com/kepin7) |
+| **Muhammad Daffa Al Faiz** | Assistant Mobile Developer | — |
+| **Denny Budiansyach** | Designer | [GitHub](https://github.com/DennyBudiansyach) · [LinkedIn](https://www.linkedin.com/in/dennybudiansyach/) |
+| **Dadya Vio Hendraksa** | QA / Tester | [GitHub](https://github.com/DadyaVio) · [LinkedIn](https://www.linkedin.com/in/dadyaviohendraksa/) |
 
 ---
 
