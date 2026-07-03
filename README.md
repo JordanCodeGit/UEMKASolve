@@ -1,7 +1,15 @@
-<h1 align="center">📈 UEMKASolve</h1>
+<p align="center">
+  <img src="logo-uemkasolve.png" alt="UEMKASolve logo" width="120"/>
+</p>
 
-<p align="center"><b>Digital financial ledger & cash-management platform for Indonesian MSMEs (UMKM)</b><br/>
-<i>Aplikasi buku kas digital dengan pemindaian struk berbasis AI, laporan keuangan, dan manajemen tim.</i></p>
+<h1 align="center">UEMKASolve</h1>
+
+<p align="center"><b>From receipts to reports.</b></p>
+
+<p align="center">
+  The digital financial ledger &amp; cash-management platform for Indonesian MSMEs (UMKM) —<br/>
+  buku kas digital dengan pemindaian struk berbasis AI, laporan keuangan, dan manajemen tim.
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 11"/>
@@ -12,6 +20,11 @@
 </p>
 
 <p align="center">🌐 <b>Live:</b> <a href="https://uemkasolve.my.id">uemkasolve.my.id</a></p>
+
+<p align="center">
+  <img src="uemkasolve.my.id_dashboard.png" alt="UEMKASolve dashboard" width="900"/>
+  <br/><em>Dashboard — balance, income/expense/profit cards, cash-flow chart, and category breakdown.</em>
+</p>
 
 ---
 
@@ -29,12 +42,7 @@ Built on **Laravel 11**, the system exposes both a **Blade web application** and
 
 <p align="center">
   <img src="uemkasolve.my.id_.png" alt="UEMKASolve login page" width="800"/>
-  <br/><em>Login — email/password or Google sign-in</em>
-</p>
-
-<p align="center">
-  <img src="uemkasolve.my.id_dashboard.png" alt="UEMKASolve dashboard" width="800"/>
-  <br/><em>Dashboard — balance, income/expense/profit cards, cash-flow chart, and category breakdown</em>
+  <br/><em>Login — email/password or Google sign-in.</em>
 </p>
 
 ---
